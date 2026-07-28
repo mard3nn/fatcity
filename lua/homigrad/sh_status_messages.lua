@@ -1,299 +1,271 @@
 
 local allowedchars = {
-	"ah",
-	"AH",
-	"ghh",
-	"GH",
-	"AHHH",
+	"ах",
+	"АХ",
+	"гхх",
+	"ГХ",
+	"АХХХ",
 }
 
 local audible_pain = {
-	"AAAAAGH..FUCK.. IT HURTS.",
-	"I CAN'T TAKE THIS ANYMORE!",
-    "Make it STOP make it STOP MAKE IT STOP",
-    "Why won't IT STOP",
-    "Make me unconscious. PLEASE",
-    "Why was I born to feel this why...",
-    "I'd do anything for it to stop... ANYTHING.",
-    "This isn't living this is being TORTURED",
-    "I don't care anymore just STOP the PAIN",
-    "Nothing matters EXCEPT MAKING IT STOP...",
-    "Every second is an eternity of FIRE.",
-    "DEATH WOULD BE MERCY NOW...",
-    "Just one moment without the pain..",
-	"I WISH I HAD SOME PAINKILLERS NOW. FUCK.",
+	"ААААГХ.. БЛЯТЬ.. БОЛИТ.",
+	"Я БОЛЬШЕ НЕ МОГУ ЭТО ВЫНОСИТЬ!",
+    "ПРЕКРАТИ ЭТО ПРЕКРАТИ ЭТО ПРЕКРАТИ ЭТО",
+    "ПОЧЕМУ ЭТО НЕ ПРЕКРАЩАЕТСЯ",
+    "Приведи меня в бессознательное состояние. ПОЖАЛУЙСТА.",
+    "Зачем я родился, чтобы чувствовать это, зачем...",
+    "Я бы на всё пошёл, чтобы это прекратилось... НА ВСЁ.",
+    "Это не жизнь, это ПЫТКА",
+    "Мне всё равно, просто ПРЕКРАТИ БОЛЬ",
+    "Ничто не имеет значения, КРОМЕ ТОГО, ЧТОБЫ ЭТО ПРЕКРАТИЛОСЬ...",
+    "Каждая секунда — это вечность ОГНЯ.",
+    "СМЕРТЬ БЫЛА БЫ МИЛОСТЬЮ СЕЙЧАС...",
+    "Хотя бы мгновение без боли..",
+	"ВОТ БЫ СЕЙЧАС ОБЕЗБОЛИВАЮЩЕГО. БЛЯДЬ.",
 }
 
 local sharp_pain = {
-	"AAAHH",
-	"AAAH",
-	"AAaaAH",
-	"AAaaAH",
-	"AAaaAAAGH",
-	"AAaaAH",
-	"AAaAaaH",
-	"AAAAAaaH",
-	"AAaaAHHHH",
-	"AAaAA",
-	"AAAAAa",
-	"AAAAaAAAaaaaghh",
-	"AAAaaAa",
-	"AaaAAaghf",
-	"aaAaaAaff",
-	"aaahhh",
-	"AAAaaGHHH",
-	"AAAaaAAHH",
-	"AAAaaAAAAAaGHHHH",
-	"AAAaaAAAAAaGHAAAHHH",
-	"AAAaaAAAAAaGHHAAAAAAHH",
-	"AAAaaAAAAAaGHHHH",
-	"AAAaaAAAaaAAAaGHHHH",
-	"AAAaaAAAaaAAAaAAAAAAAGHHHH",
-	"AAAaaAAAAAaGHHHH",
-	"AAAaaAAAAAAAAAHHH",
-	"AAAaaAAAAAaGHAaaaHH",
-	"AAAaaAAAAAaAaaaaaAAAAHH",
-	"AAAaaAAAAAaAAAAAAAADGHHHH",
-	"AAAaaAAAaaAAAaAAAAAAAAAAAAGGGGGGAGHHHH",
-	"AAAaaAAAaaAAAaAAAAAAAAAAAAAAAAAAH",
+	"АААХХ",
+	"АААХ",
+	"ААааАХ",
+	"ААааАХ",
+	"ААааАААГХ",
+	"ААааАХ",
+	"ААаАааХ",
+	"АААААааХ",
+	"ААааАХХХХ",
+	"ААаАА",
+	"АААААа",
+	"ААААаАААаааагхх",
+	"АААааАа",
+	"АааААагхф",
+	"ааАааАфф",
+	"аааххх",
+	"АААааГХХХ",
+	"АААааААХХ",
+	"АААааАААААаГХХХХ",
+	"АААааАААААаГХАААХХХ",
+	"АААааАААААаГХХААААААХХ",
+	"АААааАААААаГХХХХ",
+	"АААааАААааАААаГХХХХ",
+	"АААааАААааАААаАААААААГХХХХ",
+	"АААааАААААаГХХХХ",
+	"АААааАААААААААХХХ",
+	"АААааАААААаГХАаааХХ",
+	"АААааАААААаАаааааААААХХ",
+	"АААааАААААаААААААААДГХХХХ",
+	"АААааАААааАААаАААААААААААААГГГГГГАГХХХХ",
+	"АААааАААааАААаААААААААААААААААААХ",
 }
 
 hg.sharp_pain = sharp_pain
 
 local random_phrase = {
-	"It's kinda chilly in here...",
-	"Everything seems too quiet...",
-	"Breathing feels oddly satisfying right now.",
-	"What if this quiet lasts forever?",
-	"Why isn't anything happening?",
-	"I can hear my own heartbeat...",
-	"The silence is almost deafening.",
-	"Time feels... different somehow.",
-	"Is anyone even out there?",
-	"How long have I been standing here?",
-	"The air tastes stale.",
-	"I don't remember how I got here.",
-	"Nothing ever changes, does it?",
-	"Am I awake right now?",
-	"The shadows seem deeper than usual.",
-	"My thoughts are so loud in this silence.",
-	"When did it get so dark?",
-	"I feel like I'm being watched.",
-	"Everything's exactly where it was before.",
-	"Does anyone know I'm here?",
-	"The walls feel closer somehow.",
-	"What was I thinking about?",
-	"Time moves so strangely here.",
-	"I can't remember the last time anything changed.",
-	"The quiet is starting to feel alive.",
+	"Здесь как-то прохладно...",
+	"Всё кажется слишком тихим...",
+	"Дышать сейчас на удивление приятно.",
+	"Что, если эта тишина продлится вечно?",
+	"Почему ничего не происходит?",
 }
 
-
 local fear_hurt_ironic = {
-	"I bet there's a lesson in this... if I survive.",
-	"My future biographer won't believe this part.",
-	"Well, this is a stupid way to go.",
-	"At least my life wasn't boring.",
-	"Note to self: Never do this again.",
-	"This isn't the worst day to die.",
-	"This is fine. Everything's fine.",
-	"At least I'll die knowing I was right.",
-	"Guess I'm getting what I deserved.",
-	"Well, I asked for an adventure.",
-	"They'll probably laugh at this funeral.",
-	"At least it'll make a good story... if anyone lives to hear it.",
-	"I've survived worse... probably.",
+	"Наверное, в этом есть урок... если я выживу.",
+	"Мой будущий биограф не поверит в эту часть.",
+	"Ну что ж, глупый способ умереть.",
+	"По крайней мере, моя жизнь не была скучной.",
+	"Заметка на будущее: никогда так не делать.",
+	"Это не самый худший день для смерти.",
 }
 
 local fear_phrases = {
-	"It's not that bad... right?",
-	"I don't want to die like this.",
-	"Is this really how it ends?",
-	"This isn't good.",
-	"Is this really how it ends?",
-	"I don't want to die like this.",
-	"I wish I had a way out.",
-	"I regret so many things.",
-	"This can't be it.",
-	"I can't believe this is happening to me.",
-	"I should've taken this more seriously.",
-	"What if I don't make it..?",
-	"This is worse than I thought.",
-	"This is so unfair.",
-	"I can't give up yet.",
-	"I never thought it would be like this.",
-	"I should've listened to my instincts.",
-	"Breathe. Just breathe.",
-	"Cold hands. Steady hands.",
+	"Не так уж и плохо... правда?",
+	"Я не хочу так умереть.",
+	"Неужели вот так всё закончится?",
+	"Это плохо.",
+	"Неужели вот так всё закончится?",
+	"Я не хочу так умереть.",
+	"Хотел бы я иметь выход.",
+	"Я жалею о многом.",
+	"Этого не может быть.",
+	"Не могу поверить, что это происходит со мной.",
+	"Мне следовало отнестись к этому серьёзнее.",
+	"Что, если я не выживу..?",
+	"Это хуже, чем я думал.",
+	"Это так несправедливо.",
+	"Я не могу сдаться.",
+	"Я никогда не думал, что это будет так.",
+	"Мне стоило прислушаться к инстинктам.",
+	"Дыши. Просто дыши.",
+	"Холодные руки. Уверенные руки.",
 }
 
 local is_aimed_at_phrases = {
-    "Oh God. This is it.",
-    "Don't. move.",
-    "Is this really how I die?",
-    "I should've run. Why didn't I run?",
-    "Please don't pull the trigger. Please.",
-    "I can see their finger on the trigger.",
-    "I don't want to die. Not like this.",
-    "If I beg, will it make it worse?",
-    "This can't be real. This can't be real.",
-    "Someone help me. Please. Someone.",
-    "I don't want to die in a place like this.",
-    "I don't want my last thought to be fear.",
-    "I don't want to die.",
+    "О Боже. Это конец.",
+    "Не. двигайся.",
+    "Неужели я действительно так умру?",
+    "Надо было бежать. Почему я не побежал?",
+    "Пожалуйста, не нажимай на курок. Пожалуйста.",
+    "Я вижу её палец на спусковом крючке.",
+    "Я не хочу умирать. Не так.",
+    "Если я начну умолять, станет только хуже?",
+    "Этого не может быть реальностью. Этого не может быть.",
+    "Кто-нибудь, помогите мне. Пожалуйста. Кто-нибудь.",
+    "Я не хочу умирать в таком месте.",
+    "Я не хочу, чтобы моей последней мыслью был страх.",
+    "Я не хочу умирать.",
 }
 
 local near_death_poetic = {
-	"Trying to stand... but I just can't...",
-	"Breathing's just shallow sips of nothing...",
-	"Can't tell if my eyes are open or not anymore...",
-	"Last thing I'll taste is my own blood and copper.",
-	"Eyes keep sliding off things.",
-	"Can't remember how standing works.",
-	"Everything echoes inside my skull.",
-	"Blinking takes too long to come back.",
-	"Fingers won't close around anything.",
-	"Lungs refuse to be full.",
-	"Regrets are pointless now.",
+	"Пытаюсь встать... но просто не могу...",
+	"Дыхание — просто поверхностные глотки пустоты...",
+	"Уже не понять, открыты у меня глаза или нет...",
+	"Последнее, что я попробую — собственная кровь и медь.",
+	"Взгляд всё время соскальзывает с предметов.",
+	"Не могу вспомнить, как работают ноги.",
+	"Всё эхом отдаётся внутри черепа.",
+	"Чтобы моргнуть, нужно слишком много времени.",
+	"Пальцы не смыкаются ни на чём.",
+	"Лёгкие отказываются наполняться.",
+	"Сожаления теперь бессмысленны.",
 }
 
 local near_death_positive = {
-	"I don't want to die.",
-	"I have to survive.",
-	"There's still a chance.",
-	"I can't let fear win.",
-	"Just one more try.",
-	"I refuse to die here.",
-	"Alright... think this through.",
-	"Just stay still. Moving makes it worse.",
-	"Breathe slow. Panic won't help.",
-	"It's not over until it's over.",
-	"Pain is just a signal. Ignore it.",
-	"If this is it... at least it's gonna be quick.",
-	"I've survived worse. Probably.",
-	"This isn't how I pictured it.",
+	"Я не хочу умирать.",
+	"Я должен выжить.",
+	"Ещё есть шанс.",
+	"Я не могу позволить страху победить.",
+	"Ещё одна попытка.",
+	"Я отказываюсь умирать здесь.",
+	"Так... давай подумаем.",
+	"Просто не двигайся. От движений становится хуже.",
+	"Дыши медленно. Паника не поможет.",
+	"Всё не кончено, пока не кончено.",
+	"Боль — это просто сигнал. Игнорируй его.",
+	"Если это конец... по крайней мере, будет быстро.",
+	"Я переживал и похуже. Наверное.",
+	"Я представлял это иначе.",
 }
 
 local broken_limb = {
-	"FUCK. FUCK. ITS DEFINITELY BROKEN!",
-	"I CAN FEEL THE BONE PIECES MOVING!",
-	"IT'S FUCKING BROKEN. I THINK..",
-	"It hurts just thinking about it. Definitely broken.",
-	"I don't think it should bend here.",
-	"Oh fuck. It is snapped.",
-	"I don't see any open fracture, but I feel like I broke something",
+	"БЛЯТЬ. БЛЯТЬ. ОНО ТОЧНО СЛОМАНО!",
+	"Я ЧУВСТВУЮ, КАК КОСТИ ДВИГАЮТСЯ!",
+	"ОНО СУКА СЛОМАНО. Я ДУМАЮ..",
+	"От одной мысли об этом больно. Точно сломано.",
+	"Не думаю, что тут должно быть сгибаться.",
+	"О бля. Оно переломано.",
+	"Я не вижу открытого перелома, но чувствую, что сломал что-то.",
 }
 
 local dislocated_limb = {
-	"Yeah that shouldn't be bending like that.",
-	"I have to get this bone back in.",
-	"No... I have to move it back in place.",
-	"It just hurts so much there. I might need a check up.",
-	"My limb is out of place.",
+	"Да, оно не должно так сгибаться.",
+	"Мне нужно вправить эту кость обратно.",
+	"Нет... Я должен вправить её обратно.",
+	"Там так сильно болит. Наверное, надо провериться.",
+	"Моя конечность не на месте.",
 }
 
 local hungry_a_bit = {
-    "Mgh, I'm hungry...",
-    "Some food would be great...",
-    "I'm hungry...",
-    "I should eat something.",
+    "Мгх, я голоден...",
+    "Немного еды было бы неплохо...",
+    "Я голоден...",
+    "Мне стоит что-нибудь съесть.",
 }
 
 local very_hungry = {
-    "My stomach... Ugh...",
-    "If I don't eat, I'll feel even worse...",
-    "Stomach... Damn it... I feel sick",
+    "Живот... Угх...",
+    "Если я не поем, мне станет ещё хуже...",
+    "Желудок... Чёрт... Меня тошнит.",
 }
 
 local after_unconscious = {
-    "What happened? It hurts...",
-	"Where am I? Why does it hurt...",
-	"I-I thought I was going to die...",
-	"My head... What happened?",
-	"Did I almost die a second ago?",
-	"It felt like I died.",
-	"The heavens didn't take me?",
-	"Ohh-fuck... my head is aching...",
-	"Oh it's gonna be hard to get up right now... but I have to...",
-	"I don't recognize this place at all... or do I?",
-	"I don't want to experience this EVER AGAIN!",
+    "Что случилось? Так больно...",
+	"Где я? Почему так больно...",
+	"Я-я думал, что умру...",
+	"Моя голова... Что произошло?",
+	"Я чуть не умер только что?",
+	"Было такое чувство, будто я умер.",
+	"Небеса не приняли меня?",
+	"Ох-бля... голова раскалывается...",
+	"Ох, сейчас будет трудно встать... но надо...",
+	"Я совсем не узнаю это место... или узнаю?",
+	"Я НЕ ХОЧУ ПЕРЕЖИВАТЬ ЭТО СНОВА!",
 }
 
 local slight_braindamage_phraselist = {
-	"I don't understand...",
-	"It doesn't make sense...",
-	"Where am I?",
-	"Huh? What is this..?",
-	"I don't know what is happening...",
-	"Hello?",
-	"Ughhh ohhhh...      huh...",
-	"What... is happening?",
+	"Я не понимаю...",
+	"Это не имеет смысла...",
+	"Где я?",
+	"А? Что это..?",
+	"Я не знаю, что происходит...",
+	"Алло?",
+	"Угххх ооохххх...      ах...",
+	"Что... происходит?",
 }
 
 local braindamage_phraselist = {
-	"Bbbee.. wheea mgh?!",
-	"Bmmeee... mehk...",
-	"Mm--hhhh. Mmm?",
-	"Ghmgh whhh...",
-	"Ahgg...mg?",
-	"Hgghh... D-Dmmh.",
-	"Lmmmphf, mp-hf!",
-	"Heeelllhhpphp...",
-	"Nghh... Gmh?",
-	"Ggg... Bgh..",
-	"Bhrhraihin.",
+	"Бббээ.. гдээ а мгх?!",
+	"Бммэээ... мэхк...",
+	"Мм--хххх. Ммм?",
+	"Гхмгх уххх...",
+	"Ахгг...мг?",
+	"Хггхх... Д-Дммх.",
+	"Лмммпхф, мп-хф!",
+	"Хэээлллххппхп...",
+	"Нгхх... Гмх?",
+	"Ггг... Бгх..",
+	"Бхрхраихн.",
 }
 
 local cold_phraselist = {
-	"It's getting very cold..",
-	"Too cold for me.",
-	"I'm shivering, fucking hell, man.",
-	"Extremely chilly out here..",
-	"Need something to heat up...",
-	"I feel pretty cold...",
-	"I feel sick from that cold, fuck."
+	"Становится очень холодно..",
+	"Слишком холодно для меня.",
+	"Меня трясёт, твою мать, чувак.",
+	"Жуткий холод снаружи..",
+	"Нужно чем-то согреться...",
+	"Мне довольно холодно...",
+	"Меня тошнит от этого холода, бля."
 }
 
 local freezing_phraselist = {
-	"I.. ca.. can't feel m-my b-body..",
-	"I can't.. f-feel my legs...",
-	"I'm f-fuck-king fre-ezing..",
-	"I-I think-k my face is num-mb..",
-	"Cold-d..",
-	"I.. can't feel any-ythi-ing..",
+	"Я.. не.. не ч-чув-ствую св-воё т-тело..",
+	"Я не ч-чую св-вои ноги...",
+	"Я з-за-ёб-бно з-за-мер-заю..",
+	"Я-я ду-маю у ме-ня л-лицо о-неме-ло..",
+	"Хо-ло-дно..",
+	"Я.. ни-иче-го не чу-вствую..",
 }
 
 local numb_phraselist = {
-	"It's not.. cold anymore..",
-	"Why... does it feel warm..?",
-	"I think I'm okay... I think...",
-	"Finally some warmth...",
-	"I'm warm again... Somehow...",
-	"I was just freezing... Where did this heat come from..?",
+	"Уже не.. холодно..",
+	"Почему... ощущается тепло..?",
+	"Кажется, я в порядке... кажется...",
+	"Наконец-то тепло...",
+	"Мне снова тепло... Странно...",
+	"Я только что замерзал... Откуда взялось это тепло..?",
 }
 
 local hot_phraselist = {
-	"I'm so sweaty..",
-	"This heat is killing me..",
-	"My clothing is covered in sweat, fuck.",
-	"My sweat fucking reeks. I should really cool down...",
-	"It's a bit too hot, fuck, man.",
-	"I'm heating up real bad...",
-	"Why is it so hot in here?",
+	"Я весь в поту..",
+	"Эта жара меня убивает..",
+	"Моя одежда пропитана потом, бля.",
+	"Мой пот воняет. Мне правда стоит остыть...",
+	"Слишком жарко, блин, чувак.",
+	"Меня сильно разогревает...",
+	"Почему здесь так жарко?",
 }
 
 local heatstroke_phraselist = {
-	"I NEED WATER!!",
-	"Please... water...",
-	"I feel dizzy... Fuuck-",
-	"MY HEAD!- It hurts..",
-	"My head is aching..",
+	"МНЕ НУЖНА ВОДА!!",
+	"Пожалуйста... воду...",
+	"У меня кружится голова... Бляя-",
+	"МОЯ ГОЛОВА!- Она болит..",
+	"У меня голова раскалывается..",
 }
 
 local heatvomit_phraselist = {
-	"That heat..- I'm gonna vomit-",
-	"Ugghhh... I'm about to puke-",
-	"Fuuck.. Oughhh.. I don't feel-"
+	"Эта жара..- меня сейчас вырвет-",
+	"Угххх... Меня сейчас вырвет-",
+	"Бля.. Оугххх.. Мне плохо-"
 }
 
 local hg_showthoughts = ConVarExists("hg_showthoughts") and GetConVar("hg_showthoughts") or CreateClientConVar("hg_showthoughts", "1", true, true, "Toggle thoughts of your character", 0, 1)
@@ -339,7 +311,7 @@ function hg.likely_to_phrase(ply)
 		or (temperature < 31 and 0.5)
 		or (temperature > 38 and 0.5)
 		or (blood < 3000 and 0.3)
-		or (fear > 0.5 and 0.7)
+		--or (fear > 0.5 and 0.7)
 		or (brain > 0.1 and brain * 5)
 		or (fear < -0.5 and 0.05)
 		or -0.1
@@ -373,8 +345,6 @@ local function get_status_message(ply)
 	local blood = org.blood
 	local hungry = org.hungry
 	local broken_dislocated = org.just_damaged_bone and ((org.just_damaged_bone + 3 - CurTime()) < -3)
-	local fear = org.fear
-	local adrenaline = org.adrenaline
 
 	if broken_dislocated and org.just_damaged_bone then
 		org.just_damaged_bone = nil
@@ -419,11 +389,7 @@ local function get_status_message(ply)
 			--elseif(broken_dislocated_notify)then
 				--most_wanted_phraselist = (broken_notify and broken_limb or dislocated_limb)
 			elseif(blood < 3100)then
-				if adrenaline > 1.3 and fear < 0.5 then
-					most_wanted_phraselist = near_death_positive
-				else
-					most_wanted_phraselist = near_death_poetic
-				end
+				most_wanted_phraselist = near_death_poetic
 			end
 		end
 	elseif after_unconscious_notify then

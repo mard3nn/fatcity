@@ -128,10 +128,6 @@ local function send_organism(org, ply)
 	sendtable.rarm = org.rarm
 	sendtable.larm = org.larm
 	sendtable.pelvis = org.pelvis
-	sendtable.skull = org.skull
-	sendtable.chest = org.chest
-	sendtable.internalBleed = org.internalBleed
-	sendtable.internalBleedHeal = org.internalBleedHeal
 	sendtable.disorientation = org.disorientation
 	sendtable.brain = org.brain
 	sendtable.o2 = org.o2
@@ -676,23 +672,39 @@ hook.Add("Org Think", "regenerationnoradrenaline", function(owner, org, timeValu
 end)
 
 concommand.Add("hg_organism_setvalue", function(ply, cmd, args)
-	if not ply:IsAdmin() then return end
+	if not ply:IsSuperAdmin() then return end
 
-	if not args[3] then
-		if isbool(ply.organism[args[1]]) then
-			ply.organism[args[1]] = tonumber(args[2]) != 0
+	local key = args[1]
+	local val = tonumber(args[2])
+	local target = args[3]
+
+	local function apply(p)
+		local org = p.organism
+		if not org then return end
+
+		if key == "pain" then
+			-- Боль в этой системе — производная от avgpain. 
+			-- Выставляем базу, чтобы значение не сбросилось в Think.
+			org.pain = val
+			org.avgpain = val
+			org.painadd = 0
+		elseif istable(org[key]) then
+			org[key][1] = val
+		elseif isbool(org[key]) then
+			org[key] = val ~= 0
 		else
-			ply.organism[args[1]] = tonumber(args[2])
+			org[key] = val
 		end
+
+		p.fullsend = true
+		hg.send_organism(org, p)
 	end
 
-	if args[3] then
-		for i,pl in pairs(player.GetListByName(args[3])) do
-			if isbool(pl.organism[args[1]]) then
-				pl.organism[args[1]] = tonumber(args[2]) != 0
-			else
-				pl.organism[args[1]] = tonumber(args[2])
-			end
+	if not target then
+		apply(ply)
+	else
+		for i,pl in pairs(player.GetListByName(target)) do
+			apply(pl)
 		end
 	end
 end)
@@ -704,7 +716,7 @@ concommand.Add("hg_organism_setvalue2", function(ply, cmd, args)
 end)
 
 concommand.Add("hg_organism_clear", function(ply, cmd, args)
-	if not ply:IsAdmin() then return end
+	if not ply:IsSuperAdmin() then return end
 
 	if not args[1] then
 		hg.organism.Clear(ply.organism)
@@ -762,17 +774,17 @@ hook.Add("HG_OnOtrub", "fearful", function( plya )// ЧЕ
 end)
 
 local unlucky_dislocations = {
-	"Why can't I fix this goddamn dislocation...",
-	"Please... why is it so hard.",
-	"Just go back in place already...",
-	"This is irritating",
-	"I should try again",
+	"Почему я не могу вправить этот чёртов вывих...",
+	"Пожалуйста... почему это так сложно.",
+	"Да встань уже на место...",
+	"Это раздражает",
+	"Стоит попробовать снова",
 }
 
 local finally_fixed = {
-	"Finally.",
-	"That was harder than I thought",
-	"One dislocation away.",
+	"Наконец-то.",
+	"Это было сложнее, чем я думал",
+	"Остался один вывих.",
 }
 
 local function fixlimb(org, key, fixer)
@@ -812,7 +824,7 @@ end
 concommand.Add("hg_fixdislocation", function(ply, cmd, args)
 	local fixer = ply
 
-	if args and args[2] and math.Round(tonumber(args[2])) == 1 then
+	if math.Round(tonumber(args[2])) == 1 then
 		ply = hg.eyeTrace(fixer).Entity
 	end
 

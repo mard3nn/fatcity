@@ -234,83 +234,72 @@ end)
 
 function zb.tdm_checkpoints()
     local vecs = {}
-    local points = zb.GetMapPoints( "HMCD_TDM_T" )
-    for i,ent in pairs(ents.FindByClass("info_player_terrorist")) do
-        table.insert(vecs,ent:GetPos())
+    for i, ent in pairs(ents.FindByClass("info_player_terrorist")) do
+        table.insert(vecs, ent:GetPos())
     end
 
-    local points = #points == 0 and zb.TranslateVectorsToPoints(vecs) or points
+    local points = zb.GetMapPoints("HMCD_TDM_T")
+    if points and #points == 0 then
+        points = zb.TranslateVectorsToPoints(vecs)
+    end
 
-    if #zb.GetMapPoints( "HMCD_TDM_T" ) == 0 then
-        zb.SaveMapPoints( "HMCD_TDM_T", points )
+    local function saveIfEmpty(groupName, data)
+        local existing = zb.GetMapPoints(groupName)
+        if existing and #existing == 0 then
+            zb.SaveMapPoints(groupName, data)
+        end
     end
-    if #zb.GetMapPoints( "RIOT_TDM_RIOTERS" ) == 0 then
-        zb.SaveMapPoints( "RIOT_TDM_RIOTERS", points )
-    end
-    if #zb.GetMapPoints( "HMCD_CRI_T" ) == 0 then
-        zb.SaveMapPoints( "HMCD_CRI_T", points )
-    end
-    
-    --||
 
-    local vecs = {}
-    local points = zb.GetMapPoints( "HMCD_TDM_CT" )
+    saveIfEmpty("HMCD_TDM_T", points)
+    saveIfEmpty("RIOT_TDM_RIOTERS", points)
+    saveIfEmpty("HMCD_CRI_T", points)
+
+    vecs = {}
     for i, ent in pairs(ents.FindByClass("info_player_counterterrorist")) do
         table.insert(vecs, ent:GetPos())
     end
-   
-    local points = #points == 0 and zb.TranslateVectorsToPoints(vecs) or points
-    
-    if #zb.GetMapPoints( "HMCD_TDM_CT" ) == 0 then
-        zb.SaveMapPoints( "HMCD_TDM_CT", points )
-    end
-    if #zb.GetMapPoints( "HMCD_CRI_CT" ) == 0 then
-        zb.SaveMapPoints( "HMCD_CRI_CT", points )
-    end
-    if #zb.GetMapPoints( "RIOT_TDM_LAW" ) == 0 then
-        zb.SaveMapPoints( "RIOT_TDM_LAW", points )
+
+    points = zb.GetMapPoints("HMCD_TDM_CT")
+    if points and #points == 0 then
+        points = zb.TranslateVectorsToPoints(vecs)
     end
 
-    --||
+    saveIfEmpty("HMCD_TDM_CT", points)
+    saveIfEmpty("HMCD_CRI_CT", points)
+    saveIfEmpty("RIOT_TDM_LAW", points)
 
-    local foundA
-    local foundB
+    local foundA, foundB = false, false
     for i, ent in ipairs(ents.FindByClass("func_bomb_target")) do
-        local vecs = {}
         local min, max = ent:WorldSpaceAABB()
-
-        vecs[1] = min
-        vecs[2] = max
+        local vecs = { min, max }
+        local pts = zb.TranslateVectorsToPoints(vecs)
 
         if not foundB then
-            local points = zb.TranslateVectorsToPoints(vecs)
-            zb.SaveMapPoints( "BOMB_ZONE_B", points )
+            local existing = zb.GetMapPoints("BOMB_ZONE_B")
+            if existing and #existing == 0 then
+                zb.SaveMapPoints("BOMB_ZONE_B", pts)
+            end
             foundB = true
-            continue
-        end
-
-        if not foundA then
-            local points = zb.TranslateVectorsToPoints(vecs)
-            zb.SaveMapPoints( "BOMB_ZONE_A", points )
+        elseif not foundA then
+            local existing = zb.GetMapPoints("BOMB_ZONE_A")
+            if existing and #existing == 0 then
+                zb.SaveMapPoints("BOMB_ZONE_A", pts)
+            end
             foundA = true
-            continue
         end
     end
 
-    local points = {}
+    local hostagePoints = {}
     for i, ent in pairs(ents.FindByClass("func_hostage_rescue")) do
-        local vecs = {}
-
         local min, max = ent:WorldSpaceAABB()
-
-        table.insert(points, min)
-        table.insert(points, max)
+        table.insert(hostagePoints, min)
+        table.insert(hostagePoints, max)
     end
+    hostagePoints = zb.TranslateVectorsToPoints(hostagePoints)
 
-    points = zb.TranslateVectorsToPoints(points)
-
-    if #zb.GetMapPoints( "HOSTAGE_DELIVERY_ZONE" ) == 0 then
-        zb.SaveMapPoints( "HOSTAGE_DELIVERY_ZONE", points )
+    local existingHostage = zb.GetMapPoints("HOSTAGE_DELIVERY_ZONE")
+    if existingHostage and #existingHostage == 0 then
+        zb.SaveMapPoints("HOSTAGE_DELIVERY_ZONE", hostagePoints)
     end
 end
 

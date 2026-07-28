@@ -57,12 +57,13 @@ function MODE:RandomStuff()
 		
 		local door
 		for i, ent in RandomPairs(tbl) do
-			if DoorIsOpen(ent) then
-				door = ent
-
-				break
-			end
+    		if DoorIsOpen(ent) then
+        		door = ent
+        		break
+    		end
 		end
+
+		if not door then return end
 
 		local pos = door:GetPos() + door:GetAngles():Right() * 1
 		crysound = CreateSound(door, snd)

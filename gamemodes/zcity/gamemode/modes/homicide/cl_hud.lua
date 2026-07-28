@@ -511,3 +511,29 @@ hook.Add("Think", "RequestTraitorStatus", function()
 		net.SendToServer()
 	end
 end)
+
+hook.Add("HUDPaint", "HMCD_TraitorFriendlyTag", function()
+    local ply = LocalPlayer()
+    if not ply:Alive() or not ply.isTraitor then return end
+    if not MODE.AllTraitors or #MODE.AllTraitors == 0 then return end
+
+    for _, v in player.Iterator() do
+        if v == ply or not v:Alive() then continue end
+
+        local is_friendly = false
+        for _, info in ipairs(MODE.AllTraitors) do
+            if info[3] == v:UserID() then
+                is_friendly = true
+                break
+            end
+        end
+        if not is_friendly then continue end
+
+        local pos = v:GetPos() + Vector(0, 0, 70)
+        local screen = pos:ToScreen()
+        if not screen.visible then continue end
+
+        draw.SimpleText("СВОЙ", "ZB_HomicideSmall", screen.x + 1, screen.y + 2, Color(0, 0, 0, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("СВОЙ", "ZB_HomicideSmall", screen.x, screen.y, Color(255, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+end)

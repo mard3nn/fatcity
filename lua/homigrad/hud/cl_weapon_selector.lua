@@ -1,205 +1,75 @@
---
+surface.CreateFont("KIRO_WepTitle", {
+    font = "Bahnschrift",
+    size = ScreenScale(14),
+    weight = 600,
+    antialias = true
+})
+surface.CreateFont("KIRO_WepSmall", {
+    font = "Bahnschrift",
+    size = ScreenScale(8),
+    weight = 500,
+    antialias = true
+})
+
+local scrW, scrH = ScrW(), ScrH()
+local gradientMat = Material("vgui/gradient-d")
+
 hg = hg or {}
 hg.WeaponSelector = hg.WeaponSelector or {}
 local WS = hg.WeaponSelector
 
-function WS.GetPrintName( self )
-	local class = self:GetClass()
-	local phrase = language.GetPhrase(class)
-	return phrase ~= class and phrase or self:GetPrintName()
+function WS.GetPrintName(self)
+    local class = self:GetClass()
+    local phrase = language.GetPhrase(class)
+    return phrase ~= class and phrase or self:GetPrintName() or class
 end
 
 WS.Show = 0
 WS.Transparent = 0
 WS.LastSelectedSlot = 0
 WS.LastSelectedSlotPos = 0
-
 WS.SelectedSlot = 0
 WS.SelectedSlotPos = 0
+WS.BoxAnim = WS.BoxAnim or {}
+WS.TypeState = WS.TypeState or {}
+WS.NameScroll = WS.NameScroll or {}
+WS.Anim = WS.Anim or {}
 
-function WS.DrawText(text, font, posX, posY, color, textAlign)
-    draw.DrawText( text, font, posX + 2, posY + 2, ColorAlpha(color_black,WS.Transparent*255) ,textAlign )
-    draw.DrawText( text, font, posX, posY, ColorAlpha(color,WS.Transparent*255) ,textAlign )
+local function EaseOutCubic(t)
+    t = math.Clamp(t, 0, 1)
+    return 1 - (1 - t) ^ 3
+end
+
+function WS.GetAnimValue(id, target, speed)
+    WS.Anim[id] = LerpFT(speed or 0.18, WS.Anim[id] or 0, target)
+    return WS.Anim[id]
+end
+
+function WS.DrawText(text, font, x, y, color, alignX, alignY)
+    draw.DrawText(text, font, x + 1, y + 1, Color(0, 0, 0, 180), alignX, alignY)
+    draw.DrawText(text, font, x, y, color, alignX, alignY)
 end
 
 function WS.GetSelectedWeapon()
-    if not IsValid( LocalPlayer() ) or not LocalPlayer():Alive() then return end
-    local Weapons = WS.GetWeaponTable( LocalPlayer() )
-    return Weapons[WS.SelectedSlot] and Weapons[WS.SelectedSlot][WS.SelectedSlotPos] or Weapons[WS.LastSelectedSlot][WS.LastSelectedSlotPos] or Weapons[0][0]
+    local ply = LocalPlayer()
+    if not IsValid(ply) or not ply:Alive() then return end
+    local weapons = WS.GetWeaponTable(ply)
+    return weapons[WS.SelectedSlot] and weapons[WS.SelectedSlot][WS.SelectedSlotPos]
+        or weapons[WS.LastSelectedSlot][WS.LastSelectedSlotPos]
+        or weapons[0] and weapons[0][1]
 end
 
-function WS.GetWeaponTable( ply )
-    if not IsValid( ply ) or not ply:Alive() then return end
-    local WeaponsGet = ply:GetWeapons()
-    local FormatedTable = {
-        [0] = {}, [1] = {}, [2] = {}, [3] = {}, [4] = {}, [5] = {},
-    }
-
-    table.sort(WeaponsGet, function(a, b) return (a.SlotPos or 0) > (b.SlotPos or 0) end)
-
-    for k,wep in ipairs(WeaponsGet) do
-        local tTbl = FormatedTable[wep.Slot or 0]
-        local iMinPos = math.min( (wep.SlotPos and wep.SlotPos) or 1, ((#tTbl or 0) + 1)) - 1
-        local iPos = tTbl[ iMinPos ] and #tTbl + 1 or iMinPos
-        tTbl[ iPos ] = wep
+function WS.GetWeaponTable(ply)
+    if not IsValid(ply) or not ply:Alive() then return end
+    local all = ply:GetWeapons()
+    local tbl = {[0]={}, [1]={}, [2]={}, [3]={}, [4]={}, [5]={}}
+    table.sort(all, function(a, b) return (a.SlotPos or 0) > (b.SlotPos or 0) end)
+    for _, wep in ipairs(all) do
+        local slot = wep.Slot or 0
+        table.insert(tbl[slot], wep)
     end
-    return FormatedTable
+    return tbl
 end
-
-local scrW, scrH = ScrW(), ScrH()
-
-local AcsentColor = Color(155,0,0)
-local gradient_u = Material("vgui/gradient-d")
-
-function WS.WeaponSelectorDraw( ply )
-    if not IsValid( ply ) or not ply:Alive() or GetGlobalBool("RadialInventory", false) then return end
-    if WS.Show < CurTime() then 
-        WS.SelectedSlot = WS.LastSelectedSlot 
-        WS.SelectedSlotPos = -1
-        
-        return 
-    end
-    local Weapons = WS.GetWeaponTable( ply )
-    local SelectedWep = WS.GetSelectedWeapon()
-    if not IsValid(SelectedWep) then return end
-    WS.Transparent = LerpFT( 0.2, WS.Transparent, math.min( WS.Show - CurTime(), 1 ) )
-    --draw.RoundedBox(0,(scrW / 2)-10,(scrH *0.15),20,20, color_red )
-    local SuperAmmout = 0
-    local AmmoutSlots = 0
-    for i = 0, #Weapons do
-        local slotTbl = Weapons[i]
-        if table.Count(slotTbl) < 1 then continue end
-        AmmoutSlots = AmmoutSlots + 1
-    end
-
-
-    for i = 0, #Weapons do
-        local slotTbl = Weapons[i]
-        if table.Count(slotTbl) < 1 then continue end
-        local sizeX = scrW*0.1
-        local position = scrW/2 + ( ( SuperAmmout -  (AmmoutSlots/2)) * sizeX )
-        
-        WS.DrawText( i+1, "HomigradFontMedium", position + sizeX/2, scrH*0.02, ColorAlpha(color_white,WS.Transparent*255) ,TEXT_ALIGN_CENTER )
-        
-        --  draw.RoundedBox(
-        --      1,
-        --      position,
-        --      (scrH *0.01),
-        --      sizeX,
-        --      (scrH *0.02), 
-        --      ColorAlpha(color_black,WS.Transparent*255) 
-        --  )
-        --if slotTbl and table.Count(slotTbl) < 0 then continue end
-        local Ammout = 0
-        local lastPos = 0
-        for Id = 0, #slotTbl do
-            wepId = Id
-            local wep = slotTbl[wepId]
-            if not wep then continue end
-            --print(wepId,wep)
-            local sizeH = SelectedWep == wep and (scrH *0.12) or (scrH *0.025)
-            local LastSelected = 0
-            if slotTbl[wepId-1] and SelectedWep == slotTbl[wepId-1] then
-                lastPos = (scrH *0.095) 
-            end
-            draw.RoundedBox(
-                0,
-                position,
-                (scrH * 0.025) * (Ammout) + (scrH * 0.05) + lastPos,
-                sizeX,
-                sizeH, 
-                ColorAlpha(color_black,WS.Transparent*205) 
-            )
-            draw.RoundedBox(
-                0,
-                position,
-                ((scrH * 0.025) * (Ammout) + (scrH * 0.05) + lastPos) + sizeH-2,
-                sizeX,
-                2, 
-                ColorAlpha(color_black,WS.Transparent*205) 
-            )
-            surface.SetDrawColor( 155, 0, 0, WS.Transparent*( SelectedWep == wep and 200 or 0 )  )
-            surface.SetMaterial( gradient_u )
-            surface.DrawTexturedRect( position, (scrH * 0.025) * (Ammout) + (scrH * 0.05) + lastPos, sizeX, sizeH )
-            if SelectedWep == wep then
-                surface.SetDrawColor( 255, 0, 0, WS.Transparent*155 )
-	            surface.DrawOutlinedRect( position, (scrH * 0.025) * (Ammout) + (scrH * 0.05) + lastPos, sizeX, sizeH, 2 )
-            end
-            local sizeHi = (scrH *0.025) * (Ammout) + (scrH * 0.05) + lastPos
-            sizeHi = sizeHi + 2.5
-            WS.DrawText( WS.GetPrintName(wep), "HomigradFontSmall", position + sizeX/2, sizeHi, ColorAlpha(color_white,WS.Transparent*255) ,TEXT_ALIGN_CENTER )
-            Ammout = Ammout + 1
-
-            if SelectedWep == wep and wep.DrawWeaponSelection then
-                wep:DrawWeaponSelection(position + 5, (scrH * 0.025) * (Ammout) + (scrH * 0.055) + lastPos, sizeX - 10, sizeH, WS.Transparent*255)
-            end
-        end
-        SuperAmmout = SuperAmmout + 1
-    end
-end
-
--- Changer
-local tAcceptKeys = {
-    ["slot1"] = 1,
-    ["slot2"] = 2,
-    ["slot3"] = 3,
-    ["slot4"] = 4,
-    ["slot5"] = 5,
-    ["slot6"] = 6,
-}
-
---[[
-    Table:
-        [1]	=	Weapon [52][weapon_hands_sh]
-        [2]	=	Weapon [117][weapon_bigconsumable]
-        [3]	=	Weapon [121][weapon_handcuffs_key]
-        [4]	=	Weapon [122][weapon_handcuffs]
-        [5]	=	Weapon [123][weapon_traitor_poison1]
-        [6]	=	Weapon [124][weapon_traitor_suit]
-        [7]	=	Weapon [125][weapon_matches]
-
-    TableFormated:
-    [0]:
-		[0]	=	Weapon [126][weapon_physgun]
-		[1]	=	Weapon [52][weapon_hands_sh]
-    [1]:
-    [2]:
-    [3]:
-		[1]	=	Weapon [117][weapon_bigconsumable]
-		[2]	=	Weapon [121][weapon_handcuffs_key]
-		[3]	=	Weapon [122][weapon_handcuffs]
-		[4]	=	Weapon [123][weapon_traitor_poison1]
-		[5]	=	Weapon [125][weapon_matches]
-    [4]:
-    [5]:
-		[1]	=	Weapon [124][weapon_traitor_suit]
---]]
-
-local function GetUpper(Weapons)
-    if #LocalPlayer():GetWeapons() < 1 then return end
-    WS.SelectedSlot = WS.SelectedSlot < 0 and #Weapons or WS.SelectedSlot - 1
-    WS.SelectedSlotPos = Weapons[WS.SelectedSlot] and #Weapons[WS.SelectedSlot] or 0
-
-    --print(WS.SelectedSlot, WS.SelectedSlotPos)
-
-    if Weapons[WS.SelectedSlot] == nil or Weapons[WS.SelectedSlot][WS.SelectedSlotPos] == nil then
-        GetUpper(Weapons)
-    end
-end
-
-local function GetDown(Weapons)
-    if #LocalPlayer():GetWeapons() < 1 then return end
-    WS.SelectedSlot = WS.SelectedSlot > #Weapons and 0 or WS.SelectedSlot + 1
-    WS.SelectedSlotPos = 0
-
-    --print(WS.SelectedSlot, WS.SelectedSlotPos)
-
-    if Weapons[WS.SelectedSlot] == nil or Weapons[WS.SelectedSlot][WS.SelectedSlotPos] == nil then
-        GetDown(Weapons)
-    end
-end
-
-local LastSelected = 0
 
 local function get_active_tool(ply, tool)
     local activeWep = ply:GetActiveWeapon()
@@ -210,114 +80,295 @@ end
 local function canUseSelector(ply)
     local wep = ply:GetActiveWeapon()
     local tool = get_active_tool(ply, "submaterial")
-    if tool and IsValid(ply:GetEyeTraceNoCursor().Entity) then
-        return true
-    end
-
-    return IsAiming(ply) or (IsValid(wep) and wep:GetClass() == "weapon_physgun" and ply:KeyDown(IN_ATTACK)) or (lply.organism and lply.organism.pain and lply.organism.pain > 100) or GetGlobalBool("RadialInventory", false)
+    if tool and IsValid(ply:GetEyeTraceNoCursor().Entity) then return true end
+    return IsAiming(ply)
+        or (IsValid(wep) and wep:GetClass() == "weapon_physgun" and ply:KeyDown(IN_ATTACK))
+        or (ply.organism and ply.organism.pain and ply.organism.pain > 60)
+        or GetGlobalBool("RadialInventory", false)
 end
 
-function WS.ChangeSelectionWep( ply, key )
-    if not IsValid( ply ) or not ply:Alive() or GetGlobalBool("RadialInventory", false) then return end
-    if ply.organism and ply.organism.otrub then return end
-    if canUseSelector( ply ) then return end
-    --print(canUseSelector( ply ))
-    --print("Table")
-    --PrintTable( WS.GetWeaponTable( ply ) )
-    local iPos = tAcceptKeys[ key ]
-    if iPos or key == "invnext" or key == "invprev" or key == "lastinv" then
+function WS.HookWeapon(wep)
+    if not IsValid(wep) or wep.IsScrambledHooked then return end
+    local oldPrint = wep.PrintWeaponInfo
+    wep.PrintWeaponInfo = function(self, x, y, alpha)
+        local oldInst, oldPurp, oldDesc, oldAuth = self.Instructions, self.Purpose, self.Description, self.Author
+        self.Instructions = WS.Scramble(self.Instructions)
+        self.Purpose = WS.Scramble(self.Purpose)
+        self.Description = WS.Scramble(self.Description)
+        self.Author = WS.Scramble(self.Author)
+        if oldPrint then
+            oldPrint(self, x, y, alpha)
+        elseif self.DrawWeaponInfoBox then
+            self:DrawWeaponInfoBox(x, y, alpha)
+        end
+        self.Instructions = oldInst
+        self.Purpose = oldPurp
+        self.Description = oldDesc
+        self.Author = oldAuth
+    end
+    wep.IsScrambledHooked = true
+end
 
-        local Weapons = WS.GetWeaponTable( ply )
+function WS.WeaponSelectorDraw(ply)
+    if not IsValid(ply) or not ply:Alive() or GetGlobalBool("RadialInventory", false) then return end
 
-        WS.Show = CurTime() + 4
-        --print(key)
-        surface.PlaySound("arc9_eft_shared/weapon_generic_rifle_spin"..math.random(10)..".ogg")
-        if iPos then
-            iPos = iPos - 1
-            if LastSelected ~= iPos then 
-                WS.SelectedSlotPos = -1
+    local isShown = WS.Show > CurTime()
+    WS.Transparent = LerpFT(0.12, WS.Transparent, isShown and 1 or 0)
+
+    if not isShown and WS.Transparent < 0.02 then
+        WS.BoxAnim = {}
+        WS.TypeState = {}
+        WS.SelectedSlot = WS.LastSelectedSlot
+        WS.SelectedSlotPos = 0
+        return
+    end
+
+    local weapons = WS.GetWeaponTable(ply)
+    local selected = WS.GetSelectedWeapon()
+    if not IsValid(selected) then return end
+
+    local slotCount = 0
+    for i = 0, 5 do
+        if weapons[i] and #weapons[i] > 0 then
+            slotCount = slotCount + 1
+        end
+    end
+
+    local slotW = scrW * 0.09
+    local offset = 0
+
+    for i = 0, 5 do
+        local slot = weapons[i]
+        if not slot or #slot == 0 then continue end
+
+        local centerX = scrW / 2 + ((offset - (slotCount / 2)) * slotW) + slotW / 2
+        local baseY = scrH * 0.05
+
+        WS.DrawText(i + 1, "KIRO_WepTitle", centerX, baseY - ScreenScale(12), Color(215, 215, 215, WS.Transparent * 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+        local lastH = 0
+        for idx, wep in ipairs(slot) do
+            local isSel = (selected == wep)
+            WS.BoxAnim[wep] = WS.BoxAnim[wep] or {h = 2}
+            local targetH = isSel and scrH * 0.12 or scrH * 0.025
+            WS.BoxAnim[wep].h = LerpFT(0.2, WS.BoxAnim[wep].h, targetH)
+            local itemH = WS.BoxAnim[wep].h
+            if idx > 1 and selected == slot[idx-1] then
+                lastH = scrH * 0.095
             end
-            WS.SelectedSlotPos = (Weapons[iPos] and LastSelected == iPos and WS.SelectedSlotPos + 1 > #Weapons[iPos] and 0 or math.min( WS.SelectedSlotPos + 1, #Weapons[iPos] )) or 0
-            WS.SelectedSlot = iPos
-            LastSelected = iPos
-            --print(WS.SelectedSlotPos)
-            --print(iPos)
-            --print( Weapons[WS.SelectedSlot][WS.SelectedSlotPos] )
+            local y = (scrH * 0.025) * (idx-1) + baseY + lastH
+            local w = slotW
+            local x = centerX - w / 2
+            local alpha = WS.Transparent * 255
+
+            draw.RoundedBox(0, x, y, w, itemH, ColorAlpha(Color(18, 18, 22), alpha * 0.82))
+            surface.SetDrawColor(44, 40, 40, alpha * (isSel and 0.9 or 0.2))
+            surface.SetMaterial(gradientMat)
+            surface.DrawTexturedRect(x, y, w, itemH)
+
+            local cell = 18
+            local driftX = (CurTime() * 18) % cell
+            local driftY = (CurTime() * 10) % cell
+            render.SetScissorRect(x, y, x + w, y + itemH, true)
+            local pulse = 0.85 + math.abs(math.sin(CurTime() * 2.5)) * 0.15
+            surface.SetDrawColor(200, 200, 200, alpha * 0.15 * pulse)
+            for gx = -driftX, w, cell do
+                surface.DrawRect(x + gx, y, 1, itemH)
+            end
+            for gy = -driftY, itemH, cell do
+                surface.DrawRect(x, y + gy, w, 1)
+            end
+            render.SetScissorRect(0, 0, 0, 0, false)
+
+            if isSel then
+                surface.SetDrawColor(180, 180, 180, alpha)
+                surface.DrawOutlinedRect(x, y, w, itemH, 2)
+                for j = 1, 6 do
+                    surface.SetDrawColor(180, 180, 180, alpha * (0.5 / j))
+                    surface.DrawOutlinedRect(x - j, y - j, w + j*2, itemH + j*2, 1)
+                end
+            end
+
+            if isSel then
+                local name = WS.Typewriter(WS.GetPrintName(wep), wep:GetClass() .. "_name", 20)
+                surface.SetFont("KIRO_WepSmall")
+                local tw, th = surface.GetTextSize(name)
+                local pad = ScreenScale(2)
+                local maxW = w - pad * 2
+                local targetScroll = (tw > maxW) and -(tw - maxW) or 0
+                WS.NameScroll[wep] = LerpFT(0.3, WS.NameScroll[wep] or 0, targetScroll)
+                render.SetScissorRect(x, y, x + w, y + itemH, true)
+                local textY = y + ScreenScale(2)
+                if tw <= maxW then
+                    WS.DrawText(name, "KIRO_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                else
+                    WS.DrawText(name, "KIRO_WepSmall", x + pad + WS.NameScroll[wep], textY, Color(215, 215, 215), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                end
+                render.SetScissorRect(0, 0, 0, 0, false)
+            else
+                local name = WS.GetPrintName(wep)
+                surface.SetFont("KIRO_WepSmall")
+                local tw, _ = surface.GetTextSize(name)
+                local maxW = w - ScreenScale(4)
+                render.SetScissorRect(x, y, x + w, y + itemH, true)
+                local textY = y + ScreenScale(1)
+                if tw <= maxW then
+                    WS.DrawText(name, "KIRO_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                else
+                    local trimmed = name
+                    while #trimmed > 1 and surface.GetTextSize(trimmed .. "...") > maxW do
+                        trimmed = trimmed:sub(1, -2)
+                    end
+                    WS.DrawText(trimmed .. "...", "KIRO_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                end
+                render.SetScissorRect(0, 0, 0, 0, false)
+            end
+
+            if isSel and wep.DrawWeaponSelection then
+                WS.HookWeapon(wep)
+                wep:DrawWeaponSelection(x + 5, y + scrH * 0.025, w - 10, itemH - scrH * 0.05, alpha)
+            end
+        end
+        offset = offset + 1
+    end
+end
+
+local keyMap = {slot1 = 1, slot2 = 2, slot3 = 3, slot4 = 4, slot5 = 5, slot6 = 6}
+
+local function GetUpper(Weapons)
+    if #LocalPlayer():GetWeapons() < 1 then return end
+    WS.SelectedSlot = WS.SelectedSlot < 0 and 5 or WS.SelectedSlot - 1
+    WS.SelectedSlotPos = Weapons[WS.SelectedSlot] and #Weapons[WS.SelectedSlot] or 0
+    if Weapons[WS.SelectedSlot] == nil or Weapons[WS.SelectedSlot][WS.SelectedSlotPos] == nil then
+        GetUpper(Weapons)
+    end
+end
+
+local function GetDown(Weapons)
+    if #LocalPlayer():GetWeapons() < 1 then return end
+    WS.SelectedSlot = WS.SelectedSlot > 5 and 0 or WS.SelectedSlot + 1
+    WS.SelectedSlotPos = 1
+    if Weapons[WS.SelectedSlot] == nil or Weapons[WS.SelectedSlot][WS.SelectedSlotPos] == nil then
+        GetDown(Weapons)
+    end
+end
+
+local lastSlot = 0
+
+function WS.ChangeSelectionWep(ply, key)
+    if not IsValid(ply) or not ply:Alive() or GetGlobalBool("RadialInventory", false) then return end
+    if ply.organism and ply.organism.otrub then return end
+    if canUseSelector(ply) then return end
+
+    local slot = keyMap[key]
+    if slot or key == "invnext" or key == "invprev" or key == "lastinv" then
+        local weapons = WS.GetWeaponTable(ply)
+        WS.Show = CurTime() + 4
+        surface.PlaySound("arc9_eft_shared/weapon_generic_rifle_spin" .. math.random(10) .. ".ogg")
+        if slot then
+            slot = slot - 1
+            if lastSlot ~= slot then WS.SelectedSlotPos = 1 end
+            local curSlot = weapons[slot]
+            if curSlot and #curSlot > 0 then
+                if lastSlot == slot then
+                    WS.SelectedSlotPos = WS.SelectedSlotPos + 1
+                    if WS.SelectedSlotPos > #curSlot then WS.SelectedSlotPos = 1 end
+                else
+                    WS.SelectedSlotPos = math.min(WS.SelectedSlotPos, #curSlot)
+                    if WS.SelectedSlotPos == 0 then WS.SelectedSlotPos = 1 end
+                end
+            else
+                WS.SelectedSlotPos = 1
+            end
+            WS.SelectedSlot = slot
+            lastSlot = slot
+            WS.BoxAnim = {}
+            WS.TypeState = {}
         elseif key == "invprev" then
             WS.SelectedSlotPos = WS.SelectedSlotPos - 1
-            --print(WS.SelectedSlotPos)
-            if Weapons[WS.SelectedSlot] and WS.SelectedSlotPos < 0  then
-                GetUpper(Weapons)
-            end
-            --WS.SelectedSlot = Weapons[WS.SelectedSlot] and #Weapons[WS.SelectedSlot] > (WS.SelectedSlotPos + 1) and WS.SelectedSlot + 1 or WS.SelectedSlot + 1 > #Weapons - 1 and 0 or 0
+            if weapons[WS.SelectedSlot] and WS.SelectedSlotPos < 1 then GetUpper(weapons) end
+            WS.BoxAnim = {}
+            WS.TypeState = {}
         elseif key == "invnext" then
             WS.SelectedSlotPos = WS.SelectedSlotPos + 1
-            --print(WS.SelectedSlotPos)
-            if Weapons[WS.SelectedSlot] and WS.SelectedSlotPos > #Weapons[WS.SelectedSlot] then
-                GetDown(Weapons)
-            end
+            if weapons[WS.SelectedSlot] and WS.SelectedSlotPos > #weapons[WS.SelectedSlot] then GetDown(weapons) end
+            WS.BoxAnim = {}
+            WS.TypeState = {}
         elseif key == "lastinv" and IsValid(WS.LastInv) then
             WS.Show = 0
             WS.LastInv = WS.LastInv or "weapon_hands_sh"
             local oldwep = ply:GetActiveWeapon()
-            input.SelectWeapon( WS.LastInv )
+            input.SelectWeapon(WS.LastInv)
             WS.LastInv = oldwep
         end
-
     end
 end
 
-function WS.SetActuallyWeapon( ply, cmd )
-    if not IsValid( ply ) or not ply:Alive() or GetGlobalBool("RadialInventory", false) then return end
-    if (cmd:KeyDown( IN_ATTACK ) or cmd:KeyDown( IN_ATTACK2 )) and WS.Show > CurTime() then
-
-        if WS.Selected and WS.Selected > CurTime() then 
-            cmd:RemoveKey(IN_ATTACK) 
-            cmd:RemoveKey(IN_ATTACK2) 
+function WS.SetActuallyWeapon(ply, cmd)
+    if not IsValid(ply) or not ply:Alive() or GetGlobalBool("RadialInventory", false) then return end
+    if (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) and WS.Show > CurTime() then
+        if WS.Selected and WS.Selected > CurTime() then
+            cmd:RemoveKey(IN_ATTACK)
+            cmd:RemoveKey(IN_ATTACK2)
         else
             cmd:RemoveKey(IN_ATTACK)
-            cmd:RemoveKey(IN_ATTACK2) 
-            --print(WS.GetSelectedWeapon())
-            
+            cmd:RemoveKey(IN_ATTACK2)
             if IsValid(WS.GetSelectedWeapon()) then
                 WS.LastInv = WS.LastInv ~= ply:GetActiveWeapon() and WS.LastInv or ply:GetActiveWeapon()
-                input.SelectWeapon( WS.GetSelectedWeapon() )
+                input.SelectWeapon(WS.GetSelectedWeapon())
             end
-            cmd:RemoveKey(IN_ATTACK)
-            cmd:RemoveKey(IN_ATTACK2) 
-
             WS.LastSelectedSlot = WS.SelectedSlot
             WS.LastSelectedSlotPos = WS.SelectedSlotPos
             WS.Selected = CurTime() + 0.2
             WS.Show = CurTime() + 0.2
-            surface.PlaySound("arc9_eft_shared/weapon_generic_spin"..math.random(1,10)..".ogg")
+            surface.PlaySound("arc9_eft_shared/weapon_generic_spin" .. math.random(1, 10) .. ".ogg")
         end
     end
 end
 
-hook.Add( "PlayerBindPress", "WeaponSelector_PlayerBindPress", WS.ChangeSelectionWep )
+hook.Add("PlayerBindPress", "WeaponSelector_Bind", WS.ChangeSelectionWep)
+hook.Add("HUDPaint", "WeaponSelector_Draw", function() WS.WeaponSelectorDraw(LocalPlayer()) end)
+hook.Add("StartCommand", "WeaponSelector_StartCommand", WS.SetActuallyWeapon)
 
-hook.Add( "HUDPaint", "WeaponSelector_Draw", function()
-    WS.WeaponSelectorDraw( LocalPlayer() )
+hook.Add("HUDShouldDraw", "WeaponSelector_HideDefault", function(name)
+    if name == "CHudWeaponSelection" then return false end
 end)
 
-hook.Add( "StartCommand", "WeaponSelector_StartCommand", WS.SetActuallyWeapon )
+function WS.Scramble(target)
+    target = tostring(target or "")
+    if LocalPlayer().organism and LocalPlayer().organism.brain and LocalPlayer().organism.brain > 0.05 then
+        local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?"
+        local result = ""
+        for i = 1, #target do
+            if target:sub(i, i) == " " then
+                result = result .. " "
+            else
+                result = result .. chars:sub(math.random(#chars), math.random(#chars))
+            end
+        end
+        return result
+    end
+    return target
+end
 
-local tHideElements = {
-    ["CHudWeaponSelection"] = true
-}
-
-hook.Add("HUDShouldDraw", "WeaponSelector_HUDShouldDraw", function(sElementName)
-    if tHideElements[sElementName] then return false end
-end)
-
--- Я ТАК ЗАДОЛБАЛСЯ ПРОСТО УБЕЙТЕ МЕНЯ ХАХАХАХАХАХАХАХАХАХААХАХАХАХАХАХА
--- ПОЛЧАСА Я ПЫТАЛСЯ СДЕЛАТЬ НОРМЛАЬНОЕ ПЕРЕКЛЮЧЕНИЕ ГОВНА!!!
--- ЗАТО ПОЛУЧИЛОСЬ!!!!
--- УЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭЭ
---[[
-    /\_/\
-    |_ _|
-    |   |__
-   /_|_____\ -- IT'S SO OVER
---]]
+function WS.Typewriter(target, key, rate)
+    target = WS.Scramble(target)
+    local state = WS.TypeState[key] or {t = 0}
+    local len = #target
+    state.t = math.min(len, state.t + FrameTime() * (rate or 20))
+    WS.TypeState[key] = state
+    local progress = math.floor(state.t)
+    local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+<>/?|\\"
+    local out = ""
+    for i = 1, len do
+        local ch = target:sub(i, i)
+        if ch == " " then
+            out = out .. " "
+        elseif i <= progress then
+            out = out .. ch
+        else
+            out = out .. chars:sub(math.random(#chars), math.random(#chars))
+        end
+    end
+    return out
+end

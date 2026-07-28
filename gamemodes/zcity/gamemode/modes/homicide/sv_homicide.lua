@@ -680,7 +680,8 @@ function MODE:Intermission()
 	MODE.TraitorWord = MODE.TraitorWords[math.random(1, #MODE.TraitorWords)]
 	MODE.TraitorWordSecond = MODE.TraitorWords[math.random(1, #MODE.TraitorWords)]
 
-	local traitors_needed = math.min(player_count - 1, homicide_traitoramount:GetInt())
+	--самый крутой расчёт трейторов, на каждые 5 человек = +1 трейтор в тиму трейторов
+	local traitors_needed = math.min(player_count - 1, math.max(1, math.floor(player_count / 5)))
 	
 	if(MODE.ShouldStartRoleRound())then
 		traitors_needed = math.ceil(player_count / 9)
@@ -1495,6 +1496,20 @@ util.AddNetworkString("hmcd_roundend")
 
 MODE.NextRoundMainTraitors = MODE.NextRoundMainTraitors or {}
 
+concommand.Add("hmcd_request_main_traitor", function(ply, cmd, args)
+    if not IsValid(ply) or not ply:IsAdmin() then return end
+    
+
+    if zb.ROUND_STATE == 1 then
+        ply:ChatPrint("when round end")
+        return
+    end
+    
+
+    MODE.NextRoundMainTraitors[ply:SteamID()] = true
+    ply:ChatPrint("true")
+end)
+
 hook.Add("RoundStateChange", "ResetNextRoundMainTraitors", function(old, new)
     if new == 2 then 
         MODE.NextRoundMainTraitors = {}
@@ -1531,7 +1546,6 @@ function MODE.SpawnPlayers(spawn_with_subroles)
         end
     end
 
-    --= Профессии
     local professions = {}
     if(spawn_with_subroles and MODE.RoleChooseRoundTypes[MODE.Type])then
         local professions_possible_pre = MODE.RoleChooseRoundTypes[MODE.Type].Professions
@@ -1577,6 +1591,16 @@ function MODE.SpawnPlayers(spawn_with_subroles)
         end
     end
 
+	local all_traitors = {}
+	for _, other_ply in player.Iterator() do
+    	if other_ply.isTraitor and other_ply.CurAppearance then
+        	local color = other_ply.CurAppearance.AColor or color_white
+        	local name = other_ply.CurAppearance.AName or "error"
+        	local userID = other_ply:UserID()
+        	if not IsColor(color) then color = Color(color.r, color.g, color.b) end
+        	table.insert(all_traitors, {color, name, userID})
+    	end
+	end
 
     local all_players = player.GetAll()
     for idx, current_ply in player.Iterator() do
@@ -1670,32 +1694,6 @@ function MODE.SpawnPlayers(spawn_with_subroles)
             timer.Simple(0.2 * idx, function()
                 if not IsValid(this_player) then return end
 
-                local traitor_amt = 0
-                local traitor_assistants = {}
-                
-                if (this_player.isTraitor) then
-                    for _, other_ply in player.Iterator() do
-                        if (other_ply.isTraitor) then
-                            traitor_amt = traitor_amt + 1
-                            
-
-                            if this_player.MainTraitor and other_ply.CurAppearance then
-                                local Appearance = other_ply.CurAppearance
-                                local color = Appearance.AColor or color_white
-                                local name = Appearance.AName or "error"
-                                local steamID = other_ply:SteamID() or ""
-                                
-                                if not IsColor(color) then
-                                    color = Color(color.r, color.g, color.b)
-                                end
-                                
-                                table.insert(traitor_assistants, {color, name, steamID})
-                            end
-                        end
-                    end
-                end
-                
-
                 net.Start("HMCD_RoundStart")
                     net.WriteBool(this_player.isTraitor)
                     net.WriteBool(this_player.isGunner)
@@ -1707,34 +1705,23 @@ function MODE.SpawnPlayers(spawn_with_subroles)
                     if (this_player.isTraitor) then
                         net.WriteString(MODE.TraitorWord)
                         net.WriteString(MODE.TraitorWordSecond)
-                        net.WriteUInt(traitor_amt, MODE.TraitorExpectedAmtBits)
+                        net.WriteUInt(#all_traitors, MODE.TraitorExpectedAmtBits)
                     else
                         net.WriteString("")
                         net.WriteString("")
                         net.WriteUInt(0, MODE.TraitorExpectedAmtBits)
                     end
                     
-                    if (this_player.MainTraitor) then
-
-                        for _, traitor_info in ipairs(traitor_assistants) do
-                            net.WriteColor(traitor_info[1], false)
-                            net.WriteString(traitor_info[2])
-                        end
-
-                        timer.Simple(0.5, function()
-                            if IsValid(this_player) and this_player.isTraitor and this_player.MainTraitor then
-                                net.Start("HMCD_UpdateTraitorAssistants")
-                                    net.WriteUInt(#traitor_assistants, 8)
-                                    
-                                    for _, info in ipairs(traitor_assistants) do
-                                        net.WriteColor(info[1])
-                                        net.WriteString(info[2])
-                                        net.WriteString(info[3])
-                                    end
-                                net.Send(this_player)
-                            end
-                        end)
-                    end
+					if (this_player.isTraitor) then
+    					net.WriteUInt(#all_traitors, 8)
+    					for _, info in ipairs(all_traitors) do
+        					net.WriteColor(info[1], false)
+        					net.WriteString(info[2])
+        					net.WriteUInt(info[3], 16)
+    					end
+					else
+    					net.WriteUInt(0, 8)
+					end
                     
                     net.WriteString(this_player.Profession or "")
                 net.Send(this_player)

@@ -25,7 +25,6 @@ end
 
 util.AddNetworkString("bomb_look")
 util.AddNetworkString("bomb_enter")
-util.AddNetworkString("bomb_planted")
 
 function BombInSite(pos, site)
 	local pts = zb.GetMapPoints( "BOMB_ZONE_"..(site == 1 and "A" or "B") )
@@ -96,7 +95,6 @@ function ENT:DisableBomb()
 	self:SetNetVar("timer", nil)
 	self.addtime = activetime
 	self.active = nil
-	self:SetNWBool("active",false)
 
 	local phys = self:GetPhysicsObject()
 	if IsValid(phys) then
@@ -109,11 +107,6 @@ local offsetAng = Angle(-90,0,180)
 function ENT:ActivateBomb()
 	self:SetNetVar("timer", CurTime() + self.ExplodeTime - (self.addtime or 0))
 	self.active = true
-	self:SetNWBool("active",true)
-	--print(self:GetNWBool("active"))
-
-	net.Start("bomb_planted")
-		net.Broadcast()
 
 	if self.tbl and not self.activatedonce then
 		local siteName
@@ -122,9 +115,9 @@ function ENT:ActivateBomb()
 		elseif BombInSite(self:GetPos(), 2) then
 			siteName = "B"
 		end
-		-- PrintMessage(HUD_PRINTTALK, "Bomb has been planted"
-		-- 	..(siteName and (" on site "..siteName) or "")
-		-- 	..".")
+		PrintMessage(HUD_PRINTTALK, "Bomb has been planted"
+			..(siteName and (" on site "..siteName) or "")
+			..".")
 		
 		hg.UpdateRoundTime(zb.ROUND_TIME + self.ExplodeTime + 1)
 	end
@@ -183,7 +176,6 @@ function ENT:Think()
 			zb.bombexploded = true
 			util.ScreenShake( selfPos, 95, 500, 4, 1000 )
 			hg.PropExplosion(self, "Fire", 300, 100)
-			zb.bomb:SetNWBool("active",false)
 		end
 
 		--;; WHAT THE FAK YUUUUUUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH

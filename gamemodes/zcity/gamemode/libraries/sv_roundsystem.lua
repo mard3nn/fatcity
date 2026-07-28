@@ -75,6 +75,10 @@ function zb:EndRound()
 	zb.ROUND_STATE = 3
 	zb.Roundscount = (zb.Roundscount or 0) + 1
 
+	if hg.achievements and hg.achievements.SavePlayerAchievements then
+    	hg.achievements.SavePlayerAchievements()
+	end
+
 	local mode, round = CurrentRound()
 
 	net.Start("RoundInfo")
@@ -87,7 +91,6 @@ function zb:EndRound()
 	hook.Run("ZB_EndRound")
 	zb.AddFade()
 
-	hg.achievements.SavePlayerAchievements()
 end
 
 function zb:CheckWinner(tbl)
@@ -133,7 +136,7 @@ function zb:EndRoundThink()
 			zb.END_TIME = (CurTime() + (CurrentRound().end_time or 5))
 			if zb.nextround == "coop" and GetGlobalVar("coop_first_round_timer", 0) == 0 then
 
-				zb.END_TIME = (CurTime() + (GetConVar("zb_dev"):GetBool() and 5 or 60))
+				zb.END_TIME = (CurTime() + (GetConVar("zb_dev") and 5 or 60))
 				SetGlobalVar("coop_first_round_timer", zb.END_TIME)
 			end
 		end
@@ -470,7 +473,16 @@ function zb.GetModesInfo()
 					name = (mode.PrintName or mode.name or name).."/"..name2,
 					description = mode.Description or "",
 					forBigMaps = mode.ForBigMaps or false,
-					canlaunch = (mode:CanLaunch() and 1 or 0)
+					canlaunch = (function()
+						if not mode.CanLaunch then return 1 end
+						local ok, res = pcall(mode.CanLaunch, mode)
+						if ok then
+							return res and 1 or 0
+						else
+							print("[RoundSystem] Error in CanLaunch for mode " .. name .. ": " .. tostring(res))
+							return 0
+						end
+					end)()
 				})
 			end
 		else
@@ -479,7 +491,16 @@ function zb.GetModesInfo()
 				name = mode.PrintName or mode.name or name,
 				description = mode.Description or "",
 				forBigMaps = mode.ForBigMaps or false,
-				canlaunch = (mode:CanLaunch() and 1 or 0)
+				canlaunch = (function()
+					if not mode.CanLaunch then return 1 end
+					local ok, res = pcall(mode.CanLaunch, mode)
+					if ok then
+						return res and 1 or 0
+					else
+						print("[RoundSystem] Error in CanLaunch for mode " .. name .. ": " .. tostring(res))
+						return 0
+					end
+				end)()
 			})
 		end
 	end
@@ -519,14 +540,7 @@ function zb.SendRoundListToClient(ply)
 	net.Start("ZB_SendRoundList")
 		net.WriteTable(zb.RoundList)
 		net.WriteString(zb.nextround or "")
-		net.WriteString(forcemodeconvar:GetString() or "random")
 	net.Send(ply)
-end
-
-function zb.SyncForceModeToAdmins()
-	for _, admin in ipairs(zb.GetAllAdmins()) do
-		zb.SendRoundListToClient(admin)
-	end
 end
 
 
@@ -658,20 +672,9 @@ net.Receive("AdminSetGameMode", function(len, ply)
 			zb.SyncQueueToAdmins()
 		end
 	elseif command == "setforcemode" then
-		forcemodeconvar:SetString(modeKey)
 		forcemode = modeKey
-
-		if modeKey == "random" then
-			ply:ChatPrint("Force mode disabled")
-			net.Start("ZB_NotifyRoundListChange")
-				net.WriteString(ply:Nick())
-			net.Send(zb.GetAllAdmins())
-		else
-			NextRound(forcemode)
-			ply:ChatPrint("Force mode set to: " .. modeKey)
-		end
-
-		zb.SyncForceModeToAdmins()
+		NextRound(forcemode)
+		ply:ChatPrint("Force mode set to: " .. modeKey)
 
 		if addToQueue then
 			table.insert(zb.QueuedModes, modeKey)
@@ -840,17 +843,9 @@ if SERVER then
 				zb.SyncQueueToAdmins()
 			end
 		elseif command == "setforcemode" then
-			forcemodeconvar:SetString(modeKey)
 			forcemode = modeKey
-
-			if modeKey == "random" then
-				ply:ChatPrint("Force mode disabled")
-			else
-				NextRound(forcemode)
-				ply:ChatPrint("Force mode set to: " .. modeKey)
-			end
-
-			zb.SyncForceModeToAdmins()
+			NextRound(forcemode)
+			ply:ChatPrint("Force mode set to: " .. modeKey)
 
 			if addToQueue then
 				table.insert(zb.QueuedModes, modeKey)

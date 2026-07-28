@@ -313,6 +313,11 @@ local braindeathstart = CurTime() + 20
 local lerpedpart = 0
 local lerpedbrain = 0
 
+local brainFlashStart = 0
+local brainFlashDur = 0
+local brainFlashIdx = 1
+local brainFlashPause = 0
+
 hook.Add("Post Post Pre Post Processing", "ShowScreens", function()
 	local org = lply.organism
 	
@@ -342,8 +347,32 @@ hook.Add("Post Post Pre Post Processing", "ShowScreens", function()
 				switch = false
 			end
 		end
-	else
-		braindeathstart = CurTime()
+	elseif org.brain >= 0.2 and not org.otrub then
+		-- Лоботомия без отруба: вспышки скринов, 20% прозрачность
+		local now = CurTime()
+
+		-- если screens пустой — пробуем загрузить из файлов
+		if #screens == 0 then
+			local files = file.Find("dreams/*.jpeg", "DATA")
+			if files and #files > 0 then
+				for _, f in ipairs(files) do
+					local mat = Material("data/dreams/" .. f)
+					if mat and not mat:IsError() then
+						screens[#screens + 1] = mat
+					end
+				end
+			end
+		end
+
+		print("[brain flash] brain="..org.brain.." screens="..#screens.." pause="..brainFlashPause.." now="..now)
+
+
+		local scr = screens[brainFlashIdx]
+		if not scr or scr:IsError() then
+			print("[brain flash] scr invalid!")
+			brainFlashStart = 0
+			return
+		end
 	end
 end)
 
@@ -439,7 +468,9 @@ hook.Add("Post Post Pre Post Processing", "organism-effects", function()
 	end
 	
 	k1 = Lerp(FrameTime() * 15, k1 or 0, math.min(math.min(adrenaline / 1, 2),1.5))
-	k2 = (30 - (o2 or 30)) / 30 + (1 - (consciousnessLerp or 1)) * 1-- + brain * 2
+	-- при хедкрабе исключаем consciousness из затемнения (хедкраб сам ставит низкий consciousness)
+	local consciousnessForK2 = hasHeadcrabEffect and 1 or (consciousnessLerp or 1)
+	k2 = (30 - (o2 or 30)) / 30 + (1 - consciousnessForK2) * 1-- + brain * 2
 	k3 = ((5000 / math.max(blood, 1000)) - 1) * 1.5
 
 	DrawSharpen(k1 * 2, k1 * 1)
@@ -495,11 +526,57 @@ hook.Add("Post Post Pre Post Processing", "organism-effects", function()
 	end
 	hg_potatopc = hg_potatopc or hg.ConVars.potatopc
 	local potato = hg_potatopc:GetBool()
-	if (k1 > 0) or (k2 > 0) or (k3 > 0) or brain > 0 then
-		if !potato then
-			DrawToyTown(2, (k3 * 3 + k2 * 1 + brain * 10) * ScrH() / 2)
-		else
+	local hasHeadcrabEffect = lply:GetNetVar("headcrab") and lply.PlayerClassName ~= "headcrabzombie" and lply:Alive()
+	local brainForEffect = hasHeadcrabEffect and 0 or brain
 
+	if (k1 > 0) or (k2 > 0) or (k3 > 0) or brainForEffect > 0 then
+		if !potato then
+			DrawToyTown(2, (k3 * 3 + k2 * 1 + brainForEffect * 10) * ScrH() / 2)
+			-- Розовый оверлей поверх пикселизации при sadsalat
+			if (lply._saladPinkTint or 0) > 0.01 and ((k2 > 0.1) or (brainForEffect > 0.05)) then
+				local pt = lply._saladPinkTint
+				local intensity = math.Clamp((k2 + brainForEffect) * pt, 0, 1)
+				surface.SetDrawColor(255, 80, 200, math.floor(intensity * 60))
+				surface.DrawRect(0, 0, ScrW(), ScrH())
+			end
+		end
+	end
+
+	-- Эффект хедкраба: аберрация как при боли + красный тинт, нарастает 30 сек
+	do
+		local hasHeadcrab = hasHeadcrabEffect
+
+		if hasHeadcrab and not lply._hcStartTime then
+			lply._hcStartTime = CurTime()
+		elseif not hasHeadcrab then
+			lply._hcStartTime = nil
+		end
+
+		if lply._hcStartTime and hasHeadcrab then
+			local elapsed = CurTime() - lply._hcStartTime
+			local eatProgress = math.Clamp(elapsed / 30, 0, 1)
+
+			if eatProgress > 0 and hg.DrawHeadcrabGrain then
+				hg.DrawHeadcrabGrain(eatProgress)
+
+				-- сильное волнистое искажение zb_heat: максимум 57 сек, потом за 3 сек исчезает
+				local heatM = Material("effects/shaders/zb_heat")
+				local t = CurTime()
+				
+				-- Вычисляем интенсивность: 1.0 до 57 сек, потом плавно до 0 за последние 3 секунды
+				local grainIntensity = 1.0
+				if elapsed >= 57 then
+					-- За последние 3 секунды (57-60) уменьшаем с 1 до 0
+					grainIntensity = math.Clamp(1 - (elapsed - 57) / 3, 0, 1)
+				end
+				
+				render.UpdateScreenEffectTexture()
+				heatM:SetFloat("$c0_x", -t * 0.3)
+				heatM:SetFloat("$c0_y", grainIntensity * 0.5)
+				heatM:SetFloat("$c2_x", (math.sin(t * 0.7) - 2) * grainIntensity * 5)
+				render.SetMaterial(heatM)
+				render.DrawScreenQuad()
+			end
 		end
 	end
 
@@ -529,16 +606,24 @@ hook.Add("Post Post Pre Post Processing", "organism-effects", function()
 	*/
 
 	tabblood["$pp_colour_colour"] = Lerp(FrameTime() * 30, tabblood["$pp_colour_colour"], (blood / 5000) * (potato and (blood / 5000) or 1) + (math.max(org.analgesia - 1, 0) * math.sin(CurTime()) * 5))
-	//tabblood["$pp_colour_contrast"] = Lerp(FrameTime() * 30, tabblood["$pp_colour_contrast"], health < 80 and math.max(1.5 * ( 1 - math.min(health / 50, 1) ), 1 ) or 1)
 	tabblood["$pp_colour_brightness"] = Lerp(FrameTime() * 30, tabblood["$pp_colour_brightness"], (potato and (blood / 5000 - 1) / 2 or 0) )
 	tabblood["$pp_colour_addb"] = !org.otrub and ((potato and k2 / 5 or 0)) or 0
-	//tabblood["$pp_colour_addg"] = k2 / 15
-	//tabblood["$pp_colour_addr"] = k2 / 15
-	--tab["$pp_colour_brightness"] = k1 > 1 and -(k1 - 1) / 20 or 0
-	--tab["$pp_colour_contrast"] = k1 > 1 and -(k1 - 1) / 10 + 1 or 1
-	--DrawBloom( 0.80, 2, 9, 9, 1, 1, 1, 1, 1 )
-	//DrawColorModify(tab)
-	
+	-- при горении убираем синюю виньетку
+	local fireEnt2 = IsValid(lply.FakeRagdoll) and lply.FakeRagdoll or lply
+	if IsValid(fireEnt2) and fireEnt2:IsOnFire() then
+		tabblood["$pp_colour_addb"] = 0
+	end
+
+	-- Считаем розовый тинт для пикселей
+	local hasSaladWep = false
+	for _, wep in ipairs(lply:GetWeapons()) do
+		if IsValid(wep) and wep:GetClass() == "weapon_sadsalat" then
+			hasSaladWep = true
+			break
+		end
+	end
+	lply._saladPinkTint = LerpFT(0.05, lply._saladPinkTint or 0, hasSaladWep and 1 or 0)
+
 	DrawColorModify(tabblood)
 
 	local ent = IsValid(lply.FakeRagdoll) and lply.FakeRagdoll or lply
@@ -1083,3 +1168,759 @@ hook.Add("HG.InputMouseApply","zzzzzzzzzzzzbrain_death",function(tbl)
 
 	return true--]]
 end)
+
+local function OpenOrganismMenu()
+	if not LocalPlayer():IsAdmin() then return end
+	
+	local frame = vgui.Create("DFrame")
+	frame:SetSize(420, 750)
+	frame:SetTitle("Organism Control")
+	frame:Center()
+	frame:MakePopup()
+	
+	local scroll = vgui.Create("DScrollPanel", frame)
+	scroll:SetPos(5, 30)
+	scroll:SetSize(410, 715)
+	
+	local y = 10
+	
+	for i, target in pairs(player.GetAll()) do
+		if not IsValid(target) or not target:IsPlayer() then continue end
+		
+		local bg = vgui.Create("DPanel", scroll)
+		bg:SetPos(5, y)
+		bg:SetSize(400, 275)
+		
+		local name = vgui.Create("DLabel", bg)
+		name:SetText(target:GetName())
+		name:SetFont("DermaDefaultBold")
+		name:SetTextColor(Color(255, 255, 255))
+		name:SetPos(10, 8)
+		name:SizeToContents()
+		
+local lblo2 = vgui.Create("DLabel", bg)
+		lblo2:SetText("O2:")
+		lblo2:SetPos(10, 30)
+		lblo2:SizeToContents()
+		
+		local btn_o2_30 = vgui.Create("DButton", bg)
+		btn_o2_30:SetText("30")
+		btn_o2_30:SetPos(45, 28)
+		btn_o2_30:SetSize(35, 18)
+		btn_o2_30.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 30) end
+		
+		local btn_o2_25 = vgui.Create("DButton", bg)
+		btn_o2_25:SetText("25")
+		btn_o2_25:SetPos(85, 28)
+		btn_o2_25:SetSize(35, 18)
+		btn_o2_25.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 25) end
+		
+		local btn_o2_20 = vgui.Create("DButton", bg)
+		btn_o2_20:SetText("20")
+		btn_o2_20:SetPos(125, 28)
+		btn_o2_20:SetSize(35, 18)
+		btn_o2_20.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 20) end
+		
+		local btn_o2_15 = vgui.Create("DButton", bg)
+		btn_o2_15:SetText("15")
+		btn_o2_15:SetPos(165, 28)
+		btn_o2_15:SetSize(35, 18)
+		btn_o2_15.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 15) end
+		
+		local btn_o2_10 = vgui.Create("DButton", bg)
+		btn_o2_10:SetText("10")
+		btn_o2_10:SetPos(205, 28)
+		btn_o2_10:SetSize(35, 18)
+		btn_o2_10.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 10) end
+		
+		local btn_o2_5 = vgui.Create("DButton", bg)
+		btn_o2_5:SetText("5")
+		btn_o2_5:SetPos(245, 28)
+		btn_o2_5:SetSize(30, 18)
+		btn_o2_5.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 5) end
+		
+		local btn_o2_0 = vgui.Create("DButton", bg)
+		btn_o2_0:SetText("0")
+		btn_o2_0:SetPos(280, 28)
+		btn_o2_0:SetSize(30, 18)
+		btn_o2_0.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2", 0) end
+		
+		local lblpain = vgui.Create("DLabel", bg)
+		lblpain:SetText("Pain:")
+		lblpain:SetPos(10, 55)
+		lblpain:SizeToContents()
+		
+		local btn_pain_0 = vgui.Create("DButton", bg)
+		btn_pain_0:SetText("0")
+		btn_pain_0:SetPos(50, 53)
+		btn_pain_0:SetSize(35, 18)
+		btn_pain_0.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pain", 0) end
+		
+		local btn_pain_30 = vgui.Create("DButton", bg)
+		btn_pain_30:SetText("30")
+		btn_pain_30:SetPos(90, 53)
+		btn_pain_30:SetSize(35, 18)
+		btn_pain_30.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pain", 30) end
+		
+		local btn_pain_60 = vgui.Create("DButton", bg)
+		btn_pain_60:SetText("60")
+		btn_pain_60:SetPos(130, 53)
+		btn_pain_60:SetSize(35, 18)
+		btn_pain_60.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pain", 60) end
+		
+		local btn_pain_80 = vgui.Create("DButton", bg)
+		btn_pain_80:SetText("80")
+		btn_pain_80:SetPos(170, 53)
+		btn_pain_80:SetSize(35, 18)
+		btn_pain_80.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pain", 80) end
+		
+		local btn_pain_100 = vgui.Create("DButton", bg)
+		btn_pain_100:SetText("100")
+		btn_pain_100:SetPos(210, 53)
+		btn_pain_100:SetSize(40, 18)
+		btn_pain_100.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pain", 100) end
+		
+		local btn_pain_unlock = vgui.Create("DButton", bg)
+		btn_pain_unlock:SetText("Unlock")
+		btn_pain_unlock:SetPos(255, 53)
+		btn_pain_unlock:SetSize(55, 18)
+		btn_pain_unlock.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "painunlock", 1) end
+		
+		local btn_ko = vgui.Create("DButton", bg)
+		btn_ko:SetText("KO")
+		btn_ko:SetPos(10, 80)
+		btn_ko:SetSize(80, 25)
+		btn_ko.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "otrub", 1) end
+		
+		local btn_wake = vgui.Create("DButton", bg)
+		btn_wake:SetText("Wake")
+		btn_wake:SetPos(100, 80)
+		btn_wake:SetSize(80, 25)
+		btn_wake.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "otrub", 0) end
+		
+		local btn_freeze = vgui.Create("DButton", bg)
+		btn_freeze:SetText("Freeze O2")
+		btn_freeze:SetPos(190, 80)
+		btn_freeze:SetSize(80, 25)
+		btn_freeze.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2freeze", 1) end
+		
+		local btn_unfreeze = vgui.Create("DButton", bg)
+		btn_unfreeze:SetText("Unfreeze")
+		btn_unfreeze:SetPos(280, 80)
+		btn_unfreeze:SetSize(40, 25)
+		btn_unfreeze.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "o2freeze", 0) end
+		
+		local lbldis = vgui.Create("DLabel", bg)
+		lbldis:SetText("Disorient:")
+		lbldis:SetPos(10, 110)
+		lbldis:SizeToContents()
+		
+		local btn_dis_30 = vgui.Create("DButton", bg)
+		btn_dis_30:SetText("30")
+		btn_dis_30:SetPos(75, 108)
+		btn_dis_30:SetSize(30, 18)
+		btn_dis_30.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 30) end
+		
+		local btn_dis_25 = vgui.Create("DButton", bg)
+		btn_dis_25:SetText("25")
+		btn_dis_25:SetPos(110, 108)
+		btn_dis_25:SetSize(30, 18)
+		btn_dis_25.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 25) end
+		
+		local btn_dis_20 = vgui.Create("DButton", bg)
+		btn_dis_20:SetText("20")
+		btn_dis_20:SetPos(145, 108)
+		btn_dis_20:SetSize(30, 18)
+		btn_dis_20.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 20) end
+		
+		local btn_dis_15 = vgui.Create("DButton", bg)
+		btn_dis_15:SetText("15")
+		btn_dis_15:SetPos(180, 108)
+		btn_dis_15:SetSize(30, 18)
+		btn_dis_15.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 15) end
+		
+		local btn_dis_10 = vgui.Create("DButton", bg)
+		btn_dis_10:SetText("10")
+		btn_dis_10:SetPos(215, 108)
+		btn_dis_10:SetSize(30, 18)
+		btn_dis_10.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 10) end
+		
+		local btn_dis_5 = vgui.Create("DButton", bg)
+		btn_dis_5:SetText("5")
+		btn_dis_5:SetPos(250, 108)
+		btn_dis_5:SetSize(30, 18)
+		btn_dis_5.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 5) end
+		
+		local btn_dis_0 = vgui.Create("DButton", bg)
+		btn_dis_0:SetText("0")
+		btn_dis_0:SetPos(285, 108)
+		btn_dis_0:SetSize(30, 18)
+		btn_dis_0.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "disorient", 0) end
+		
+		local lblshock = vgui.Create("DLabel", bg)
+		lblshock:SetText("Shock:")
+		lblshock:SetPos(10, 130)
+		lblshock:SizeToContents()
+		
+		local btn_shock_30 = vgui.Create("DButton", bg)
+		btn_shock_30:SetText("30")
+		btn_shock_30:SetPos(60, 128)
+		btn_shock_30:SetSize(30, 18)
+		btn_shock_30.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 30) end
+		
+		local btn_shock_25 = vgui.Create("DButton", bg)
+		btn_shock_25:SetText("25")
+		btn_shock_25:SetPos(95, 128)
+		btn_shock_25:SetSize(30, 18)
+		btn_shock_25.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 25) end
+		
+		local btn_shock_20 = vgui.Create("DButton", bg)
+		btn_shock_20:SetText("20")
+		btn_shock_20:SetPos(130, 128)
+		btn_shock_20:SetSize(30, 18)
+		btn_shock_20.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 20) end
+		
+		local btn_shock_15 = vgui.Create("DButton", bg)
+		btn_shock_15:SetText("15")
+		btn_shock_15:SetPos(165, 128)
+		btn_shock_15:SetSize(30, 18)
+		btn_shock_15.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 15) end
+		
+		local btn_shock_10 = vgui.Create("DButton", bg)
+		btn_shock_10:SetText("10")
+		btn_shock_10:SetPos(200, 128)
+		btn_shock_10:SetSize(30, 18)
+		btn_shock_10.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 10) end
+		
+		local btn_shock_5 = vgui.Create("DButton", bg)
+		btn_shock_5:SetText("5")
+		btn_shock_5:SetPos(235, 128)
+		btn_shock_5:SetSize(30, 18)
+		btn_shock_5.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 5) end
+		
+		local btn_shock_0 = vgui.Create("DButton", bg)
+		btn_shock_0:SetText("0")
+		btn_shock_0:SetPos(270, 128)
+		btn_shock_0:SetSize(30, 18)
+		btn_shock_0.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "shock", 0) end
+		
+		local lblpulse = vgui.Create("DLabel", bg)
+		lblpulse:SetText("Pulse:")
+		lblpulse:SetPos(10, 150)
+		lblpulse:SizeToContents()
+		
+		local btn_pulse_30 = vgui.Create("DButton", bg)
+		btn_pulse_30:SetText("30")
+		btn_pulse_30:SetPos(60, 148)
+		btn_pulse_30:SetSize(30, 18)
+		btn_pulse_30.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 30) end
+		
+		local btn_pulse_25 = vgui.Create("DButton", bg)
+		btn_pulse_25:SetText("25")
+		btn_pulse_25:SetPos(95, 148)
+		btn_pulse_25:SetSize(30, 18)
+		btn_pulse_25.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 25) end
+		
+		local btn_pulse_20 = vgui.Create("DButton", bg)
+		btn_pulse_20:SetText("20")
+		btn_pulse_20:SetPos(130, 148)
+		btn_pulse_20:SetSize(30, 18)
+		btn_pulse_20.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 20) end
+		
+		local btn_pulse_15 = vgui.Create("DButton", bg)
+		btn_pulse_15:SetText("15")
+		btn_pulse_15:SetPos(165, 148)
+		btn_pulse_15:SetSize(30, 18)
+		btn_pulse_15.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 15) end
+		
+		local btn_pulse_10 = vgui.Create("DButton", bg)
+		btn_pulse_10:SetText("10")
+		btn_pulse_10:SetPos(200, 148)
+		btn_pulse_10:SetSize(30, 18)
+		btn_pulse_10.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 10) end
+		
+		local btn_pulse_5 = vgui.Create("DButton", bg)
+		btn_pulse_5:SetText("5")
+		btn_pulse_5:SetPos(235, 148)
+		btn_pulse_5:SetSize(30, 18)
+		btn_pulse_5.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 5) end
+		
+		local btn_pulse_0 = vgui.Create("DButton", bg)
+		btn_pulse_0:SetText("0")
+		btn_pulse_0:SetPos(270, 148)
+		btn_pulse_0:SetSize(30, 18)
+		btn_pulse_0.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulse", 0) end
+		
+		local btn_pulse_freeze = vgui.Create("DButton", bg)
+		btn_pulse_freeze:SetText("Freeze")
+		btn_pulse_freeze:SetPos(305, 148)
+		btn_pulse_freeze:SetSize(50, 18)
+		btn_pulse_freeze.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulsefreeze", 1) end
+		
+		local btn_pulse_unfreeze = vgui.Create("DButton", bg)
+		btn_pulse_unfreeze:SetText("Unfrz")
+		btn_pulse_unfreeze:SetPos(360, 148)
+		btn_pulse_unfreeze:SetSize(35, 18)
+		btn_pulse_unfreeze.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "pulsefreeze", 0) end
+		
+local lbladren = vgui.Create("DLabel", bg)
+		lbladren:SetText("Adrenaline:")
+		lbladren:SetPos(10, 170)
+		lbladren:SizeToContents()
+		
+		local btn_adren_30 = vgui.Create("DButton", bg)
+		btn_adren_30:SetText("30")
+		btn_adren_30:SetPos(85, 168)
+		btn_adren_30:SetSize(35, 18)
+		btn_adren_30.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 30) end
+		
+		local btn_adren_25 = vgui.Create("DButton", bg)
+		btn_adren_25:SetText("25")
+		btn_adren_25:SetPos(125, 168)
+		btn_adren_25:SetSize(35, 18)
+		btn_adren_25.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 25) end
+		
+		local btn_adren_20 = vgui.Create("DButton", bg)
+		btn_adren_20:SetText("20")
+		btn_adren_20:SetPos(165, 168)
+		btn_adren_20:SetSize(35, 18)
+		btn_adren_20.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 20) end
+		
+		local btn_adren_15 = vgui.Create("DButton", bg)
+		btn_adren_15:SetText("15")
+		btn_adren_15:SetPos(205, 168)
+		btn_adren_15:SetSize(35, 18)
+		btn_adren_15.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 15) end
+		
+		local btn_adren_10 = vgui.Create("DButton", bg)
+		btn_adren_10:SetText("10")
+		btn_adren_10:SetPos(245, 168)
+		btn_adren_10:SetSize(35, 18)
+		btn_adren_10.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 10) end
+		
+		local btn_adren_5 = vgui.Create("DButton", bg)
+		btn_adren_5:SetText("5")
+		btn_adren_5:SetPos(285, 168)
+		btn_adren_5:SetSize(35, 18)
+		btn_adren_5.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 5) end
+		
+		local btn_adren_0 = vgui.Create("DButton", bg)
+		btn_adren_0:SetText("0")
+		btn_adren_0:SetPos(325, 168)
+		btn_adren_0:SetSize(35, 18)
+		btn_adren_0.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenaline", 0) end
+		
+		local btn_adren_freeze = vgui.Create("DButton", bg)
+		btn_adren_freeze:SetText("Freeze")
+		btn_adren_freeze:SetPos(365, 168)
+		btn_adren_freeze:SetSize(40, 18)
+		btn_adren_freeze.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenalinefreeze", 1) end
+		
+		local btn_adren_unfreeze = vgui.Create("DButton", bg)
+		btn_adren_unfreeze:SetText("Unfrz")
+		btn_adren_unfreeze:SetPos(365, 190)
+		btn_adren_unfreeze:SetSize(40, 18)
+		btn_adren_unfreeze.DoClick = function() RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "adrenalinefreeze", 0) end
+		
+		local lblbleed = vgui.Create("DLabel", bg)
+		lblbleed:SetText("Bleeding:")
+		lblbleed:SetPos(10, 215)
+		lblbleed:SizeToContents()
+		
+		local slider_bleed = vgui.Create("DNumSlider", bg)
+		slider_bleed:SetPos(70, 210)
+		slider_bleed:SetSize(250, 20)
+		slider_bleed:SetMin(0)
+		slider_bleed:SetMax(100)
+		slider_bleed:SetDecimals(0)
+		slider_bleed:SetValue(0)
+		
+		local btn_apply_bleed = vgui.Create("DButton", bg)
+		btn_apply_bleed:SetText("Apply")
+		btn_apply_bleed:SetPos(330, 213)
+		btn_apply_bleed:SetSize(60, 18)
+		btn_apply_bleed.DoClick = function()
+			local bleedValue = slider_bleed:GetValue()
+			RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "bleed", bleedValue)
+		end
+		
+		local btn_cut_artery = vgui.Create("DButton", bg)
+		btn_cut_artery:SetText("Cut Carotid Artery")
+		btn_cut_artery:SetPos(10, 240)
+		btn_cut_artery:SetSize(150, 25)
+		btn_cut_artery.DoClick = function()
+			RunConsoleCommand("hg_org_menu_cmd", target:UserID(), "cutartery", 1)
+		end
+		
+		y = y + 280
+	end
+end
+
+concommand.Add("hg_organism_menu", function()
+	OpenOrganismMenu()
+end)
+
+local afk_lastMove = CurTime()
+local afk_lastAng  = Angle(0,0,0)
+local afk_lastPos  = Vector(0,0,0)
+local afk_alpha    = 0
+local AFK_TIME     = 300 -- секунд до АФК
+
+local afk_dots     = 0
+local afk_dotTimer = 0
+
+hook.Add("Think", "hg_afk_tracker", function()
+	local ply = LocalPlayer()
+	if not IsValid(ply) then return end
+
+	local pos = ply:GetPos()
+	local ang = ply:EyeAngles()
+
+	-- если двинулся или повернул камеру — сбрасываем таймер
+	if pos:DistToSqr(afk_lastPos) > 4 or math.abs(ang.y - afk_lastAng.y) > 1 or math.abs(ang.p - afk_lastAng.p) > 1 then
+		afk_lastMove = CurTime()
+		afk_lastPos  = pos
+		afk_lastAng  = ang
+	end
+end)
+
+hook.Add("PlayerButtonDown", "hg_afk_keypress", function(ply, btn)
+	if ply ~= LocalPlayer() then return end
+	afk_lastMove = CurTime()
+end)
+
+hook.Add("HUDPaint", "hg_afk_screen", function()
+	local ply = LocalPlayer()
+	if not IsValid(ply) then return end
+
+	local isAfk = (CurTime() - afk_lastMove) >= AFK_TIME
+
+	afk_alpha = Lerp(FrameTime() * 2, afk_alpha, isAfk and 1 or 0)
+
+	if afk_alpha < 0.01 then return end
+
+	local sw, sh = ScrW(), ScrH()
+	local a = afk_alpha
+
+	-- затемнение
+	surface.SetDrawColor(0, 0, 0, 180 * a)
+	surface.DrawRect(0, 0, sw, sh)
+
+	-- градиент снизу
+	surface.SetDrawColor(80, 0, 0, 180 * a)
+	surface.SetMaterial(Material("vgui/gradient-d"))
+	surface.DrawTexturedRect(0, sh / 2, sw, sh / 2)
+
+	-- градиент сверху
+	surface.SetDrawColor(80, 0, 0, 120 * a)
+	surface.SetMaterial(Material("vgui/gradient-u"))
+	surface.DrawTexturedRect(0, 0, sw, sh / 2)
+
+	-- анимация точек
+	afk_dotTimer = afk_dotTimer + FrameTime()
+	if afk_dotTimer >= 0.5 then
+		afk_dotTimer = 0
+		afk_dots = (afk_dots + 1) % 4
+	end
+	local dots = string.rep(".", afk_dots)
+
+	-- текст
+	local cx, cy = sw / 2, sh / 2
+
+	surface.SetFont("HomigradFontBig")
+	local tw, th = surface.GetTextSize("AFK")
+	surface.SetTextColor(255, 255, 255, 255 * a)
+	surface.SetTextPos(cx - tw / 2, cy - th - 10)
+	surface.DrawText("AFK")
+
+	surface.SetFont("HomigradFontMedium")
+	local msg = "Тип пошел хавать" .. dots
+	local mw, mh = surface.GetTextSize(msg)
+	surface.SetTextColor(180, 180, 180, 220 * a)
+	surface.SetTextPos(cx - mw / 2, cy + 10)
+	surface.DrawText(msg)
+
+	-- время афк
+	local elapsed = math.floor(CurTime() - afk_lastMove)
+	local mins = math.floor(elapsed / 60)
+	local secs = elapsed % 60
+	local timeStr = string.format("%d:%02d", mins, secs)
+	surface.SetFont("HomigradFontSmall")
+	local tw2, th2 = surface.GetTextSize(timeStr)
+	surface.SetTextColor(120, 120, 120, 180 * a)
+	surface.SetTextPos(cx - tw2 / 2, cy + mh + 20)
+	surface.DrawText(timeStr)
+
+	-- подсказка снизу слева — чередуется каждые 3 сек с анимацией
+	local afk_hints = {
+		"ау, ты тут? давай играй!",
+		"сервер скучает без тебя...",
+		"эй, не спи за клавой",
+		"ты там живой вообще?",
+		"может хватит афкшить?",
+		"твой персонаж замёрз стоять",
+		"нажми хоть что-нибудь...",
+		"сколько можно стоять столбом",
+	}
+	local period   = 3  -- секунд на фразу
+	local t        = CurTime()
+	local hintIdx  = math.floor(t / period) % #afk_hints + 1
+	local phase    = (t % period) / period  -- 0..1 внутри периода
+
+	-- fade in 20%, показ 60%, fade out 20%
+	local hintAlpha
+	if phase < 0.2 then
+		hintAlpha = math.ease.OutQuart(phase / 0.2)
+	elseif phase < 0.8 then
+		hintAlpha = 1
+	else
+		hintAlpha = math.ease.InQuart(1 - (phase - 0.8) / 0.2)
+	end
+
+	-- выезд снизу: при fade in едет вверх, при fade out уходит вниз
+	local slideOffset
+	if phase < 0.2 then
+		slideOffset = (1 - math.ease.OutQuart(phase / 0.2)) * 22
+	elseif phase < 0.8 then
+		slideOffset = 0
+	else
+		slideOffset = math.ease.InQuart((phase - 0.8) / 0.2) * 22
+	end
+
+	surface.SetFont("HomigradFontSmall")
+	local hint = afk_hints[hintIdx]
+	surface.SetTextColor(255, 255, 255, 200 * a * hintAlpha)
+	surface.SetTextPos(20, sh - 40 + slideOffset)
+	surface.DrawText(hint)
+end)
+
+-- Сообщение при лоботомии >= 30% — чередующиеся фразы
+do
+	surface.CreateFont("HG_LobotomyMsg", {
+		font      = "Bender",
+		size      = ScreenScale(14),
+		weight    = 700,
+		antialias = true,
+	})
+
+	-- спокойные фразы (brain 0.3 - 0.6)
+	local MESSAGES_CALM = {
+		"You tried to survive, but failed.",
+		"Your mind is slipping away...",
+		"The damage is too great to recover.",
+		"You can feel yourself fading.",
+		"It's getting harder to think clearly.",
+		"Your brain can't take much more of this.",
+		"Everything is becoming a blur.",
+		"You should have been more careful.",
+		"The end is closer than you think.",
+		"Hold on... just a little longer.",
+		"Is anyone out there?",
+		"I can't remember who I am anymore.",
+		"The pain is fading... that's not good.",
+		"My thoughts are scattered.",
+		"I just need to rest for a moment.",
+		"Why can't I focus?",
+		"Something is very wrong with my head.",
+		"I can hear my heartbeat slowing.",
+		"Was it worth it?",
+		"I should have run when I had the chance.",
+	}
+
+	-- агрессивные фразы (brain > 0.6) — капсом, злые
+	local MESSAGES_RAGE = {
+		"YOU COULD HAVE SURVIVED BUT YOU'RE TOO STUPID FOR THAT.",
+		"WHAT WERE YOU THINKING? YOU DESERVED THIS.",
+		"YOU HAD EVERY CHANCE. YOU WASTED THEM ALL.",
+		"TOO DUMB TO LIVE. TOO SLOW TO RUN.",
+		"DID YOU REALLY THINK YOU COULD MAKE IT?",
+		"YOU FAILED. AGAIN. AS ALWAYS.",
+		"YOUR BRAIN IS GONE. JUST LIKE YOUR CHANCES.",
+		"PATHETIC. ABSOLUTELY PATHETIC.",
+		"YOU CALL THAT SURVIVING? I CALL IT DYING SLOWLY.",
+		"NOBODY IS COMING TO SAVE YOU.",
+		"YOU BROUGHT THIS ON YOURSELF.",
+		"STOP PRETENDING YOU KNOW WHAT YOU'RE DOING.",
+		"THIS IS WHAT HAPPENS WHEN YOU DON'T THINK.",
+		"YOU NEVER HAD A CHANCE. ADMIT IT.",
+		"GAME OVER. YOU LOSE. AGAIN.",
+	}
+
+	-- издевательские фразы (brain > 0.7)
+	local MESSAGES_MOCK = {
+		"WHILE YOU'RE BEING STUPID, YOUR BRAIN IS ROTTING.",
+		"KEEP STANDING THERE. THAT'S REALLY HELPING.",
+		"WOW. JUST... WOW. HOW ARE YOU EVEN ALIVE THIS LONG?",
+		"YOUR TEAMMATES ARE WATCHING YOU DIE. SLOWLY.",
+		"CONGRATULATIONS. YOU FOUND A NEW WAY TO FAIL.",
+		"IS THIS YOUR STRATEGY? BECAUSE IT'S WORKING GREAT.",
+		"MAYBE NEXT TIME TRY USING YOUR HEAD. OH WAIT.",
+		"YOU'RE DOING AMAZING. KEEP IT UP. (YOU'RE NOT.)",
+		"I'VE SEEN ROCKS MAKE BETTER DECISIONS.",
+		"AT LEAST YOU'RE CONSISTENT. CONSISTENTLY TERRIBLE.",
+		"YOUR BRAIN CALLED. IT WANTS OUT.",
+		"EVEN THE HEADCRAB IS EMBARRASSED FOR YOU.",
+		"THIS IS FINE. EVERYTHING IS FINE. (IT'S NOT FINE.)",
+		"YOU COULD HAVE JUST... NOT DONE THAT.",
+		"SKILL ISSUE. MASSIVE SKILL ISSUE.",
+	}
+
+	local MSG_INTERVAL = 4.0
+
+	local msgAlpha   = 0
+	local msgShown   = false
+	local msgIndex   = 1
+	local msgTimer   = 0
+	local msgFadeOut = false
+	local msgRage    = false  -- текущий пул
+
+	-- глитч: случайные символы для замены
+	local GLITCH_CHARS = "!@#$%^&*<>?/\\|[]{}~`"
+	local glitchTimer  = 0
+	local glitchStr    = ""
+
+	local function MakeGlitch(str, intensity)
+		local result = {}
+		for i = 1, #str do
+			if math.random() < intensity * 0.4 then
+				local idx = math.random(#GLITCH_CHARS)
+				result[i] = string.sub(GLITCH_CHARS, idx, idx)
+			else
+				result[i] = string.sub(str, i, i)
+			end
+		end
+		return table.concat(result)
+	end
+
+	hook.Add("Player Spawn", "HG_LobotomyMsgReset", function(ply)
+		if ply ~= LocalPlayer() then return end
+		msgShown   = false
+		msgAlpha   = 0
+		msgIndex   = 1
+		msgTimer   = 0
+		msgFadeOut = false
+		msgRage    = false
+		glitchStr  = ""
+	end)
+
+	hook.Add("HUDPaint", "HG_LobotomyMsg", function()
+		local lp = LocalPlayer()
+		if not IsValid(lp) or not lp:Alive() then return end
+		local org = lp.organism
+		if not org then return end
+
+		local brain = org.brain or 0
+
+		if msgShown and brain < 0.1 then
+			msgShown   = false
+			msgAlpha   = 0
+			msgIndex   = 1
+			msgTimer   = 0
+			msgFadeOut = false
+			msgRage    = false
+			glitchStr  = ""
+			return
+		end
+
+		if brain >= 0.3 and not msgShown then
+			msgShown   = true
+			msgRage    = brain > 0.6
+			local pool = msgRage and (brain > 0.7 and MESSAGES_MOCK or MESSAGES_RAGE) or MESSAGES_CALM
+			msgIndex   = math.random(#pool)
+			msgTimer   = CurTime() + MSG_INTERVAL
+			msgFadeOut = false
+		end
+
+		if not msgShown then return end
+
+		local ft = FrameTime()
+		local t  = CurTime()
+
+		-- при нарастании brain переключаем пул
+		local shouldRage = brain > 0.6
+		if shouldRage ~= msgRage and not msgFadeOut then
+			msgFadeOut = true
+		end
+
+		if msgFadeOut then
+			msgAlpha = math.max(msgAlpha - ft * 150, 0)
+			if msgAlpha <= 0 then
+				msgRage = shouldRage
+				local pool = msgRage and (brain > 0.7 and MESSAGES_MOCK or MESSAGES_RAGE) or MESSAGES_CALM
+				local newIdx = msgIndex
+				while newIdx == msgIndex and #pool > 1 do
+					newIdx = math.random(#pool)
+				end
+				msgIndex   = newIdx
+				msgFadeOut = false
+				msgTimer   = CurTime() + MSG_INTERVAL
+			end
+		else
+			msgAlpha = math.min(msgAlpha + ft * 80, 255)
+			if CurTime() > msgTimer then
+				msgFadeOut = true
+			end
+		end
+
+		if msgAlpha <= 0 then return end
+
+		local pool  = msgRage and (brain > 0.7 and MESSAGES_MOCK or MESSAGES_RAGE) or MESSAGES_CALM
+		local msg   = pool[msgIndex] or ""
+
+		-- глитч нарастает с brain
+		local glitchIntensity = math.Clamp((brain - 0.3) / 0.7, 0, 1)
+
+		-- обновляем глитч строку раз в 0.05 сек
+		glitchTimer = glitchTimer + ft
+		if glitchTimer > 0.05 then
+			glitchTimer = 0
+			if glitchIntensity > 0.05 then
+				glitchStr = MakeGlitch(msg, glitchIntensity)
+			else
+				glitchStr = msg
+			end
+		end
+		if glitchStr == "" then glitchStr = msg end
+
+		-- дрожание нарастает с brain
+		local shakeAmt = glitchIntensity * 8
+		local shakeX   = math.sin(t * 60) * shakeAmt
+		local shakeY   = math.cos(t * 55) * shakeAmt
+
+		local sw, sh = ScrW(), ScrH()
+		local alpha  = math.floor(msgAlpha)
+		local baseX  = sw / 2
+		local baseY  = sh * 0.62
+
+		surface.SetFont("HG_LobotomyMsg")
+		local tw, _ = surface.GetTextSize(glitchStr)
+
+		-- при rage — красный цвет, при calm — белый
+		local r = msgRage and 220 or 200
+		local g = msgRage and 20  or 200
+		local b = msgRage and 20  or 200
+
+		-- тень
+		surface.SetTextColor(0, 0, 0, alpha)
+		surface.SetTextPos(baseX - tw / 2 + shakeX + 2, baseY + shakeY + 2)
+		surface.DrawText(glitchStr)
+
+		-- основной текст
+		surface.SetTextColor(r, g, b, alpha)
+		surface.SetTextPos(baseX - tw / 2 + shakeX, baseY + shakeY)
+		surface.DrawText(glitchStr)
+
+		-- при сильном глитче — чёрная аберрация (смещённые тёмные копии)
+		if glitchIntensity > 0.4 then
+			local aberr = glitchIntensity * 4
+			-- тёмно-красный слой справа
+			surface.SetTextColor(80, 0, 0, math.floor(alpha * 0.5))
+			surface.SetTextPos(baseX - tw / 2 + shakeX + aberr, baseY + shakeY)
+			surface.DrawText(glitchStr)
+			-- чёрный слой слева
+			surface.SetTextColor(0, 0, 0, math.floor(alpha * 0.6))
+			surface.SetTextPos(baseX - tw / 2 + shakeX - aberr, baseY + shakeY)
+			surface.DrawText(glitchStr)
+		end
+	end)
+end

@@ -1,345 +1,494 @@
-local PANEL = {}
-local curent_panel 
-local red_select = Color(192,0,0)
-
-DISCORD_URL = "https://discord.gg/475EmEdTgH"
-
-local Selects = {
-    {Title = "Disconnect", Func = function(luaMenu) RunConsoleCommand("disconnect") end},
-    {Title = "Main Menu", Func = function(luaMenu) gui.ActivateGameUI() luaMenu:Close() end},
-    {Title = "Discord", Func = function(luaMenu) luaMenu:Close() gui.OpenURL(DISCORD_URL)  end},
-    {Title = "Traitor Role",
-    GamemodeOnly = true,
-    CreatedFunc = function(self, parent, luaMenu)
-        local btn = vgui.Create( "DLabel", self )
-        btn:SetText( "SOE" )
-        btn:SetMouseInputEnabled( true )
-        btn:SizeToContents()
-        btn:SetFont( "ZCity_Small" )
-        btn:SetTall( ScreenScale( 15 ) )
-        btn:Dock(BOTTOM)
-        btn:DockMargin(ScreenScale(20),ScreenScale(10),0,0)
-        btn:SetTextColor(Color(255,255,255))
-        btn:InvalidateParent()
-        btn.RColor = Color(225, 225, 225, 0)
-        btn.WColor = Color(225, 225, 225, 255)
-        btn.x = btn:GetX()
-
-        function btn:DoClick()
-            luaMenu:Close()
-            hg.SelectPlayerRole(nil, "soe")
-        end
-    
-        local selfa = self
-        function btn:Think()
-            self.HoverLerp = selfa.HoverLerp
-            self.HoverLerp2 = LerpFT(0.2, self.HoverLerp2 or 0, self:IsHovered() and 1 or 0)
-                
-            self:SetTextColor(self.RColor:Lerp(self.WColor:Lerp(red_select, self.HoverLerp2), self.HoverLerp))
-            self:SetX(self.x + ScreenScaleH(40) + self.HoverLerp * ScreenScaleH(50))
-        end
-
-        local btn = vgui.Create( "DLabel", btn )
-        btn:SetText( "STD" )
-        btn:SetMouseInputEnabled( true )
-        btn:SizeToContents()
-        btn:SetFont( "ZCity_Small" )
-        btn:SetTall( ScreenScale( 15 ) )
-        btn:Dock(BOTTOM)
-        btn:DockMargin(0,ScreenScale(2),0,0)
-        btn:SetTextColor(Color(255,255,255))
-        btn:InvalidateParent()
-        btn.RColor = Color(225, 225, 225, 0)
-        btn.WColor = Color(225, 225, 225, 255)
-        btn.x = btn:GetX()
-
-        function btn:DoClick()
-            luaMenu:Close()
-            hg.SelectPlayerRole(nil, "standard")
-        end
-    
-        function btn:Think()
-            self.HoverLerp = selfa.HoverLerp
-            self.HoverLerp2 = LerpFT(0.2, self.HoverLerp2 or 0, self:IsHovered() and 1 or 0)
-    
-            self:SetTextColor(self.RColor:Lerp(self.WColor:Lerp(red_select, self.HoverLerp2), self.HoverLerp))
-            self:SetX(self.x + ScreenScaleH(35))
-        end
-    end,
-    Func = function(luaMenu)
-        
-    end,
-    },
-    {Title = "Achievements", Func = function(luaMenu,pp) 
-        hg.DrawAchievmentsMenu(pp)
-    end},
-    {Title = "Settings", Func = function(luaMenu,pp) 
-        hg.DrawSettings(pp) 
-    end},
-    {Title = "Appearance", Func = function(luaMenu,pp) hg.CreateApperanceMenu(pp) end},
-    {Title = "Return", Func = function(luaMenu) luaMenu:Close() end},
-}
-
-local splasheh = {
-    'LIKE HOMICIDED',
-    'PLUV PLUV PLUVISKI',
-    'LULU IS NOT DEAD | !PLUV',
-    'THE TRAITOR WAS KILLED',
-    'NAB HOMICIDE SERVER',
-    'ALSO TRY MODDED HOMICIDE 2',
-    'HOP ON Z-CITY',
-    'JOHN Z-CITY',
-    ':pluvrare:',
-    'SAW51 IS REAL',
-    'MORE SMALLTOWN',
-    'MORE CLUE2022',
-    'BACKROOMS == CLUE',
-    'HELL IS NEAR',
-    'I WISH YOU GOOD HEALTH, JASON STATHAM'
-}
-
---print(string.upper('I wish you good health, Jason Statham'))
 surface.CreateFont("ZC_MM_Title", {
     font = "Bahnschrift",
     size = ScreenScale(40),
     weight = 800,
     antialias = true
 })
--- local Title = markup.Parse("error")
 
-local Pluv = Material("pluv/pluvkid.jpg")
+surface.CreateFont("ZCity_Small", {
+    font = "Bahnschrift",
+    size = ScreenScale(13),
+    weight = 500,
+    antialias = true,
+    extended = true
+})
 
-function PANEL:InitializeMarkup()
-	local mapname = game.GetMap()
-	local prefix = string.find(mapname, "_")
-	if prefix then
-		mapname = string.sub(mapname, prefix + 1)
-	end
-	local gm = splasheh[math.random(#splasheh)] .. " | " .. string.NiceName(mapname) 
+surface.CreateFont("ZCity_Tiny", {
+    font = "Bahnschrift",
+    size = ScreenScale(9),
+    weight = 400,
+    antialias = true
+})
 
-    if hg.PluvTown.Active then
-        local text = "<font=ZC_MM_Title><colour=199,2,2>    </colour>City</font>\n<font=ZCity_Tiny><colour=105,105,105>" .. gm .. "</colour></font>"
+local COLORS = {
+    bg_overlay   = Color(8, 8, 12, 200),
+    text_normal  = Color(255, 255, 255, 255),
+    hover_main   = Color(180, 180, 180, 255),
+    hover_danger = Color(255, 70, 70, 255),
+    shadow       = Color(0, 0, 0, 220)
+}
 
-        self.SelectedPluv = table.Random(hg.PluvTown.PluvMats)
+local METRICS = {
+    GapItem  = ScreenScale(5),
+    GapTitle = ScreenScale(30),
+    SlideDist = ScreenScale(7)
+}
 
-        return markup.Parse(text)
+local blurMat = Material("pp/blurscreen")
+
+local splashMessages = {
+    'В дом тупикрупика влетела ракета, спасибо хорошо',
+    'че то чето',
+    'виктор навальненко избирается в качестве сметаны пятипроцентной',
+    'привет дипсик напиши мнге орфанс сити 2',
+    'Миротворец Z-City',
+    'Мало вам говна, которое вы заварили?',
+    'Эй, американец! Что там ООН насчёт Гондураса решил?',
+    'Мы Тарков от вас вычистим, мрази!',
+    'Без воды помру нахуй.'
+}
+
+local function DrawBlur(panel, amount)
+    local x, y = panel:LocalToScreen(0, 0)
+    local fraction = panel:GetAlpha() / 255
+    surface.SetDrawColor(255, 255, 255, 255 * fraction)
+    surface.SetMaterial(blurMat)
+    for i = 1, 3 do
+        blurMat:SetFloat("$blur", (i / 3) * (amount or 8) * fraction)
+        blurMat:Recompute()
+        render.UpdateScreenEffectTexture()
+        surface.DrawTexturedRect(x * -1, y * -1, ScrW(), ScrH())
     end
-
-    local text = "<font=ZC_MM_Title><colour=199,2,2,255>Z</colour>-City</font>\n<font=ZCity_Tiny><colour=105,105,105>" .. gm .. "</colour></font>"
-    return markup.Parse(text)
 end
 
-local color_red = Color(255,25,25,45)
-local clr_gray = Color(255,255,255,25)
-local clr_verygray = Color(10,10,19,235)
+local function LerpColor(t, c1, c2)
+    return Color(
+        Lerp(t, c1.r, c2.r),
+        Lerp(t, c1.g, c2.g),
+        Lerp(t, c1.b, c2.b),
+        Lerp(t, c1.a, c2.a)
+    )
+end
+
+local function GetTextChars(text)
+    local chars = {}
+    if utf8 then
+        for _, code in utf8.codes(text) do
+            chars[#chars + 1] = utf8.char(code)
+        end
+    else
+        for i = 1, #text do chars[#chars + i] = text:sub(i, i) end
+    end
+    return chars
+end
+
+local function OpenStandaloneContent(drawFunc)
+    if not isfunction(drawFunc) then return end
+
+    hg = hg or {}
+    if IsValid(hg.StandaloneEscPanel) then
+        hg.StandaloneEscPanel:Remove()
+    end
+
+    local panel = vgui.Create("EditablePanel")
+    panel:SetSize(ScrW(), ScrH())
+    panel:SetPos(0, 0)
+    panel:SetMouseInputEnabled(true)
+    panel:SetKeyboardInputEnabled(true)
+    panel:MakePopup()
+
+    function panel:OnKeyCodePressed(keyCode)
+        if keyCode == KEY_ESCAPE then
+            self:Remove()
+        end
+    end
+
+    function panel:OnRemove()
+        if hg then hg.StandaloneEscPanel = nil end
+        gui.EnableScreenClicker(false)
+    end
+
+    hg.StandaloneEscPanel = panel
+    gui.EnableScreenClicker(true)
+    drawFunc(panel)
+end
+
+local Selects = {
+    { Title = "Продолжить", Func = function(menu) menu:Close() end },
+    {
+        Title = "Правила",
+        Func = function(menu)
+            menu:Close(function()
+                timer.Simple(0, function()
+                    if hg and hg.DrawRules then
+                        OpenStandaloneContent(hg.DrawRules)
+                    end
+                end)
+            end)
+        end
+    },
+    {
+        Title = "Внешний вид",
+        Func = function(menu)
+            menu:Close(function()
+                timer.Simple(0, function()
+                    if hg and hg.CreateApperanceMenu then
+                        hg.CreateApperanceMenu()
+                    end
+                end)
+            end)
+        end
+    },
+    {
+        Title = "Настройки",
+        Func = function(menu)
+            menu:Close(function()
+                timer.Simple(0, function()
+                    if hg and hg.DrawSettings then
+                        OpenStandaloneContent(hg.DrawSettings)
+                    end
+                end)
+            end)
+        end
+    },
+    {
+        Title = "Магазин / Донат",
+        Func = function(menu)
+            menu:Close(function()
+                if IGS and type(IGS.UI) == "function" then
+                    IGS.UI()
+                else
+                    RunConsoleCommand("igs")
+                    RunConsoleCommand("say", "!donate")
+                end
+            end)
+        end
+    },
+    {
+        Title = "Роль предателя",
+        Func = function(menu)
+            menu:Close(function()
+                if hg then hg.SelectPlayerRole(nil, "soe") end
+            end)
+        end
+    },
+    {
+        Title = "Главное меню",
+        Func = function(menu)
+            menu:Close(function() gui.ActivateGameUI() end)
+        end
+    },
+    {
+        Title = "Дискорд",
+        Func = function(menu)
+            menu:Close(function()
+                gui.OpenURL("https://discord.gg/2X9pgvVZ8")
+            end)
+        end
+    },
+    { Title = "Переподключиться", Func = function() RunConsoleCommand("retry") end },
+    { Title = "Отключиться", Func = function() RunConsoleCommand("disconnect") end },
+}
+
+local musicShouldPlay = false
+local activeStation = nil
+local lastStationID = 0
+
+hook.Add("Think", "ZMainMenu_MusicFailsafe", function()
+    if not musicShouldPlay and IsValid(activeStation) then
+        activeStation:SetVolume(0)
+        activeStation:Stop()
+        activeStation = nil
+    end
+end)
+
+local PANEL = {}
 
 function PANEL:Init()
-    self:SetAlpha(0)
     self:SetSize(ScrW(), ScrH())
     self:Center()
-    self:SetTitle("")
-    self:SetDraggable(false)
-    self:SetBorder(false)
-    self:SetColorBG(clr_verygray)
-    self:SetDraggable(false)
-    self:ShowCloseButton(false)
-    curent_panel = nil
-    self.Title, self.TitleShadow = self:InitializeMarkup()
-
-    timer.Simple(0, function()
-        if self.First then
-            self:First()
-        end
+    self:MakePopup()
+    self:SetAlpha(0)
+    self:AlphaTo(255, 0.4, 0)
+    self:SetCursor("blank")
+    timer.Simple(0.5, function()
+        if IsValid(self) then self:SetCursor("arrow") end
     end)
 
-    self.lDock = vgui.Create("DPanel", self)
-    local lDock = self.lDock
-    lDock:Dock(LEFT)
-    lDock:SetSize(ScrW() / 4, ScrH())
-    lDock:DockMargin(ScreenScale(0), ScreenScaleH(90), ScreenScale(10), ScreenScaleH(90))
-    lDock.Paint = function(this, w, h)
-        if hg.PluvTown.Active then
-            surface.SetDrawColor(color_white)
-            surface.SetMaterial(self.SelectedPluv or Pluv)
-            surface.DrawTexturedRect(0, ScreenScale(27), ScreenScale(35), ScreenScale(27))
+    self.MainTitle = "GOMICITY"
+    local mapname = game.GetMap():match("_(.+)$") or game.GetMap()
+    self.SubTitle = splashMessages[math.random(#splashMessages)] .. " | " .. string.NiceName(mapname)
+
+    self:BuildUI()
+    timer.Simple(0, function()
+        if self.First then self:First() end
+    end)
+
+    self.OpenedAt = RealTime()
+end
+
+function PANEL:OnKeyCodePressed(key)
+    if key == KEY_ESCAPE then
+        self:Close()
+    end
+end
+
+function PANEL:Paint(w, h)
+    DrawBlur(self, 8)
+    local fraction = self:GetAlpha() / 255
+
+    surface.SetDrawColor(COLORS.bg_overlay.r, COLORS.bg_overlay.g, COLORS.bg_overlay.b, COLORS.bg_overlay.a * fraction)
+    surface.DrawRect(0, 0, w, h)
+
+    local gridSize = ScreenScale(25)
+    local gridSpeed = 12
+    local gridAlpha = 10
+    local offset = RealTime() * gridSpeed % gridSize
+    surface.SetDrawColor(180, 180, 180, gridAlpha)
+    for i = -1, math.ceil(w / gridSize) + 1 do
+        surface.DrawRect(i * gridSize - offset, 0, 1, h)
+    end
+    for i = -1, math.ceil(h / gridSize) + 1 do
+        surface.DrawRect(0, i * gridSize + offset, w, 1)
+    end
+
+    if not IsValid(self.BtnContainer) or not self.BtnContainer:IsVisible() then return end
+
+    local openedAt = self.OpenedAt or RealTime()
+    local shouldAppear = RealTime() >= openedAt + (self.TitleAppearDelay or 0)
+    self.TitleAppearLerp = Lerp(FrameTime() * 15, self.TitleAppearLerp or 0, shouldAppear and 1 or 0)
+    local v = self.TitleAppearLerp
+    local title = self.MainTitle
+    local x = w * 0.5
+    local y = self.TitleY + (1 - v) * (self.TitleAppearOffset or 0)
+    local t = RealTime() * 4
+
+    surface.SetFont("ZC_MM_Title")
+    local tw = surface.GetTextSize(title)
+    local startX = x - tw * 0.5
+
+    local chars = GetTextChars(title)
+    local acc = 0
+    for i, char in ipairs(chars) do
+        local cw = surface.GetTextSize(char)
+        local shimmer = (math.sin(t - i * 0.4) + 1) * 0.5
+        local col = Color(100, 100, 100):Lerp(Color(255, 255, 255), shimmer)
+
+        draw.SimpleText(char, "ZC_MM_Title", startX + acc + 2, y + 2, Color(0, 0, 0, 150 * v), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        draw.SimpleText(char, "ZC_MM_Title", startX + acc, y, Color(col.r, col.g, col.b, 255 * v), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+
+        acc = acc + cw
+    end
+
+    draw.SimpleText(self.SubTitle, "ZCity_Tiny", x, y + ScreenScale(36), Color(105, 105, 105, 255 * v), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+end
+
+function PANEL:BuildUI()
+    local w, h = self:GetWide(), self:GetTall()
+
+    self.BtnContainer = vgui.Create("DPanel", self)
+    self.BtnContainer:SetSize(w, h)
+    self.BtnContainer.Paint = function() end
+
+    surface.SetFont("ZC_MM_Title")
+    local _, titleHeight = surface.GetTextSize("A")
+    local btnHeight = ScreenScale(14)
+    local totalBlockHeight = titleHeight + METRICS.GapTitle + (#Selects * btnHeight) + ((#Selects - 1) * METRICS.GapItem)
+    self.TitleY = (h * 0.48) - (totalBlockHeight / 2)
+
+    local yPos = self.TitleY + titleHeight + METRICS.GapTitle
+
+    for i, v in ipairs(Selects) do
+        local btn = vgui.Create("DButton", self.BtnContainer)
+        btn:SetSize(w * 0.4, btnHeight)
+        btn:SetText("")
+        btn:SetAlpha(0)
+        btn:SetPos(w / 2 - btn:GetWide() / 2, yPos + ScreenScale(15))
+        btn:MoveTo(w / 2 - btn:GetWide() / 2, yPos, 0.5, (i * 0.04), 0.5)
+        btn:AlphaTo(255, 0.5, (i * 0.04))
+
+        btn.Hov = 0
+        btn.wasHovered = false
+
+        btn.Think = function(s)
+            local isHover = s:IsHovered()
+            if isHover and not s.wasHovered then
+                surface.PlaySound("garrysmod/ui_hover.wav")
+                s.wasHovered = true
+            elseif not isHover then
+                s.wasHovered = false
+            end
+            s.Hov = Lerp(FrameTime() * 8, s.Hov, isHover and 1 or 0)
         end
 
-        self.Title:Draw(ScreenScale(15), ScreenScale(50), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 255, TEXT_ALIGN_LEFT)
-    end
+        btn.Paint = function(s, pw, ph)
+            local hoverAmount = s.Hov
+            local alpha = s:GetAlpha() / 255
+            local txt = v.Title
+            local xOffset = Lerp(hoverAmount, 0, METRICS.SlideDist)
+            local targetCol = (v.Title == "Отключиться") and COLORS.hover_danger or COLORS.hover_main
+            local col = LerpColor(hoverAmount, COLORS.text_normal, targetCol)
 
-    self.Buttons = {}
-    for k, v in ipairs(Selects) do
-        if v.GamemodeOnly and engine.ActiveGamemode() != "zcity" then continue end
-        self:AddSelect(lDock, v.Title, v)
-    end
+            surface.SetFont("ZCity_Small")
 
+            draw.SimpleText(txt, "ZCity_Small", pw / 2 + xOffset + 2, ph / 2 + 2, Color(0, 0, 0, 220 * alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            draw.SimpleText(txt, "ZCity_Small", pw / 2 + xOffset, ph / 2, Color(col.r, col.g, col.b, col.a * alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        end
+
+        btn.DoClick = function(s)
+            surface.PlaySound("garrysmod/ui_click.wav")
+            v.Func(self)
+        end
+
+        yPos = yPos + btnHeight + METRICS.GapItem
+    end
 
     local bottomDock = vgui.Create("DPanel", self)
-    bottomDock:SetPos(ScreenScale(1), ScrH() - ScrH()/10)
-    bottomDock:SetSize(ScreenScale(190), ScreenScaleH(40))
-    bottomDock.Paint = function(this, w, h) end
-    self.panelparrent = vgui.Create("DPanel", self)
-    self.panelparrent:SetPos(bottomDock:GetWide()+bottomDock:GetX(), 0)
-    self.panelparrent:SetSize(ScrW() - bottomDock:GetWide()*1, ScrH())
-    self.panelparrent.Paint = function(this, w, h) end
-    
-    local git = vgui.Create("DLabel", bottomDock)
-    git:Dock(BOTTOM)
-    git:DockMargin(ScreenScale(10), 0, 0, 0)
-    git:SetFont("ZCity_Tiny")
-    git:SetTextColor(clr_gray)
-    git:SetText("GitHub: github.com/" .. hg.GitHub_ReposOwner .. "/" .. hg.GitHub_ReposName)
-    git:SetContentAlignment(4)
-    git:SetMouseInputEnabled(true)
-    git:SizeToContents()
+    local footerLineH = ScreenScaleH(14)
+    bottomDock:SetSize(math.min(ScrW() * 0.45, math.max(420, ScreenScaleH(420))), footerLineH * 4 + 4)
+    bottomDock.BaseX = ScreenScale(6)
+    bottomDock.AppearOffset = ScreenScaleH(18)
+    bottomDock.AppearDelay = 0.18
+    bottomDock.AppearLerp = 0
+    bottomDock:SetAlpha(0)
+    bottomDock:SetPos(bottomDock.BaseX, ScrH() - bottomDock:GetTall() - ScreenScale(6) + bottomDock.AppearOffset)
 
-    function git:DoClick()
-        gui.OpenURL("https://github.com/" .. hg.GitHub_ReposOwner .. "/" .. hg.GitHub_ReposName)
-    end
-
-    local version = vgui.Create("DLabel", bottomDock)
-    version:Dock(BOTTOM)
-    version:DockMargin(ScreenScale(10), 0, 0, 0)
-    version:SetFont("ZCity_Tiny")
-    version:SetTextColor(clr_gray)
-    version:SetText(hg.Version)
-    version:SetContentAlignment(4)
-    version:SizeToContents()
-
-    local zteam = vgui.Create("DLabel", bottomDock)
-    zteam:Dock(BOTTOM)
-    zteam:DockMargin(ScreenScale(10), 0, 0, 0)
-    zteam:SetFont("ZCity_Tiny")
-    zteam:SetTextColor(clr_gray)
-    zteam:SetText("Authors: uzelezz, Sadsalat, \nMr.Point, Zac90, Deka, Mannytko")
-    zteam:SetContentAlignment(4)
-    zteam:SizeToContents()
-end
-
-function PANEL:First( ply )
-    self:AlphaTo( 255, 0.1, 0, nil )
-end
-
-local gradient_d = surface.GetTextureID("vgui/gradient-d")
-local gradient_r = surface.GetTextureID("vgui/gradient-u")
-local gradient_l = surface.GetTextureID("vgui/gradient-l")
-
-local clr_1 = Color(102,0,0,35)
-function PANEL:Paint(w,h)
-    draw.RoundedBox( 0, 0, 0, w, h, self.ColorBG )
-    hg.DrawBlur(self, 5)
-    surface.SetDrawColor( self.ColorBG )
-    surface.SetTexture( gradient_l )
-    surface.DrawTexturedRect(0,0,w,h)
-    surface.SetDrawColor( clr_1 )
-    surface.SetTexture( gradient_d )
-    surface.DrawTexturedRect(0,0,w,h)
-end
-
-function PANEL:AddSelect( pParent, strTitle, tbl )
-    local id = #self.Buttons + 1
-    self.Buttons[id] = vgui.Create( "DLabel", pParent )
-    local btn = self.Buttons[id]
-    btn:SetText( strTitle )
-    btn:SetMouseInputEnabled( true )
-    btn:SizeToContents()
-    btn:SetFont( "ZCity_Small" )
-    btn:SetTall( ScreenScale( 15 ) )
-    btn:Dock(BOTTOM)
-    btn:DockMargin(ScreenScale(15),ScreenScale(1.5),0,0)
-    btn.Func = tbl.Func
-    btn.HoveredFunc = tbl.HoveredFunc
-    local luaMenu = self 
-    if tbl.CreatedFunc then tbl.CreatedFunc(btn, self, luaMenu) end
-    btn.RColor = Color(225,225,225)
-    function btn:DoClick()
-        -- ,kz оптимизировать надо, но идёт ошибка(кэшировать бы luaMenu.panelparrent вместо вызова его каждый раз)
-        if curent_panel == string.lower(strTitle) then
-			for i = 1, 3 do
-				surface.PlaySound("shitty/tap_release.wav")
-			end
-            luaMenu.panelparrent:AlphaTo(0,0.2,0,function()
-                luaMenu.panelparrent:Remove()
-                luaMenu.panelparrent = nil
-                luaMenu.panelparrent = vgui.Create("DPanel", luaMenu)
-                
-                luaMenu.panelparrent:SetPos(some_coordinates_x, 0)
-                luaMenu.panelparrent:SetSize(some_size_x, some_size_y)
-                luaMenu.panelparrent.Paint = function(this, w, h) end
-                --btn.Func(luaMenu,luaMenu.panelparrent)
-                curent_panel = nil
-            end)
-            return 
+    bottomDock.Paint = function() end
+    bottomDock.Think = function(s)
+        local parent = s:GetParent()
+        local openedAt = IsValid(parent) and (parent.OpenedAt or RealTime()) or RealTime()
+        local show = RealTime() >= openedAt + s.AppearDelay
+        s.AppearLerp = Lerp(FrameTime() * 12, s.AppearLerp or 0, show and 1 or 0)
+        s:SetAlpha(255 * s.AppearLerp)
+        s:SetPos(s.BaseX, ScrH() - s:GetTall() - ScreenScale(6) + (1 - s.AppearLerp) * s.AppearOffset)
+        for _, child in ipairs(s:GetChildren()) do
+            if IsValid(child) then child:SetAlpha(s:GetAlpha()) end
         end
-        some_size_x = luaMenu.panelparrent:GetWide()
-        some_size_y = luaMenu.panelparrent:GetTall()
-        some_coordinates_x = luaMenu.panelparrent:GetX()
-        luaMenu.panelparrent:AlphaTo(0,0.2,0,function()
-            luaMenu.panelparrent:Remove()
-            luaMenu.panelparrent = nil
-            luaMenu.panelparrent = vgui.Create("DPanel", luaMenu)
-            
-            luaMenu.panelparrent:SetPos(some_coordinates_x, 0)
-            luaMenu.panelparrent:SetSize(some_size_x, some_size_y)
-            luaMenu.panelparrent.Paint = function(this, w, h) end
-            btn.Func(luaMenu,luaMenu.panelparrent)
-            curent_panel = string.lower(strTitle)
-        end)
-		for i = 1, 3 do
-			surface.PlaySound("shitty/tap_depress.wav")
-		end
     end
 
-    function btn:Think()
-        self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, (self:IsHovered() or (IsValid(self:GetChild(0)) and self:GetChild(0):IsHovered()) or (IsValid(self:GetChild(0)) and IsValid(self:GetChild(0):GetChild(0)) and self:GetChild(0):GetChild(0):IsHovered())) and 1 or 0)
+    local infoColor = Color(178, 178, 178, 220)
+    local labelsData = {
+        { text = "Authors: uzelezz, Sadsalat,", index = 0 },
+        { text = "Mr.Point, Zac70, Deka, Mannytko", index = 1 },
+        { text = "Release " .. tostring(hg and hg.Version or "1.4.0"), index = 2 },
+        { text = "GitHub: github.com/uzelezz123/Z-City", index = 3 },
+    }
 
-        local v = self.HoverLerp
-        self:SetTextColor(self.RColor:Lerp(red_select, v))
-
-        local targetText = (self:IsHovered()) and string.upper(strTitle) or strTitle
-        local crw = self:GetText()
-
-        if (crw ~= targetText) or (curent_panel == string.lower(strTitle)) then
-            local ntxt = ""
-            local will_text = (curent_panel == string.lower(strTitle) and not strTitle == 'Traitor Role') and '[ '..string.upper(strTitle)..' ]' or strTitle
-            for i = 1, #will_text do
-                local char = will_text:sub(i, i)
-                if i <= math.ceil(#will_text * v) then
-                    ntxt = ntxt .. string.upper(char)
-                else
-                    ntxt = ntxt .. char
-                end
+    for _, data in ipairs(labelsData) do
+        local lbl = vgui.Create("DLabel", bottomDock)
+        lbl:SetPos(0, 2 + footerLineH * data.index)
+        lbl:SetSize(bottomDock:GetWide(), footerLineH)
+        lbl:SetFont("ZCity_Tiny")
+        lbl:SetTextColor(data.index == 3 and Color(105, 105, 105, 220) or infoColor)
+        lbl:SetText(data.text)
+        lbl:SetContentAlignment(4)
+        if data.index == 3 then
+            lbl:SetMouseInputEnabled(true)
+            function lbl:DoClick()
+                gui.OpenURL("https://github.com/uzelezz123/Z-City")
             end
-			if self:GetText() ~= ntxt then
-				surface.PlaySound("shitty/tap-resonant.wav")
-			end
-            self:SetText(ntxt)
         end
-        self:SizeToContents()
+    end
+
+    local rightAuthors = vgui.Create("DLabel", self)
+    rightAuthors:SetFont("ZCity_Tiny")
+    rightAuthors:SetTextColor(infoColor)
+    rightAuthors:SetText("GOMICITY COMMIT 1\nburmaldeiko")
+    rightAuthors:SetContentAlignment(3)
+    rightAuthors:SizeToContents()
+
+    rightAuthors.AppearOffset = ScreenScaleH(18)
+    rightAuthors.AppearDelay = 0.2
+    rightAuthors.AppearLerp = 0
+    rightAuthors:SetAlpha(0)
+    rightAuthors:SetPos(ScrW() - rightAuthors:GetWide() - 5, ScrH() - rightAuthors:GetTall() - 16 + rightAuthors.AppearOffset)
+
+    rightAuthors.Think = function(s)
+        local parent = s:GetParent()
+        if not IsValid(parent) then return end
+        local openedAt = parent.OpenedAt or RealTime()
+        local show = RealTime() >= openedAt + s.AppearDelay
+        s.AppearLerp = Lerp(FrameTime() * 12, s.AppearLerp or 0, show and 1 or 0)
+        s:SetAlpha(255 * s.AppearLerp)
+        s:SetPos(ScrW() - s:GetWide() - 5, ScrH() - s:GetTall() - 16 + (1 - s.AppearLerp) * s.AppearOffset)
     end
 end
 
-function PANEL:Close()
-    self:AlphaTo( 0, 0.1, 0, function() self:Remove() end)
+function PANEL:First()
+    self.TitleAppearDelay = 0.03
+    self.TitleAppearOffset = ScreenScaleH(22)
+    self.TitleAppearLerp = 0
+
+    local hg_dmusic = GetConVar("hg_dmusic")
+    if hg_dmusic and not hg_dmusic:GetBool() then return end
+
+    musicShouldPlay = true
+    lastStationID = lastStationID + 1
+    local currentID = lastStationID
+
+    if IsValid(activeStation) then
+        activeStation:SetVolume(0)
+        activeStation:Stop()
+        activeStation = nil
+    end
+
+    sound.PlayFile("sound/esc/rube_cool_music_for_esc.wav", "noplay mono", function(station, err, errStr)
+        if IsValid(station) then
+            if musicShouldPlay and currentID == lastStationID and IsValid(self) and not self.IsClosing then
+                if IsValid(activeStation) then activeStation:Stop() end
+                activeStation = station
+                activeStation:SetVolume(0.5)
+                activeStation:Play()
+            else
+                station:SetVolume(0)
+                station:Stop()
+            end
+        end
+    end)
+end
+
+function PANEL:Close(callback)
+    self.IsClosing = true
+    musicShouldPlay = false
+
+    if IsValid(activeStation) then
+        activeStation:SetVolume(0)
+        activeStation:Stop()
+        activeStation = nil
+    end
+
     self:SetKeyboardInputEnabled(false)
     self:SetMouseInputEnabled(false)
+
+    self:AlphaTo(0, 0.35, 0, function()
+        if IsValid(self) then self:Remove() end
+        if callback then callback() end
+    end)
 end
 
-vgui.Register( "ZMainMenu", PANEL, "ZFrame")
+vgui.Register("ZMainMenu", PANEL, "EditablePanel")
 
-hook.Add("OnPauseMenuShow","OpenMainMenu",function()
+if IsValid(ZCity_MainMenu_Instance) then
+    ZCity_MainMenu_Instance:Remove()
+end
+ZCity_MainMenu_Instance = nil
+
+hook.Add("OnPauseMenuShow", "ZCity_OpenMainMenu", function()
     local run = hook.Run("OnShowZCityPause")
-    if run != nil then
-        return run
-    end
+    if run ~= nil then return run end
 
-    if MainMenu and IsValid(MainMenu) then
-        MainMenu:Close()
-        MainMenu = nil
+    if hg and IsValid(hg.StandaloneEscPanel) then
+        hg.StandaloneEscPanel:Remove()
         return false
     end
 
-    MainMenu = vgui.Create("ZMainMenu")
-    MainMenu:MakePopup()
+    if IsValid(ZCity_MainMenu_Instance) then
+        ZCity_MainMenu_Instance:Close()
+        ZCity_MainMenu_Instance = nil
+        return false
+    end
+
+    gui.HideGameUI()
+    ZCity_MainMenu_Instance = vgui.Create("ZMainMenu")
     return false
 end)

@@ -1,369 +1,388 @@
+local blurMat = Material("pp/blurscreen")
+
+surface.CreateFont("KIRO_Title", {
+    font = "Bahnschrift",
+    size = ScreenScale(40),
+    weight = 800,
+    antialias = true
+})
+surface.CreateFont("KIRO_Btn", {
+    font = "Bahnschrift",
+    size = ScreenScale(13),
+    weight = 500,
+    antialias = true,
+    extended = true
+})
+surface.CreateFont("KIRO_Small", {
+    font = "Bahnschrift",
+    size = ScreenScale(9),
+    weight = 400,
+    antialias = true
+})
+surface.CreateFont("KIRO_SettingsCat", {
+    font = "Bahnschrift",
+    size = ScreenScale(15),
+    weight = 700,
+    antialias = true
+})
+surface.CreateFont("KIRO_SettingsLabel", {
+    font = "Bahnschrift",
+    size = ScreenScale(12),
+    weight = 500,
+    antialias = true
+})
+surface.CreateFont("KIRO_SettingsHelp", {
+    font = "Bahnschrift",
+    size = ScreenScale(8),
+    weight = 400,
+    antialias = true
+})
+
+local bgOverlay = Color(10, 10, 15, 220)
+local textBright = Color(220, 220, 220)
+local textDim = Color(140, 140, 140)
+local accent = Color(180, 180, 180)
+local panelHoverBg = Color(255, 255, 255, 8)
+local sliderTrack = Color(60, 60, 65, 200)
+local sliderKnob = Color(180, 180, 180)
+local toggleOff = Color(50, 50, 55, 200)
+local toggleOn = Color(180, 180, 180, 255)
+
+local function drawBlur(panel, amount)
+    local x, y = panel:LocalToScreen(0, 0)
+    local frac = panel:GetAlpha() / 255
+    surface.SetDrawColor(255, 255, 255, 255 * frac)
+    surface.SetMaterial(blurMat)
+    for i = 1, 3 do
+        blurMat:SetFloat("$blur", (i / 3) * (amount or 8) * frac)
+        blurMat:Recompute()
+        render.UpdateScreenEffectTexture()
+        surface.DrawTexturedRect(-x, -y, ScrW(), ScrH())
+    end
+end
+
 hg.settings = hg.settings or {}
-hg.settings.tbl = hg.settings.tbl or {}
+hg.settings.tbl = {}
 
-function hg.settings:AddOpt( strCategory, strConVar, strTitle, bDecimals, bString, category )
-    self.tbl[strCategory] = self.tbl[strCategory] or {}
-    self.tbl[strCategory][strConVar] = { strCategory, strConVar, strTitle, bDecimals or false, bString or false, category }
-end
-local hg_firstperson_death = CreateClientConVar("hg_firstperson_death", "0", true, false, "Toggle first-person death camera view", 0, 1)
-local hg_font = CreateClientConVar("hg_font", "Bahnschrift", true, false, "change every text font to selected because ui customization is cool")
-local hg_attachment_draw_distance = CreateClientConVar("hg_attachment_draw_distance", 0, true, nil, "distance to draw attachments", 0, 4096)
-
-xbars = 17
-ybars = 30
-
-gradient_l = Material("vgui/gradient-l")
-
-local blur = Material("pp/blurscreen")
-local blur2 = Material("effects/shaders/zb_blur" )
-local sw, sh = ScrW(), ScrH()
-
-local font = function() -- hg_coolvetica:GetBool() and "Coolvetica" or "Bahnschrift"
-    local usefont = "Bahnschrift"
-
-    if hg_font:GetString() != "" then
-        usefont = hg_font:GetString()
-    end
-
-    return usefont
+function hg.settings:AddOpt(category, convarName, title, decimals, isString, convarType)
+    self.tbl[category] = self.tbl[category] or {}
+    self.tbl[category][convarName] = {
+        convar  = convarName,
+        title   = title,
+        decimals = decimals or false,
+        isString = isString or false,
+        convarType = convarType
+    }
 end
 
-surface.CreateFont("ZCity_setiings_tiny", {
-	font = font(),
-	size = ScreenScale(7),
-	weight = 100
-})
+local hg_firstperson_death   = CreateClientConVar("hg_firstperson_death",   "0", true, false, "Переключение вида камеры смерти от первого лица", 0, 1)
+local hg_font                = CreateClientConVar("hg_font",                "Bahnschrift", true, false, "Изменить шрифт текста")
+local hg_attachment_draw_distance = CreateClientConVar("hg_attachment_draw_distance", 0, true, nil, "Расстояние прорисовки обвесов", 0, 4096)
 
-surface.CreateFont("ZCity_setiings_fine", {
-	font = font(),
-	size = ScreenScale(10),
-	weight = 100
-})
+hg.settings:AddOpt("Геймплей", "hg_old_notificate", "Старые уведомления")
+hg.settings:AddOpt("Геймплей", "hg_cheats", "Включить читы")
+hg.settings:AddOpt("Геймплей", "hg_showthoughts", "Показывать свои мысли")
+hg.settings:AddOpt("Геймплей", "hg_hints", "Показывать подсказки")
+hg.settings:AddOpt("Геймплей", "hg_gary", "HG GARY")
+hg.settings:AddOpt("Геймплей", "hg_deathfadeout", "Затухание при смерти")
 
-surface.CreateFont("ZCity_setiings_category", {
-	font = font(),
-	size = ScreenScale(15),
-	weight = 100
-})
-
-
-hg.settings:AddOpt("Gameplay","hg_old_notificate", "Old Notifications")
-hg.settings:AddOpt("Gameplay","hg_cheats", "Enable Cheats")
-hg.settings:AddOpt("Gameplay","hg_showthoughts", "Show thoughts")
-hg.settings:AddOpt("Gameplay","hg_hints", "Show hints")
-hg.settings:AddOpt("Gameplay","hg_gary", "Center weapon in fake")
-hg.settings:AddOpt("Gameplay","hg_deathfadeout", "Death fade out")
---hg_gary
---hg_deathfadeout
 if not game.IsDedicated() then
-	hg.settings:AddOpt("Server-side settings","hg_toughnpcs", "Tough npcs")
-	hg.settings:AddOpt("Server-side settings","hg_thirdperson", "Thirdperson (WIP)")
-	hg.settings:AddOpt("Server-side settings","hg_legacycam", "Legacy camera")
-	hg.settings:AddOpt("Server-side settings","hg_ragdollcombat", "Ragdoll combat mode")
-	hg.settings:AddOpt("Server-side settings","hg_movement_stamina_debuff", "Movement stamina debuff")
-	hg.settings:AddOpt("Server-side settings","hg_furcity", "Furcity")
-	hg.settings:AddOpt("Server-side settings","hg_appearance_access_for_all", "Appearance full access for all", nil, nil, "bool")
-	hg.settings:AddOpt("Server-side settings","hg_healanims", "Heal & food animations")
-	hg.settings:AddOpt("Server-side settings","hg_aimtoshoot", "Toggle DarkRP-like shooting system (aim to shoot): 0 - disabled; 1 - hipfire only; 2 - aiming only", nil, nil, "int")
-	hg.settings:AddOpt("Server-side settings","hg_slings", "Sling system")
-	hg.settings:AddOpt("Server-side settings","hg_allow_gopro", "Allow GoPro-like first-person camera")
-	hg.settings:AddOpt("Server-side settings","hg_allow_gopro_pos", "Allow editing GoPro camera position")
-	hg.settings:AddOpt("Server-side settings","hg_giveammomul", "Multiply given ammo for weapon spawned from spawnmenu")
-	hg.settings:AddOpt("Server-side settings","hg_ixanims", "Toggle Helix-like animations on NPC models for players. Experimental")
-	hg.settings:AddOpt("Server-side settings","hg_coolhands", "Give cool hands instead of default hands on spawn")
-	hg.settings:AddOpt("Server-side settings","hg_loadcontent", "Toggle loading content to clients using 'resource.AddWorkshop' (need server restart to apply)")
-    hg.settings:AddOpt("Server-side settings","homicide_traitoramount", "Homicide: Traitor Amount", nil, nil, "int")
-end
---hg_appearance_access_for_all
---hg_furcity
---hg_legacycam
---hg_toughnpcs
-
-hg.settings:AddOpt("Debug","hg_show_hitposmuzzle", "Show weapon hitpos")
-hg.settings:AddOpt("Debug","hg_setzoompos", "Edit weapon zoompos, check console for results")
-hg.settings:AddOpt("Debug","hg_show_hitbox", "Show hitboxes")
-
-hg.settings:AddOpt("Optimization","hg_potatopc", "Potato PC Mode")
-hg.settings:AddOpt("Optimization","hg_anims_draw_distance", "Animations Draw Distance", true, nil, "int")
-hg.settings:AddOpt("Optimization","hg_anim_fps", "Animations FPS", nil, nil, "int")
-hg.settings:AddOpt("Optimization","hg_attachment_draw_distance", "Attachment Draw Distance", true, nil, "int")
-hg.settings:AddOpt("Optimization","hg_maxsmoketrails", "Maximum Smoke Trails", nil, nil, "int")
-hg.settings:AddOpt("Optimization","hg_tpik_distance", "TPIK Render Distance", true, nil, "int")
-
-hg.settings:AddOpt("Blood","hg_blood_draw_distance", "Blood Draw Distance")
-hg.settings:AddOpt("Blood","hg_blood_fps", "Blood FPS")
-hg.settings:AddOpt("Blood","hg_blood_sprites", "Blood Sprites (DISABLED FOR EVERYONE)")
-hg.settings:AddOpt("Blood","hg_old_blood", "Old blood")
-
-hg.settings:AddOpt("UI","hg_font", "Set Custom Font", false, true)
-
-hg.settings:AddOpt("Weapons","hg_weaponshotblur_enable", "Shooting Blur")
-hg.settings:AddOpt("Weapons","hg_dynamic_mags", "Dynamic Ammo Inspect")
-hg.settings:AddOpt("Weapons","hg_zoomsensitivity", "Scope sensitivity")
-hg.settings:AddOpt("Weapons","hg_highpitchgunfire", "Toggle high pitched gunfire sounds inside buildings")
-
-hg.settings:AddOpt("View","hg_firstperson_death", "First-Person Death")
-hg.settings:AddOpt("View","hg_fov", "Field Of View")
-hg.settings:AddOpt("View","hg_newspectate", "Smooth Spectator Camera")
-hg.settings:AddOpt("View","hg_cshs_fake", "C'sHS Ragdoll Camera")
-hg.settings:AddOpt("View","hg_gun_cam", "Gun Camera (ADMIN ONLY)")
-hg.settings:AddOpt("View","hg_nofovzoom", "Disable/Enable FOV Zoom")
-hg.settings:AddOpt("View","hg_realismcam", "Realism camera (shitty)")
-hg.settings:AddOpt("View","hg_gopro", "GoPro camera")
-hg.settings:AddOpt("View","hg_newfakecam", "New fake camera")
-hg.settings:AddOpt("View","hg_leancam_mul", "Lean camera mul", true, nil, "int")
-hg.settings:AddOpt("View","hg_gun_cam", "Gun camera (WIP Admin only)")
---hg_hints
---hg_leancam_mul
-  --hg_newfakecam
-hg.settings:AddOpt("Sound","hg_dmusic", "Dynamic Music")
-hg.settings:AddOpt("Sound","hg_quietshots", "Enable/Disable Quietshoot Sounds")
-
-
-function hg.CreateCategory(ctgName, ParentPanel, yPos)
-    local pppanel = vgui.Create('DPanel', ParentPanel)
-    pppanel:SetSize(ParentPanel:GetWide() / 1.05, ParentPanel:GetTall() * 0.07)
-    pppanel:SetPos(ParentPanel:GetWide() / 2 -pppanel:GetWide() / 2, yPos)
-    --pppanel:SetText(ctgName)
-    pppanel.Paint = function(self,w,h)
-        surface.SetDrawColor(60,60,60,145)
-        surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(42, 42, 42, 184)
-		surface.DrawRect(0, h-5, w, 5)
-    
-        draw.SimpleText(ctgName, 'ZCity_setiings_category', w / 2, h / 2, color3, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    end
-    
-    return pppanel
+    hg.settings:AddOpt("Сервер", "hg_toughnpcs", "Сильные NPC")
+    hg.settings:AddOpt("Сервер", "hg_thirdperson", "Третье лицо (WIP)")
+    hg.settings:AddOpt("Сервер", "hg_legacycam", "Старая камера")
+    hg.settings:AddOpt("Сервер", "hg_ragdollcombat", "Боевой режим ragdoll")
+    hg.settings:AddOpt("Сервер", "hg_movement_stamina_debuff", "Снижение выносливости")
+    hg.settings:AddOpt("Сервер", "hg_furcity", "Фурсити")
+    hg.settings:AddOpt("Сервер", "hg_appearance_access_for_all", "Полный доступ к внешности", nil, nil, "bool")
+    hg.settings:AddOpt("Сервер", "hg_healanims", "Анимации лечения и еды")
+    hg.settings:AddOpt("Сервер", "hg_aimtoshoot", "Стрельба в стиле DarkRP (не работает)")
+    hg.settings:AddOpt("Сервер", "hg_slings", "Sling system")
 end
 
-function hg.GetConVarType(convar)
-    local stringv = convar:GetString()
-    local floatVal = convar:GetFloat()
-    local intVal = convar:GetInt()
-    local boolVal = convar:GetBool()
+hg.settings:AddOpt("Отладка", "hg_show_hitposmuzzle", "Показывать хитпосы")
+hg.settings:AddOpt("Отладка", "hg_setzoompos", "Настройка зума оружия (консоль)")
+hg.settings:AddOpt("Отладка", "hg_show_hitbox", "Показывать хитбоксы")
 
-    if (stringv == '0' and not boolVal) or (stringv == '1' and boolVal) then
-        return 'bool'
-    end
+hg.settings:AddOpt("Оптимизация", "hg_potatopc", "Режим слабого ПК")
+hg.settings:AddOpt("Оптимизация", "hg_anims_draw_distance", "Дистанция анимаций", true, nil, "int")
+hg.settings:AddOpt("Оптимизация", "hg_anim_fps", "FPS анимаций", nil, nil, "int")
+hg.settings:AddOpt("Оптимизация", "hg_attachment_draw_distance", "Дистанция обвесов", true, nil, "int")
+hg.settings:AddOpt("Оптимизация", "hg_maxsmoketrails", "Макс. дымовых следов", nil, nil, "int")
+hg.settings:AddOpt("Оптимизация", "hg_tpik_distance", "Дистанция рендера TPIK", true, nil, "int")
 
-    if tonumber(stringv) and math.floor(stringv) == floatVal then
-        if intVal == floatVal then
-            return "int"
-        end
-    end
+hg.settings:AddOpt("Кровь", "hg_blood_draw_distance", "Дистанция крови")
+hg.settings:AddOpt("Кровь", "hg_blood_fps", "FPS крови")
+hg.settings:AddOpt("Кровь", "hg_blood_sprites", "Спрайты крови (отключены)")
+hg.settings:AddOpt("Кровь", "hg_old_blood", "Старая кровь")
 
+hg.settings:AddOpt("Интерфейс", "hg_font", "Пользовательский шрифт", false, true)
+
+hg.settings:AddOpt("Оружие", "hg_weaponshotblur_enable", "Размытие при стрельбе")
+hg.settings:AddOpt("Оружие", "hg_dynamic_mags", "Динамическая проверка магазинов")
+hg.settings:AddOpt("Оружие", "hg_zoomsensitivity", "Чувствительность прицела")
+hg.settings:AddOpt("Оружие", "hg_highpitchgunfire", "Высокие частоты выстрелов")
+
+hg.settings:AddOpt("Вид", "hg_firstperson_death", "Смерть от первого лица")
+hg.settings:AddOpt("Вид", "hg_fov", "Поле зрения")
+hg.settings:AddOpt("Вид", "hg_newspectate", "Плавная камера наблюдателя")
+hg.settings:AddOpt("Вид", "hg_cshs_fake", "C'sHS Ragdoll камера")
+hg.settings:AddOpt("Вид", "hg_gun_cam", "Оружейная камера (админы)")
+hg.settings:AddOpt("Вид", "hg_nofovzoom", "Отключить FOV Zoom")
+hg.settings:AddOpt("Вид", "hg_realismcam", "Realism camera")
+hg.settings:AddOpt("Вид", "hg_gopro", "GoPro камера (не работает)")
+hg.settings:AddOpt("Вид", "hg_newfakecam", "New fake camera")
+hg.settings:AddOpt("Вид", "hg_leancam_mul", "Множ. наклона камеры", true, nil, "int")
+
+hg.settings:AddOpt("Звук", "hg_dmusic", "Музыка в меню")
+hg.settings:AddOpt("Звук", "hg_quietshots", "Тихие выстрелы")
+
+local function getConvarType(cvar)
+    local s = cvar:GetString()
+    if s == "0" or s == "1" then return "bool" end
+    if tonumber(s) then return "int" end
     return "string"
 end
 
-local function SetConVarValue(convar, value)
-    if not convar then
-        return
+local function makeCategoryRow(parent, y, text)
+    local pnl = vgui.Create("DPanel", parent)
+    pnl:SetSize(parent:GetWide(), ScreenScale(26))
+    pnl:SetPos(0, y)
+    pnl:SetMouseInputEnabled(false)
+    pnl.anim = 0
+    pnl.Paint = function(self, w, h)
+        self.anim = Lerp(FrameTime() * 8, self.anim, 1)
+        local t = RealTime() * 4
+        local alpha = self.anim * 255
+        local chars = {}
+        if utf8 then
+            for _, c in utf8.codes(text) do chars[#chars+1] = utf8.char(c) end
+        else
+            for i = 1, #text do chars[i] = text:sub(i, i) end
+        end
+        surface.SetFont("KIRO_SettingsCat")
+        local cx = ScreenScale(16)
+        for i, ch in ipairs(chars) do
+            local cw = surface.GetTextSize(ch)
+            local shimmer = (math.sin(t - i * 0.4) + 1) / 2
+            local gray = 130 + shimmer * 90
+            local col = Color(gray, gray, gray, alpha)
+            draw.SimpleText(ch, "KIRO_SettingsCat", cx + 1, h/2 + 1, Color(0,0,0,120))
+            draw.SimpleText(ch, "KIRO_SettingsCat", cx, h/2, col)
+            cx = cx + cw
+        end
     end
-
-    local name = convar.GetName and convar:GetName()
-    if not name or name == "" then
-        return
-    end
-
-    if isbool(value) then
-        RunConsoleCommand(name, value and "1" or "0")
-        return
-    end
-
-    RunConsoleCommand(name, tostring(value))
+    return pnl
 end
 
-local clr_1 = Color(255,255,255,104)
-local clr_2 = Color(122,122,122,104)
-local clr_3 = Color(28,28,28)
-local clr_4 = Color(0, 0, 0, 30)
-local clr_5 = Color(30, 29, 29, 30)
-local clr_6 = Color(255, 255, 255, 100)
-local clr_7 = Color(255, 255, 255, 200)
-local clr_8 = Color(70, 130, 180)
-function hg.CreateButton(buttonData, convarName, ParentPanel, yPos)
-    local convar = GetConVar(convarName)
-
-    if not convar then 
-        return 
+local function makeSettingRow(parent, y, data)
+    local convarName = data.convar
+    local title = data.title
+    if not convarName then
+        convarName = data[2]
+        title = data[3]
     end
-    local pppanel = vgui.Create('DPanel', ParentPanel)
-    pppanel:SetSize(ParentPanel:GetWide()/1.05, ParentPanel:GetTall()/15)
-    pppanel:SetPos(ParentPanel:GetWide()/2-pppanel:GetWide()/2, yPos)
-    
-    surface.SetFont('ZCity_setiings_fine')
-    local width2, height2 = surface.GetTextSize(buttonData[3])
-    
-    convarType = buttonData[6] or hg.GetConVarType(convar)
-    pppanel.Paint = function(self,w,h)
-        surface.SetDrawColor(43, 43, 43,145)
-        surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(47, 47, 47,145)
-		surface.DrawRect(0, h-3, w, 3)
-        
-        draw.SimpleText(buttonData[3], 'ZCity_setiings_fine', 30, h / 2 -height2/2.5, clr_1, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-        draw.SimpleText(convar:GetHelpText(), 'ZCity_setiings_tiny', 30, h / 2+height2/2, clr_2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-    end
+    if not convarName then return end
+    local cvar = GetConVar(convarName)
+    if not cvar then return end
 
-    if convarType == 'bool' then
-        local toggle = vgui.Create('DButton', pppanel)
-        toggle:SetSize(pppanel:GetWide() / 18, pppanel:GetTall() / 2)
+    local ctype = data.convarType or getConvarType(cvar)
+    local w = parent:GetWide()
+    local pad = ScreenScale(16)
+    local ctrlW = ScreenScale(180)
+    local rowH = ScreenScale(28)
+    local hasHelp = cvar:GetHelpText() and cvar:GetHelpText() ~= ""
+    if hasHelp then rowH = ScreenScale(40) end
 
-        
-        toggle:SetPos(pppanel:GetWide() - toggle:GetWide()*1.4 - pppanel:GetWide() / 20, pppanel:GetTall() / 2 - toggle:GetTall() / 2)
-        toggle:SetText('')
-        
-        local animProgress = convar:GetBool() and 1 or 0
-        local targetProgress = animProgress
-        
-        function toggle:Paint(w, h)
-            if animProgress ~= targetProgress then
-                animProgress = Lerp(FrameTime() * 8, animProgress, targetProgress)
-            end
-            
-            local bgColor = Color(
-                Lerp(animProgress, 180, 80),  
-                Lerp(animProgress, 30, 120),  
-                Lerp(animProgress, 30, 50)   
-            )
-            
-            local shadowColor = Color(0, 0, 0, Lerp(animProgress, 150, 40))
-            surface.SetDrawColor(clr_3)
-            draw.RoundedBox(0, 0, 0, w, h, clr_3)
-            
-            surface.SetDrawColor(clr_5)
-            draw.RoundedBox(0, 2, 2, w - 4, h - 4, clr_4)
-            
-            local slsize = h - 12
-            local slPos = Lerp(animProgress, 6, w - slsize - 6)
-            surface.SetDrawColor(bgColor)
-            draw.RoundedBox(0, slPos, 6, slsize, slsize, bgColor)
-            surface.SetDrawColor(shadowColor)
-            surface.DrawRect(slPos, slsize+4, slsize, 3)
-    
-            surface.SetDrawColor(clr_6)
-        end
-        
-        function toggle:DoClick()
-            if convar then
-                local newValue = not convar:GetBool()
-                SetConVarValue(convar, newValue)
-
-                surface.PlaySound('glide/headlights_on.wav')
-                targetProgress = newValue and 1 or 0
-            end
-        end
-        
-    elseif convarType == 'int' then
-        local slider = vgui.Create('DNumSlider', pppanel)
-        slider:SetSize(280, 30)
-        slider:SetPos(pppanel:GetWide() - 300, pppanel:GetTall() / 2 - 15)
-        slider:SetText('')
-        
-        local min = convar:GetMin() or 0
-        local max = convar:GetMax() or 100
-        local decimals = buttonData[4] and 2 or 0
-        
-        slider:SetMin(min)
-        slider:SetMax(max)
-        slider:SetDecimals(decimals)
-        slider:SetValue(decimals > 0 and convar:GetFloat() or convar:GetInt())
-        
-        function slider:OnValueChanged(val)
-            if convar then
-                SetConVarValue(convar, decimals > 0 and math.Round(val, decimals) or math.Round(val))
-            end
-        end
-        
-        local valueLabel = vgui.Create('DLabel', pppanel)
-        valueLabel:SetPos(pppanel:GetWide() - 350, pppanel:GetTall() / 2 - 8)
-        valueLabel:SetSize(50, 20)
-        valueLabel:SetText(convar:GetInt())
-        valueLabel:SetTextColor(clr_7)
-        valueLabel:SetFont('ZCity_setiings_tiny')
-        
-        slider.Think = function()
-            if convar then
-                valueLabel:SetText(convar:GetInt())
-            end
-        end
-        
-    elseif convarType == 'string' then
-        local textEntry = vgui.Create('DTextEntry', pppanel)
-        textEntry:SetSize(pppanel:GetWide()/8, pppanel:GetTall()/2)
-        textEntry:SetPos(pppanel:GetWide()-pppanel:GetWide()/8-20, pppanel:GetTall()/2-textEntry:GetTall()/2)
-        textEntry:SetText(convar:GetString())
-        textEntry:SetUpdateOnType(true) 
-        textEntry:SetFont('ZCity_Tiny')
-        
-    
-        textEntry.Paint = function(self, w, h)
-            surface.SetDrawColor(30, 30, 30, 255)
-            surface.DrawRect(0, 0, w, h)
-            surface.SetDrawColor(60, 60, 60, 255)
-            surface.DrawOutlinedRect(0, 0, w, h)
-            
-            self:DrawTextEntryText(color_white, clr_8, color_white)
-        end
-        
-        function textEntry:OnValueChange(val)
-            if convar then
-                SetConVarValue(convar, val)
-            end
+    local pnl = vgui.Create("DPanel", parent)
+    pnl:SetSize(w, rowH)
+    pnl:SetPos(0, y)
+    pnl:SetMouseInputEnabled(true)
+    pnl.hover = 0
+    pnl.Paint = function(self, w, h)
+        self.hover = Lerp(FrameTime() * 10, self.hover, self:IsHovered() and 1 or 0)
+        if self.hover > 0.01 then
+            surface.SetDrawColor(panelHoverBg.r, panelHoverBg.g, panelHoverBg.b, panelHoverBg.a * self.hover)
+            surface.DrawRect(pad, 0, w - pad*2, h)
         end
     end
-    
-    return pppanel
+
+    local titleLbl = vgui.Create("DLabel", pnl)
+    titleLbl:SetPos(pad, rowH * 0.3)
+    titleLbl:SetFont("KIRO_SettingsLabel")
+    titleLbl:SetText(title)
+    titleLbl:SetTextColor(textBright)
+    titleLbl:SizeToContents()
+
+    if hasHelp then
+        local helpLbl = vgui.Create("DLabel", pnl)
+        helpLbl:SetPos(pad, rowH * 0.7)
+        helpLbl:SetFont("KIRO_SettingsHelp")
+        helpLbl:SetText(cvar:GetHelpText())
+        helpLbl:SetTextColor(textDim)
+        helpLbl:SizeToContents()
+    end
+
+    local ctrlX = w - ctrlW - pad
+    if ctype == "bool" then
+        local tw, th = ScreenScale(36), ScreenScale(16)
+        local tog = vgui.Create("DPanel", pnl)
+        tog:SetSize(tw, th)
+        tog:SetPos(ctrlX, rowH/2 - th/2)
+        local val = cvar:GetBool() and 1 or 0
+        local target = val
+        tog.Paint = function(self, w, h)
+            target = cvar:GetBool() and 1 or 0
+            val = Lerp(FrameTime() * 12, val, target)
+            draw.RoundedBox(4, 0, 0, w, h, val > 0.5 and toggleOn or toggleOff)
+            local kx = Lerp(val, 2, w - h + 2)
+            draw.RoundedBox(4, kx, 2, h-4, h-4, val > 0.5 and Color(30,30,30) or textBright)
+        end
+        tog.OnMousePressed = function()
+            RunConsoleCommand(convarName, cvar:GetBool() and "0" or "1")
+        end
+    elseif ctype == "int" then
+        local valW = ScreenScale(40)
+        local slider = vgui.Create("DNumSlider", pnl)
+        slider:SetSize(ctrlW - valW - ScreenScale(8), ScreenScale(16))
+        slider:SetPos(ctrlX + valW + ScreenScale(4), rowH/2 - ScreenScale(8))
+        slider:SetText("")
+        local decimals = data.decimals or false
+        slider:SetDecimals(decimals and 2 or 0)
+        slider:SetMin(cvar:GetMin() or 0)
+        slider:SetMax(cvar:GetMax() or 100)
+        slider:SetValue(decimals and cvar:GetFloat() or cvar:GetInt())
+        slider.Label:SetVisible(false)
+        if slider.TextArea then slider.TextArea:SetVisible(false) end
+        slider.Slider.Paint = function(self, w, h)
+            draw.RoundedBox(4, 0, h/2-2, w, 4, sliderTrack)
+        end
+        slider.Slider.Knob.Paint = function(self, w, h)
+            draw.RoundedBox(4, 0, 0, w, h, sliderKnob)
+        end
+
+        local valLbl = vgui.Create("DLabel", pnl)
+        valLbl:SetPos(ctrlX, rowH/2 - ScreenScale(8))
+        valLbl:SetSize(valW, ScreenScale(16))
+        valLbl:SetFont("KIRO_Small")
+        valLbl:SetTextColor(textBright)
+        valLbl:SetContentAlignment(6)
+
+        slider.OnValueChanged = function(self, val)
+            if decimals then
+                RunConsoleCommand(convarName, string.format("%.2f", val))
+            else
+                RunConsoleCommand(convarName, tostring(math.Round(val)))
+            end
+            valLbl:SetText(decimals and string.format("%.2f", cvar:GetFloat()) or tostring(cvar:GetInt()))
+        end
+        timer.Simple(0, function()
+            if IsValid(valLbl) then
+                valLbl:SetText(decimals and string.format("%.2f", cvar:GetFloat()) or tostring(cvar:GetInt()))
+            end
+        end)
+    elseif ctype == "string" then
+        local entry = vgui.Create("DTextEntry", pnl)
+        entry:SetSize(ctrlW, ScreenScale(18))
+        entry:SetPos(ctrlX, rowH/2 - ScreenScale(9))
+        entry:SetFont("KIRO_Small")
+        entry:SetText(cvar:GetString())
+        entry:SetUpdateOnType(true)
+        entry.Paint = function(self, w, h)
+            draw.RoundedBox(4, 0, 0, w, h, Color(40,40,45,200))
+            surface.SetDrawColor(100,100,100,180)
+            surface.DrawOutlinedRect(0,0,w,h,1)
+            self:DrawTextEntryText(textBright, accent, textBright)
+        end
+        entry.OnChange = function()
+            RunConsoleCommand(convarName, entry:GetValue())
+        end
+    end
+
+    return pnl
 end
 
-function hg.DrawSettings(ParentPanel)
-    ParentPanel:SetAlpha(0)
-    ParentPanel.Paint = function(self,w,h)
-
-        surface.SetDrawColor(28,28,28,255)
+function hg.DrawSettings(parent)
+    parent:SetAlpha(0)
+    parent.bgAlpha = 0
+    parent.Paint = function(self, w, h)
+        self.bgAlpha = Lerp(FrameTime() * 8, self.bgAlpha, 1)
+        drawBlur(self, 8)
+        surface.SetDrawColor(bgOverlay.r, bgOverlay.g, bgOverlay.b, bgOverlay.a * self.bgAlpha)
         surface.DrawRect(0, 0, w, h)
 
-        surface.SetDrawColor(107, 107, 107,20)
-
-        for i = 1, (ybars + 1) do
-            surface.DrawRect((sw / ybars) * i - (CurTime() * 30 % (sw / ybars)), 0, ScreenScale(1), sh)
-        end
-
-        for i = 1, (xbars + 1) do
-            surface.DrawRect(0, (sh / xbars) * (i - 1) + (CurTime() * 30 % (sh / xbars)), sw, ScreenScale(1))
-        end
-
-        local border_size = ScreenScale(2)
-
-        surface.SetDrawColor(0, 0, 0)
-        surface.SetMaterial(gradient_l)
-        surface.DrawTexturedRect(0, 0, border_size, sh)
-		surface.SetMaterial(blur)
-        surface.SetDrawColor(28,28,28,208)
-        surface.DrawRect(0, 0, w, h)
+        local grid = ScreenScale(25)
+        local off = (RealTime() * 12) % grid
+        surface.SetDrawColor(200, 200, 200, 15 * self.bgAlpha)
+        for i = -1, math.ceil(w/grid)+1 do surface.DrawRect(i*grid - off, 0, 1, h) end
+        for i = -1, math.ceil(h/grid)+1 do surface.DrawRect(0, i*grid + off, w, 1) end
     end
-    hg.DrawBlur(ParentPanel, 5)
-    ParentPanel:AlphaTo(255,0.15,0)
-    local pppanel3 = vgui.Create('DScrollPanel', ParentPanel)
-    pppanel3:SetSize(ParentPanel:GetWide(), ParentPanel:GetTall())
-    pppanel3:SetPos(0,0)
-    --pppanel3:SetAlpha(0)
-    pppanel3.Paint = function()end
-    -- 🥴 <- лучший смайлик
+    parent:AlphaTo(255, 0.15, 0)
 
-    local yOffset = pppanel3:GetTall()/100
-
-    for categoryName, categoryTable in pairs(hg.settings.tbl) do
-        local category = hg.CreateCategory(categoryName, pppanel3, yOffset)
-        yOffset = yOffset + category:GetTall() + 12
-        for convarName, settingData in pairs(categoryTable) do
-            local vbv = hg.CreateButton(settingData,convarName,pppanel3,yOffset)
-            if not vbv then continue end
-            yOffset = yOffset + (vbv:GetTall()) + 12
+    local title = vgui.Create("DLabel", parent)
+    title:SetPos(ScreenScale(20), ScreenScale(20))
+    title:SetFont("KIRO_Title")
+    title:SetText("Настройки")
+    title:SetTextColor(Color(0,0,0,0))
+    title.anim = 0
+    title.Paint = function(self, w, h)
+        self.anim = Lerp(FrameTime() * 10, self.anim, 1)
+        local a = self.anim * 255
+        local t = RealTime() * 4
+        local s = "Настройки"
+        surface.SetFont("KIRO_Title")
+        local chars = {}
+        if utf8 then
+            for _, c in utf8.codes(s) do chars[#chars+1] = utf8.char(c) end
+        else
+            for i = 1, #s do chars[i] = s:sub(i,i) end
+        end
+        local cx = 0
+        for i, ch in ipairs(chars) do
+            local cw = surface.GetTextSize(ch)
+            local shimmer = (math.sin(t - i*0.4) + 1)/2
+            local gray = 100 + shimmer*155
+            draw.SimpleText(ch, "KIRO_Title", cx+2, 2, Color(0,0,0,150*(a/255)))
+            draw.SimpleText(ch, "KIRO_Title", cx, 0, Color(gray, gray, gray, a))
+            cx = cx + cw
         end
     end
-    local pppanel23 = vgui.Create('DPanel', pppanel3)
-    pppanel23:SetSize(0, 0)
-    pppanel23:SetPos(0,yOffset+12)
+
+    local scroll = vgui.Create("DScrollPanel", parent)
+    scroll:SetSize(parent:GetWide() - ScreenScale(40), parent:GetTall() - ScreenScale(90))
+    scroll:SetPos(ScreenScale(20), ScreenScale(70))
+    scroll.Paint = function() end
+
+    local vbar = scroll:GetVBar()
+    vbar:SetSize(ScreenScale(8), 0)
+    vbar.Paint = function(s,w,h) draw.RoundedBox(4,0,0,w,h,Color(30,30,40,200)) end
+    vbar.btnUp.Paint = function() end
+    vbar.btnDown.Paint = function() end
+    vbar.btnGrip.Paint = function(s,w,h)
+        draw.RoundedBox(4,2,2,w-4,h-4,s:IsHovered() and Color(100,100,130) or Color(70,70,90))
+    end
+
+    local y = 0
+    for catName, catTable in pairs(hg.settings.tbl) do
+        local hasValid = false
+        for _, optData in pairs(catTable) do
+            local cn = optData.convar or optData[2]
+            if cn and GetConVar(cn) then
+                hasValid = true
+                break
+            end
+        end
+
+        if hasValid then
+            local catPnl = makeCategoryRow(scroll, y, catName)
+            y = y + catPnl:GetTall() + ScreenScale(12)
+
+            for _, optData in pairs(catTable) do
+                local row = makeSettingRow(scroll, y, optData)
+                if row then
+                    y = y + row:GetTall() + ScreenScale(6)
+                end
+            end
+            y = y + ScreenScale(16)
+        end
+    end
 end

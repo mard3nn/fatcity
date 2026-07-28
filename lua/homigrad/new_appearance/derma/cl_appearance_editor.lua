@@ -321,6 +321,8 @@ function PANEL:PostInit()
     local viewer = vgui.Create( "DModelPanel", self )
     viewer:SetSize(sizeX / 2.6,sizeY)
     viewer:SetModel( util.IsValidModel( tostring(tMdl.mdl) ) and tostring(tMdl.mdl) or "models/player/group01/female_01.mdl" )
+    viewer:SetMouseInputEnabled(true)
+    viewer:SetKeyboardInputEnabled(true)
     viewer:SetFOV( 75 )
     viewer:SetLookAng( Angle( 11, 180, 0 ) )
     viewer:SetCamPos( Vector( 100, 0, 55 ) )
@@ -405,8 +407,8 @@ function PANEL:PostInit()
         end
 
         if IsValid(Entity) and Entity:LookupBone("ValveBiped.Bip01_Head1") then
-            funpos1x = lookX * 25
-            funpos3x = -lookX * 75
+            funpos1x = lookX * 10
+            funpos3x = -lookX * 16
         end
     end
 
@@ -506,6 +508,7 @@ function PANEL:PostInit()
     NameEntry:SetSize(ScreenScale(164),ScreenScale(15))
     NameEntry:SetFont("ZCity_Tiny")
     NameEntry:SetText(main.AppearanceTable.AName)
+    NameEntry:SetKeyboardInputEnabled(true)
     NameEntry:Dock(FILL)
     NameEntry:DockMargin(ScreenScale(4), 0, ScreenScale(4), 0)
     NameEntry:SetContentAlignment(5)
@@ -694,13 +697,29 @@ function PANEL:PostInit()
         accessoryMenus = {}
     end
 
-    local hatSelector = vgui.Create("DButton",viewer)
+    local function SetupCharacterButton(btn)
+        btn:SetMouseInputEnabled(true)
+        btn:SetKeyboardInputEnabled(false)
+        btn:SetZPos(5)
+        function btn:OnMousePressed(mouseCode)
+            if mouseCode == MOUSE_LEFT and self.DoClick then
+                self:DoClick()
+            end
+        end
+    end
+
+    local leftButtonsX = sizeX * 0.07
+    local rightButtonsX = sizeX * 0.63
+    local buttonsTopY = sizeY * 0.18
+
+    local hatSelector = vgui.Create("DButton", main)
     hatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     hatSelector:SetFont("ZCity_Tiny")
     hatSelector:SetText("Hats")
+    SetupCharacterButton(hatSelector)
     function hatSelector:Think()
         if funpos1x then
-            hatSelector:SetPos(sizeX * 0.1 + funpos1x, sizeY * 0.2)
+            hatSelector:SetPos(leftButtonsX + funpos1x, buttonsTopY)
         end
     end
 
@@ -758,13 +777,14 @@ function PANEL:PostInit()
         end
     end
 
-    local faceSelector = vgui.Create("DButton",viewer)
+    local faceSelector = vgui.Create("DButton", main)
     faceSelector:SetSize(ScreenScale(100),ScreenScale(16))
     faceSelector:SetFont("ZCity_Tiny")
     faceSelector:SetText("Face")
+    SetupCharacterButton(faceSelector)
     function faceSelector:Think()
         if funpos1x then
-            faceSelector:SetPos(sizeX * 0.1 + funpos1x, sizeY * 0.2 + ScreenScale(32))
+            faceSelector:SetPos(leftButtonsX + funpos1x, buttonsTopY + ScreenScale(32))
         end
     end
     function faceSelector:Paint(w,h)
@@ -821,13 +841,14 @@ function PANEL:PostInit()
         end
     end
 
-    local bodySelector = vgui.Create("DButton",viewer)
+    local bodySelector = vgui.Create("DButton", main)
     bodySelector:SetSize(ScreenScale(100),ScreenScale(16))
     bodySelector:SetFont("ZCity_Tiny")
     bodySelector:SetText("Body")
+    SetupCharacterButton(bodySelector)
     function bodySelector:Think()
         if funpos3x then
-            bodySelector:SetPos(sizeX * 0.1 + funpos1x, sizeY * 0.2 + ScreenScale(64))
+            bodySelector:SetPos(leftButtonsX + funpos1x, buttonsTopY + ScreenScale(64))
         end
     end
     function bodySelector:Paint(w,h)
@@ -886,13 +907,14 @@ function PANEL:PostInit()
         end
     end
 
-    local bodyMatSelector = vgui.Create("DButton",viewer)
+    local bodyMatSelector = vgui.Create("DButton", main)
     bodyMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     bodyMatSelector:SetFont("ZCity_Tiny")
     bodyMatSelector:SetText("Jacket")
+    SetupCharacterButton(bodyMatSelector)
     function bodyMatSelector:Think()
         if funpos3x then
-            bodyMatSelector:SetPos(sizeX * 0.5 - funpos3x, sizeY * 0.2)
+            bodyMatSelector:SetPos(rightButtonsX - funpos3x, buttonsTopY)
         end
     end
     function bodyMatSelector:Paint(w,h)
@@ -930,13 +952,14 @@ function PANEL:PostInit()
         end
     end
 
-    local legsMatSelector = vgui.Create("DButton",viewer)
+    local legsMatSelector = vgui.Create("DButton", main)
     legsMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     legsMatSelector:SetFont("ZCity_Tiny")
     legsMatSelector:SetText("Pants")
+    SetupCharacterButton(legsMatSelector)
     function legsMatSelector:Think()
         if funpos3x then
-            legsMatSelector:SetPos(sizeX * 0.5 - funpos3x, sizeY * 0.2 + ScreenScale(32))
+            legsMatSelector:SetPos(rightButtonsX - funpos3x, buttonsTopY + ScreenScale(32))
         end
     end
     function legsMatSelector:Paint(w,h)
@@ -968,13 +991,14 @@ function PANEL:PostInit()
         end
     end
 
-    local bootsMatSelector = vgui.Create("DButton",viewer)
+    local bootsMatSelector = vgui.Create("DButton", main)
     bootsMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     bootsMatSelector:SetFont("ZCity_Tiny")
     bootsMatSelector:SetText("Boots")
+    SetupCharacterButton(bootsMatSelector)
     function bootsMatSelector:Think()
         if funpos3x then
-            bootsMatSelector:SetPos(sizeX * 0.5 - funpos3x, sizeY * 0.2 + ScreenScale(64))
+            bootsMatSelector:SetPos(rightButtonsX - funpos3x, buttonsTopY + ScreenScale(64))
         end
     end
     function bootsMatSelector:Paint(w,h)
@@ -1006,13 +1030,16 @@ function PANEL:PostInit()
         end
     end
 
-    local glovesSelector = vgui.Create("DButton",viewer)
+    local parentPanel = self:GetParent()
+
+    local glovesSelector = vgui.Create("DButton", main)
     glovesSelector:SetSize(ScreenScale(100),ScreenScale(16))
     glovesSelector:SetFont("ZCity_Tiny")
     glovesSelector:SetText("Gloves")
+    SetupCharacterButton(glovesSelector)
     function glovesSelector:Think()
         if funpos3x then
-            glovesSelector:SetPos(sizeX * 0.5 - funpos3x, sizeY * 0.2 + ScreenScale(96))
+            glovesSelector:SetPos(rightButtonsX - funpos3x, buttonsTopY + ScreenScale(96))
         end
     end
     function glovesSelector:Paint(w,h)
@@ -1038,13 +1065,14 @@ function PANEL:PostInit()
         end
     end
 
-    local faceMatSelector = vgui.Create("DButton",viewer)
+    local faceMatSelector = vgui.Create("DButton", main)
     faceMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     faceMatSelector:SetFont("ZCity_Tiny")
     faceMatSelector:SetText("Facemap")
+    SetupCharacterButton(faceMatSelector)
     function faceMatSelector:Think()
         if funpos3x then
-            faceMatSelector:SetPos(sizeX * 0.5 - funpos3x, sizeY * 0.2 + ScreenScale(96 + 32))
+            faceMatSelector:SetPos(rightButtonsX - funpos3x, buttonsTopY + ScreenScale(128))
         end
     end
     function faceMatSelector:Paint(w,h)
@@ -1072,7 +1100,13 @@ function PANEL:PostInit()
     local oldClose = self.Close
     function self:Close()
         CloseAllAccessoryMenus()
+        gui.EnableScreenClicker(false)
         if oldClose then oldClose(self) end
+    end
+
+    function self:OnKeyCodePressed(keyCode)
+        if keyCode ~= KEY_ESCAPE then return end
+        self:Close()
     end
     self:CallbackAppearance()
 end
@@ -1092,9 +1126,21 @@ function hg.CreateApperanceMenu(ParentPanel)
         if IsValid(zpan) then
             zpan:Close()
         end
-        zpan = vgui.Create("HG_AppearanceMenu",ParentPanel)
-        zpan:SetSize(ParentPanel:GetWide(),ParentPanel:GetTall())
-        zpan:SetPos(0,0)
+
+        local parent = IsValid(ParentPanel) and ParentPanel or nil
+        zpan = vgui.Create("HG_AppearanceMenu", parent)
+
+        if IsValid(parent) then
+            zpan:SetSize(parent:GetWide(), parent:GetTall())
+            zpan:SetPos(0, 0)
+        else
+            zpan:SetSize(ScrW(), ScrH())
+            zpan:SetPos(0, 0)
+            zpan:MakePopup()
+            zpan:SetMouseInputEnabled(true)
+            zpan:SetKeyboardInputEnabled(true)
+            gui.EnableScreenClicker(true)
+        end
     end)
     
 end

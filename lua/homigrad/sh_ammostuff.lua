@@ -357,18 +357,18 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 49,
+			Damage = 44,
 			Force = 44,
-			Penetration = 9.2,
+			Penetration = 13,
 			Shell = "556x45",
-			Speed = 980,
+			Speed = 890,
 			Diameter = 5.56,
-			Mass = 3.56,
+			Mass = 4,
 			Icon = matRfileAmmo
 		}
 	},
-	["5.56x45mmm855"] = {
-		name = "5.56x45 mm M855",
+	["5.56x45mmm856"] = {
+		name = "5.56x45 mm M856",
 		allowed = true,
 		dmgtype = DMG_BULLET,
 		tracer = TRACER_LINE,
@@ -384,24 +384,24 @@ hg.ammotypes = {
 			TracerHeadSize = 90,
 			TracerLength = 255,
 			TracerWidth = 5,
-			TracerColor = Color(0, 255, 0),
+			TracerColor = Color(255, 0, 0),
 			TracerTPoint1 = 0.25,
 			TracerTPoint2 = 1,
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 38,
+			Damage = 44,
 			Force = 44,
-			Penetration = 13.5,
+			Penetration = 16,
 			Shell = "556x45",
-			Speed = 920,
+			Speed = 860,
 			Diameter = 5.56,
 			Mass = 4,
 			Icon = matRfileAmmo
 		}
 	},
-	["5.56x45mmm855a1"] = {
-		name = "5.56x45 mm M855A1",
+	["5.56x45mmap"] = {
+		name = "5.56x45 mm AP",
 		allowed = true,
 		dmgtype = DMG_BULLET,
 		tracer = TRACER_LINE,
@@ -423,46 +423,13 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 34,
+			Damage = 44,
 			Force = 44,
-			Penetration = 20.4,
+			Penetration = 15,
 			Shell = "556x45",
-			Speed = 940,
+			Speed = 980,
 			Diameter = 5.56,
 			Mass = 4,
-			Icon = matRfileAmmo
-		}
-	},
-	["5.56x45mmm995"] = {
-		name = "5.56x45 mm M995",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 120,
-		minsplash = 5,
-		maxsplash = 5,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 2,
-			TracerLength = 155,
-			TracerWidth = 2,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 29,
-			Force = 29,
-			Penetration = 21.9,
-			Shell = "556x45",
-			Speed = 1030,
-			Diameter = 5.56,
-			Mass = 3.4,
 			Icon = matRfileAmmo
 		}
 	},
@@ -489,14 +456,14 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 57,
+			Damage = 68,
 			Force = 45,
-			Penetration = 8.2,
+			Penetration = 9.98,
 			Shell = "762x39",
-			Speed = 715,
+			Speed = 772,
 			AirResistMul = 0.00011,
 			Diameter = 7.62,
-			Mass = 8.1,
+			Mass = 8.5,
 			Icon = matRfileAmmo
 		}
 	},
@@ -523,14 +490,14 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 48,
+			Damage = 50,
 			Force = 50,
-			Penetration = 12.9,
+			Penetration = 13,
 			Shell = "762x39",
-			Speed = 715,
+			Speed = 650,
 			AirResistMul = 0.00011,
 			Diameter = 7.62,
-			Mass = 7.9,
+			Mass = 8.5,
 			Icon = matRfileAmmo
 		}
 	},
@@ -557,18 +524,18 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 47,
+			Damage = 58.8,
 			Force = 66,
-			Penetration = 18.2,
+			Penetration = 17.8,
 			Shell = "762x39",
-			Speed = 720,
+			Speed = 730,
 			AirResistMul = 0.00011,
 			Diameter = 7.62,
-			Mass = 7.9,
+			Mass = 8.5,
 			Icon = matRfileAmmo
 		}
 	},
-	[".366tkmfmj"] = {
+	[".366tkm"] = {
 		name = ".366 TKM",
 		allowed = true,
 		dmgtype = DMG_BULLET,
@@ -593,46 +560,12 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 50,
 			Force = 50,
-			Penetration = 11.5,
+			Penetration = 3,
 			Shell = "366tkm",
 			Speed = 650,
 			AirResistMul = 0.00011,
 			Diameter = 9.58,
 			Mass = 13.5,
-			Icon = matRfileAmmo
-		}
-	},
-	[".366tkmgeksa"] = {
-		name = ".366 TKM 'Geksa'",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 160,
-		maxcarry = 120,
-		minsplash = 8,
-		maxsplash = 8,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 3,
-			TracerLength = 175,
-			TracerWidth = 3,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 84,
-			Force = 50,
-			Penetration = 7.9,
-			Shell = "366tkm",
-			Speed = 550,
-			AirResistMul = 0.00011,
-			Diameter = 9.58,
-			Mass = 15.5,
 			Icon = matRfileAmmo
 		}
 	},
@@ -659,79 +592,13 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 37,
+			Damage = 35,
 			Force = 35,
-			Penetration = 10.2,
-			Shell = "545x39",
-			Speed = 890,
-			Diameter = 5.45,
-			Mass = 3.4,
-			Icon = matRfileAmmo
-		}
-	},
-	["5.45x39mm7n22"] = {
-		name = "5.45x39 mm BP 7N22",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 120,
-		minsplash = 5,
-		maxsplash = 5,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 2,
-			TracerLength = 155,
-			TracerWidth = 2,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 33,
-			Force = 33,
-			Penetration = 17.8,
-			Shell = "545x39",
-			Speed = 890,
-			Diameter = 5.45,
-			Mass = 3.4,
-			Icon = matRfileAmmo
-		}
-	},
-	["5.45x39mm7n39"] = {
-		name = "5.45x39 mm PPBS 7N39",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 120,
-		minsplash = 5,
-		maxsplash = 5,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 2,
-			TracerLength = 155,
-			TracerWidth = 2,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 26,
-			Force = 26,
-			Penetration = 21.9,
+			Penetration = 11,
 			Shell = "545x39",
 			Speed = 850,
 			Diameter = 5.45,
-			Mass = 4.1,
+			Mass = 4.5,
 			Icon = matRfileAmmo
 		}
 	},
@@ -796,7 +663,7 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 16,
 			Force = 8,
-			Penetration = 7.5,
+			Penetration = 8,
 			NumBullet = 8,
 			Shell = "12x70",
 			Speed = 400,
@@ -833,13 +700,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 60,
 			Force = 150,
-			Penetration = 1.1,
+			Penetration = 3,
 			Shell = "12x70beanbag",
 			Spread = Vector(0, 0, 0),
-			Speed = 90,
+			Speed = 550,
 			AirResistMul = 0.0003,
 			Diameter = 12,
-			Mass = 40,
+			Mass = 20,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(122,122,122)
 		}
@@ -868,15 +735,15 @@ hg.ammotypes = {
 			NoSpin = true,
 		},
 		BulletSettings = {
-			Damage = 115,
+			Damage = 120,
 			Force = 120,
-			Penetration = 10.1,
+			Penetration = 15,
 			Shell = "12x70slug",
 			Spread = Vector(0, 0, 0),
-			Speed = 430,
+			Speed = 550,
 			AirResistMul = 0.00015,
 			Diameter = 12,
-			Mass = 32,
+			Mass = 30,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(12,75,12)
 		}
@@ -908,13 +775,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 200,
 			Force = 90,
-			Penetration = 7.2,
+			Penetration = 8,
 			Shell = "12x70slug",
 			Spread = Vector(0, 0, 0),
-			Speed = 380,
+			Speed = 410,
 			AirResistMul = 0.00015,
 			Diameter = 12,
-			Mass = 20,
+			Mass = 30,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(50,110,90)
 		}
@@ -945,7 +812,7 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 16,
 			Force = 8,
-			Penetration = 1,
+			Penetration = 8,
 			NumBullet = 8,
 			Shell = "12x70blank",
 			Speed = 400,
@@ -983,13 +850,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 20,
 			Force = 6,
-			Penetration = 8.1,
+			Penetration = 8,
 			NumBullet = 10,
 			Shell = "23x75sh10",
-			Speed = 360,
+			Speed = 300,
 			AirResistMul = 0.0007,
 			Diameter = 23/10,
-			Mass = 45/10,
+			Mass = 32/10,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(255,185,0)
 		}
@@ -1020,10 +887,10 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 20,
 			Force = 2,
-			Penetration = 7.5,
+			Penetration = 8,
 			NumBullet = 25,
 			Shell = "23x75sh25",
-			Speed = 360,
+			Speed = 300,
 			AirResistMul = 0.0007,
 			Diameter = 23/25,
 			Mass = 32/25,
@@ -1055,15 +922,15 @@ hg.ammotypes = {
 			NoSpin = true,
 		},
 		BulletSettings = {
-			Damage = 150,
+			Damage = 120,
 			Force = 100,
-			Penetration = 12.4,
+			Penetration = 25,
 			Shell = "23x75barricade",
 			Spread = Vector(0, 0, 0),
-			Speed = 400,
+			Speed = 420,
 			AirResistMul = 0.0009,
 			Diameter = 23,
-			Mass = 55,
+			Mass = 40,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(255,185,0)
 		}
@@ -1092,15 +959,15 @@ hg.ammotypes = {
 			NoSpin = true,
 		},
 		BulletSettings = {
-			Damage = 1,
-			Force = 1,
-			Penetration = 1,
-			NumBullet = 1,
+			Damage = 16,
+			Force = 6,
+			Penetration = 8,
+			NumBullet = 8,
 			Shell = "23x75zvezda",
-			Speed = 80,
+			Speed = 400,
 			AirResistMul = 0.0003,
 			Diameter = 12/8,
-			Mass = 60,
+			Mass = 32/8,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(255,185,0),
 			Distance = 32,
@@ -1132,13 +999,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 80,
 			Force = 100,
-			Penetration = 2.2,
+			Penetration = 1,
 			Shell = "23x75waver",
 			Spread = Vector(0, 0, 0),
-			Speed = 120,
+			Speed = 390,
 			AirResistMul = 0.0008,
 			Diameter = 23,
-			Mass = 15,
+			Mass = 20,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(255,185,0)
 		}
@@ -1169,13 +1036,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 12,
 			Force = 6,
-			Penetration = 7.6,
+			Penetration = 6,
 			NumBullet = 11,
 			Shell = "20/70",
-			Speed = 410,
+			Speed = 420,
 			AirResistMul = 0.00025,
 			Diameter = 20/6,
-			Mass = 24/6,
+			Mass = 26/6,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(255,150,0)
 		}
@@ -1206,13 +1073,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 120,
 			Force = 120,
-			Penetration = 9.8,
+			Penetration = 8,
 			Shell = "20/70",
 			Spread = Vector(0, 0, 0),
-			Speed = 450,
+			Speed = 420,
 			AirResistMul = 0.00025,
-			Diameter = 20,
-			Mass = 24,
+			Diameter = 20/6,
+			Mass = 26/6,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(12,75,12)
 		}
@@ -1243,13 +1110,13 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 16,
 			Force = 6,
-			Penetration = 6.1,
+			Penetration = 6,
 			NumBullet = 8,
 			Shell = "20/70",
-			Speed = 400,
+			Speed = 520,
 			AirResistMul = 0.00025,
 			Diameter = 20/6,
-			Mass = 10/6,
+			Mass = 26/6,
 			Icon = matShotgunAmmo,
 			ShellColor = Color(195,143,0),
 		}
@@ -1277,46 +1144,13 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 23,
+			Damage = 24,
 			Force = 24,
-			Penetration = 7.9,
+			Penetration = 6,
 			Shell = "9x18",
-			Speed = 315,
+			Speed = 309,
 			Diameter = 9,
-			Mass = 6.1,
-			Icon = matPistolAmmo
-		}
-	},
-	["9x18mmpbm"] = {
-		name = "9x18 mm PBM 7N25",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 90,
-		maxcarry = 80,
-		minsplash = 1,
-		maxsplash = 1,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 1,
-			TracerLength = 45,
-			TracerWidth = 1,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 15000
-		},
-		BulletSettings = {
-			Damage = 23,
-			Force = 24,
-			Penetration = 8.1,
-			Shell = "9x18",
-			Speed = 485,
-			Diameter = 9,
-			Mass = 3.7,
+			Mass = 7,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1345,11 +1179,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 24,
 			Force = 24,
-			Penetration = 3.1,
+			Penetration = 6,
 			Shell = "9x18",
-			Speed = 290,
+			Speed = 309,
 			Diameter = 9,
-			Mass = 4.8,
+			Mass = 7,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1378,44 +1212,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 25,
 			Force = 25,
-			Penetration = 3.8,
+			Penetration = 7,
 			Shell = "9x19",
-			Speed = 365,
+			Speed = 352,
 			Diameter = 9,
-			Mass = 7.5,
-			Icon = matPistolAmmo
-		}
-	},
-	["9x19mmpbp"] = {
-		name = "9x19 mm PBP gzh",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 80,
-		minsplash = 1,
-		maxsplash = 1,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 1,
-			TracerLength = 45,
-			TracerWidth = 1,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 15000
-		},
-		BulletSettings = {
-			Damage = 22,
-			Force = 22,
-			Penetration = 11.8,
-			Shell = "9x19",
-			Speed = 535,
-			Diameter = 9,
-			Mass = 4.1,
+			Mass = 7,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1442,13 +1243,13 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 48,
+			Damage = 58.23,
 			Force = 27,
-			Penetration = 3.6,
+			Penetration = 6.1,
 			Shell = "9x19",
-			Speed = 340,
+			Speed = 291,
 			Diameter = 9,
-			Mass = 6.5,
+			Mass = 7,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1475,13 +1276,13 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 21,
+			Damage = 25,
 			Force = 25,
-			Penetration = 3.2,
+			Penetration = 7,
 			Shell = "45acp",
-			Speed = 310,
+			Speed = 352,
 			Diameter = 9,
-			Mass = 4.8,
+			Mass = 7,
 			Icon = matRfileAmmo
 		}
 	},
@@ -1508,13 +1309,13 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 28,
+			Damage = 45,
 			Force = 45,
-			Penetration = 4.3,
+			Penetration = 4,
 			Shell = "45acp",
-			Speed = 350,
+			Speed = 256,
 			Diameter = 11.18,
-			Mass = 10.7,
+			Mass = 15,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1543,44 +1344,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 30,
 			Force = 35,
-			Penetration = 3.9,
+			Penetration = 6.5,
 			Shell = "45acp",
-			Speed = 260,
+			Speed = 259,
 			Diameter = 11.19,
-			Mass = 14.9,
-			Icon = matPistolAmmo
-		}
-	},
-	[".45acpp"] = {
-		name = ".45 ACP +P",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 80,
-		minsplash = 1,
-		maxsplash = 1,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 1,
-			TracerLength = 45,
-			TracerWidth = 1,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 15000
-		},
-		BulletSettings = {
-			Damage = 30,
-			Force = 35,
-			Penetration = 7.8,
-			Shell = "45acp",
-			Speed = 330,
-			Diameter = 11.19,
-			Mass = 12.6,
+			Mass = 14,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1607,13 +1375,13 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 52,
+			Damage = 50,
 			Force = 50,
-			Penetration = 3.3,
+			Penetration = 5,
 			Shell = "45acp",
-			Speed = 280,
+			Speed = 259,
 			Diameter = 11.19,
-			Mass = 14.9,
+			Mass = 14,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1675,11 +1443,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 25,
 			Force = 25,
-			Penetration = 3.7,
+			Penetration = 7,
 			Shell = "9x19",
-			Speed = 340,
+			Speed = 352,
 			Diameter = 9,
-			Mass = 7.6,
+			Mass = 7,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1709,11 +1477,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 30,
 			Force = 30,
-			Penetration = 0.8,
+			Penetration = 1,
 			Shell = "9x18",
-			Speed = 260,
+			Speed = 259,
 			Diameter = 11.19,
-			Mass = 1.5,
+			Mass = 10,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1743,7 +1511,7 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 8,
 			Force = 5,
-			Penetration = 0.5,
+			Penetration = 4,
 			Shell = "9x18",
 			Speed = 259,
 			Diameter = 11.19,
@@ -1776,9 +1544,9 @@ hg.ammotypes = {
 			NoSpin = true,
 		},
 		BulletSettings = {
-			Damage = 5,
+			Damage = 8,
 			Force = 5,
-			Penetration = 0.5,
+			Penetration = 4,
 			Shell = "9x18",
 			Speed = 259,
 			Diameter = 11.19,
@@ -1825,11 +1593,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 35,
 			Force = 32,
-			Penetration = 2.3,
+			Penetration = 1,
 			Shell = "50ae",
-			Speed = 124,
+			Speed = 250,
 			Diameter = 18,
-			Mass = 11.6,
+			Mass = 22,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1859,12 +1627,12 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 15,
 			Force = 10,
-			Penetration = 1,
+			Penetration = 2,
 			Shell = "50ae",
 			Speed = 250,
 			Diameter = 18,
 			Distance = 32,
-			Mass = 18,
+			Mass = 1180,
 			Icon = matPistolAmmo
 		}
 	},
@@ -1891,46 +1659,13 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 23,
-			Force = 23,
-			Penetration = 8.7,
+			Damage = 32,
+			Force = 32,
+			Penetration = 10,
 			Shell = "556x45",
-			Speed = 620,
+			Speed = 734,
 			Diameter = 4.6,
-			Mass = 2.6,
-			Icon = matRfileAmmo
-		}
-	},
-	["4.6x30mmap"] = {
-		name = "4.6x30 mm AP SX",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 120,
-		minsplash = 4,
-		maxsplash = 4,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 2,
-			TracerLength = 45,
-			TracerWidth = 2.5,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 22,
-			Force = 22,
-			Penetration = 11.8,
-			Shell = "556x45",
-			Speed = 675,
-			Diameter = 4.6,
-			Mass = 2,
+			Mass = 1.6,
 			Icon = matRfileAmmo
 		}
 	},
@@ -1957,44 +1692,11 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 26,
-			Force = 26,
-			Penetration = 9.1,
+			Damage = 32,
+			Force = 32,
+			Penetration = 10.5,
 			Shell = "556x45",
-			Speed = 792,
-			Diameter = 5.7,
-			Mass = 1.8,
-			Icon = matRfileAmmo
-		}
-	},
-	["5.7x28mmap"] = {
-		name = "5.7x28 mm SS190",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 100,
-		maxcarry = 150,
-		minsplash = 4,
-		maxsplash = 4,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 5,
-			TracerLength = 45,
-			TracerWidth = 2.5,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 23,
-			Force = 23,
-			Penetration = 11.7,
-			Shell = "556x45",
-			Speed = 716,
+			Speed = 853,
 			Diameter = 5.7,
 			Mass = 2,
 			Icon = matRfileAmmo
@@ -2024,11 +1726,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 40,
 			Force = 40,
-			Penetration = 9.5,
+			Penetration = 10,
 			Shell = "10mm",
-			Speed = 450,
+			Speed = 472,
 			Diameter = 10.9,
-			Mass = 15.6,
+			Mass = 13,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2057,11 +1759,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 40,
 			Force = 40,
-			Penetration = 5.8,
+			Penetration = 10,
 			Shell = "10mm",
-			Speed = 440,
+			Speed = 450,
 			Diameter = 9,
-			Mass = 10.2,
+			Mass = 10,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2090,11 +1792,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 27,
 			Force = 27,
-			Penetration = 3.5,
+			Penetration = 7,
 			Shell = "10mm",
 			Speed = 290,
 			Diameter = 9.1,
-			Mass = 10.2,
+			Mass = 10,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2111,7 +1813,7 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 550,
 			Force = 100,
-			Penetration = 270.2,
+			Penetration = 320,
 			Shell = "50cal",
 			Speed = 1000,
 			Diameter = 14.5,
@@ -2141,9 +1843,9 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 550,
+			Damage = 250,
 			Force = 100,
-			Penetration = 270.2,
+			Penetration = 320,
 			Shell = "50cal",
 			Speed = 1000,
 			Diameter = 14.5,
@@ -2173,43 +1875,11 @@ hg.ammotypes = {
 			TracerSpeed = 15000
 		},
 		BulletSettings = {
-			Damage = 52,
+			Damage = 42,
 			Force = 42,
-			Penetration = 10.9,
+			Penetration = 15,
 			Shell = "762x39",
-			Speed = 290,
-			Diameter = 9,
-			Mass = 16,
-			Icon = matRfileAmmo
-		}
-	},
-	["9x39mmsp6"] = {
-		name = "9x39 mm SP-6",
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 150,
-		maxcarry = 150,
-		minsplash = 5,
-		maxsplash = 5,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 5,
-			TracerLength = 75,
-			TracerWidth = 2.5,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 0.5,
-			TracerSpeed = 15000
-		},
-		BulletSettings = {
-			Damage = 50,
-			Force = 42,
-			Penetration = 16.8,
-			Shell = "762x39",
-			Speed = 290,
+			Speed = 300,
 			Diameter = 9,
 			Mass = 16,
 			Icon = matRfileAmmo
@@ -2238,13 +1908,13 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 52,
+			Damage = 40,
 			Force = 40,
-			Penetration = 9.2,
+			Penetration = 11,
 			Shell = "50ae",
-			Speed = 450,
+			Speed = 440,
 			Diameter = 12.7,
-			Mass = 21,
+			Mass = 19,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2271,13 +1941,13 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 65,
+			Damage = 81,
 			Force = 40,
-			Penetration = 11.2,
+			Penetration = 10,
 			Shell = "50ae",
-			Speed = 470,
+			Speed = 460,
 			Diameter = 12.7,
-			Mass = 20,
+			Mass = 19,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2304,13 +1974,13 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 95,
+			Damage = 101.5,
 			Force = 110,
-			Penetration = 5.4,
+			Penetration = 9.6,
 			Shell = "50ae",
 			Speed = 440,
 			Diameter = 12.7,
-			Mass = 19.4,
+			Mass = 19,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2339,11 +2009,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 65,
 			Force = 65,
-			Penetration = 14.1,
+			Penetration = 18,
 			Shell = "762x51",
-			Speed = 850,
+			Speed = 840,
 			Diameter = 7.62,
-			Mass = 9.5,
+			Mass = 10,
 			Icon = matRfileAmmo
 		}
 	},
@@ -2372,11 +2042,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 74.7,
 			Force = 69,
-			Penetration = 22.4,
+			Penetration = 23.4,
 			Shell = "762x51",
-			Speed = 910,
+			Speed = 930,
 			Diameter = 7.62,
-			Mass = 8.2,
+			Mass = 18,
 			Icon = matRfileAmmo
 		}
 	},
@@ -2405,44 +2075,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 70,
 			Force = 70,
-			Penetration = 12.3,
+			Penetration = 20,
 			Shell = "762x54",
-			Speed = 830,
+			Speed = 860,
 			Diameter = 7.62,
-			Mass = 9.6,
-			Icon = matRfileAmmo
-		}
-	},
-	["7.62x54mm7n26"] = {
-		name = "7.62x54 mm 7N26",
-		allowed = true,
-		dmgtype = DMG_BULLET,
-		tracer = TRACER_LINE,
-		plydmg = 0,
-		npcdmg = 0,
-		force = 250,
-		maxcarry = 120,
-		minsplash = 11,
-		maxsplash = 11,
-		TracerSetings = {
-			TracerBody = Material("particle/fire"),
-			TracerTail = Material("effects/laser_tracer"),
-			TracerHeadSize = 5,
-			TracerLength = 75,
-			TracerWidth = 2,
-			TracerColor = Color(255, 237, 155),
-			TracerTPoint1 = 0.25,
-			TracerTPoint2 = 1,
-			TracerSpeed = 25000
-		},
-		BulletSettings = {
-			Damage = 68,
-			Force = 68,
-			Penetration = 19.3,
-			Shell = "762x54",
-			Speed = 825,
-			Diameter = 7.62,
-			Mass = 9.9,
+			Mass = 10,
 			Icon = matRfileAmmo
 		}
 	},
@@ -2470,11 +2107,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 180,
 			Force = 60,
-			Penetration = 32.2,
+			Penetration = 35,
 			Shell = ".338Lapua",
-			Speed = 910,
+			Speed = 880,
 			Diameter = 8.6,
-			Mass = 16.2,
+			Mass = 16,
 			Icon = matRfileAmmo
 		}
 	},
@@ -2501,13 +2138,13 @@ hg.ammotypes = {
 			TracerSpeed = 10000
 		},
 		BulletSettings = {
-			Damage = 16,
+			Damage = 17,
 			Force = 20,
-			Penetration = 2.4,
+			Penetration = 6.5,
 			Shell = ".22lr",
-			Speed = 330,
+			Speed = 335,
 			Diameter = 5.72,
-			Mass = 2.6,
+			Mass = 2.5,
 			Icon = matPistolAmmo
 		}
 	},
@@ -2546,7 +2183,7 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 150,
 			Force = 40,
-			Penetration = 60.4,
+			Penetration = 60,
 			Shell = "50cal",
 			Speed = 820,
 			Diameter = 12.7,
@@ -2578,11 +2215,11 @@ hg.ammotypes = {
 		BulletSettings = {
 			Damage = 255,
 			Force = 40,
-			Penetration = 21.5,
+			Penetration = 9,
 			Shell = "50cal",
-			Speed = 295, --asha it's subsonic rifle... deka you are stupid
+			Speed = 315, --asha it's subsonic rifle... deka you are stupid
 			Diameter = 12.7,
-			Mass = 48,
+			Mass = 20,
 			Icon = matRfileAmmo
 		}
 	},
@@ -2725,9 +2362,9 @@ hg.ammotypes = {
 			TracerSpeed = 25000
 		},
 		BulletSettings = {
-			Damage = 58,
+			Damage = 50,
 			Force = 50,
-			Penetration = 23.6,
+			Penetration = 17,
 			Shell = "Pulse",
 			Speed = 1000,
 			Diameter = 10,
@@ -2871,90 +2508,65 @@ hg.ammotypes = {
 local ammotypes = hg.ammotypes
 local ammoents = {
 	["5.56x45mm"] = {
-		Icon = "vgui/hud/556fmj.png",
+		Icon = "vgui/hud/hmcd_round_556",
 		Material = "models/hmcd_ammobox_556",
 		Scale = 1
 	},
-	["5.56x45mmm855"] = {
-		Icon = "vgui/hud/m855.png",
-		Material = "models/hmcd_ammobox_556",
-		Scale = 1
-	},
-	["5.56x45mmm855a1"] = {
-		Icon = "vgui/hud/m855a1.png",
-		Material = "models/hmcd_ammobox_556",
-		Scale = 1
-	},
-	["5.56x45mmm995"] = {
-		Icon = "vgui/hud/m995.png",
+	["5.56x45mmap"] = {
+		Icon = "vgui/hud/556apzcity",
 		Model = "models/zcity/ammo/ammo_556x45_ap.mdl",
 		Scale = 1,
 	},
+	["5.56x45mmm856"] = {
+		Icon = "vgui/hud/556m856zcity",
+		Material = "models/hmcd_ammobox_556",
+		Scale = 1,
+		Color = Color(255,0,0)
+	},
 	["7.62x39mm"] = {
-		Icon = "vgui/hud/ps.png",
+		Icon = "vgui/hud/hmcd_round_76239",
 		Model = "models/items/ammo_76239.mdl",
 		Scale = 1
 	},
 	["7.62x51mm"] = {  
-		Icon = "vgui/hud/m80.png",
+		Icon = "vgui/hud/hmcd_round_792",
 		Model = "models/items/ammo_76251.mdl",
 		Scale = 1,
 		Count = 25,
 	},
 	["7.62x51mmm993"] = {  
-		Icon = "vgui/hud/m993.png",
+		Icon = "vgui/hud/76251m993zcity",
 		Model = "models/items/ammo_76251.mdl",
 		Scale = 1,
 		Count = 25,
 	},
 	["7.62x54mm"] = {
-		Icon = "vgui/hud/std.png",
-		Model = "models/zcity/ammo/ammo_762x54_7h1.mdl",
-		Scale = 1,
-		Count = 25,
-	},
-	["7.62x54mm7n26"] = {
-		Icon = "vgui/hud/t46m.png",
+		Icon = "vgui/hud/76254zcity",
 		Model = "models/zcity/ammo/ammo_762x54_7h1.mdl",
 		Scale = 1,
 		Count = 25,
 	},
 	["7.62x39mmsp"] = {
-		Icon = "vgui/hud/hp.png",
+		Icon = "vgui/hud/762spzcity",
 		Model = "models/zcity/ammo/ammo_762x54_7h1.mdl",
 		Scale = 1,
 		Count = 25,
 		Color = Color(14,54,22)
 	},
 	["7.62x39mmbp"] = {
-		Icon = "vgui/hud/bp.png",
+		Icon = "vgui/hud/762bpzcity",
 		Model = "models/zcity/ammo/ammo_762x54_7h1.mdl",
 		Scale = 1,
 		Count = 25,
 		Color = Color(14,54,22)
 	},
-	[".366tkmfmj"] = {
-		Icon = "vgui/hud/366fmj.png",
-		Model = "models/items/ammo_76239.mdl",
-		Scale = 1
-	},
-	[".366tkmgeksa"] = {
-		Icon = "vgui/hud/geksa.png",
+	[".366tkm"] = {
+		Icon = "vgui/hud/762spzcity",
 		Model = "models/items/ammo_76239.mdl",
 		Scale = 1
 	},
 	["5.45x39mm"] = {
-		Icon = "vgui/hud/545ps.png",
-		Model = "models/zcity/ammo/ammo_545x39_fmj.mdl",
-		Scale = 1,
-	},
-	["5.45x39mm7n22"] = {
-		Icon = "vgui/hud/545bp.png",
-		Model = "models/zcity/ammo/ammo_545x39_fmj.mdl",
-		Scale = 1,
-	},
-	["5.45x39mm7n39"] = {
-		Icon = "vgui/hud/ppbs.png",
+		Icon = "vgui/hud/545zcity",
 		Model = "models/zcity/ammo/ammo_545x39_fmj.mdl",
 		Scale = 1,
 	},
@@ -2965,224 +2577,197 @@ local ammoents = {
 		Spawnable = false
 	},
 	["12/70gauge"] = {
-		Icon = "vgui/hud/def.png",
+		Icon = "vgui/hud/hmcd_round_12",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.1,
 		Count = 12,
 	},
 	["12/70beanbag"] = {
-		Icon = "vgui/hud/flech.png",
+		Icon = "vgui/hud/hmcd_round_beanbag",
 		Model = "models/ammo/beanbag12_ammo.mdl",
 		Scale = 1,
 		Count = 12,
 	},
 	["12/70slug"] = {
-		Icon = "vgui/hud/12copper.png",
+		Icon = "vgui/hud/12_70slugzcity",
 		Model = "models/zcity/ammo/ammo_12x76_zhekan.mdl",
 		Scale = 1.1,
 		Count = 12,
 		Color = Color(125, 155, 95)
 	},
 	["12/70rip"] = {
-		Icon = "vgui/hud/p3.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Model = "models/zcity/ammo/ammo_12x76_zhekan.mdl",
 		Scale = 1.1,
 		Count = 12,
 		Color = Color(22, 168, 221)
 	},
 	["12/70blank"] = {
-		Icon = "vgui/hud/slug.png",
+		Icon = "vgui/hud/12_70blankzcity",
 		Model = "models/ammo/beanbag12_ammo.mdl",
 		Scale = 1,
 		Count = 12,
 		Color = Color(22, 168, 221)
 	},
 	["23x75sh10"] = {
-		Icon = "vgui/hud/sh.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.2,
 		Count = 12,
 	},
 	["23x75sh25"] = {
-		Icon = "vgui/hud/sh25.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.2,
 		Count = 12,
 	},
 	["23x75barricade"] = {
-		Icon = "vgui/hud/bar.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.2,
 		Count = 12,
 	},
 	["23x75zvezda"] = {
-		Icon = "vgui/hud/z.png",
+		Icon = "vgui/hud/12_70blankzcity",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.2,
 		Count = 12,
 	},
 	["23x75waver"] = {
-		Icon = "vgui/hud/sh.png",
+		Icon = "vgui/hud/hmcd_round_beanbag",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.2,
 		Count = 12,
 	},
 	["20/70gauge"] = {
-		Icon = "vgui/hud/20ga_std.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.1,
 		Count = 12,
 		Color = Color(255,150,0)
 	},
 	["20/70slug"] = {
-		Icon = "vgui/hud/20ga_p6u.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.1,
 		Count = 12,
 		Color(0,84,0)
 	},
 	["20/70flechette"] = {
-		Icon = "vgui/hud/20ga_p3.png",
+		Icon = "vgui/hud/bullets/buck_caliber.png",
 		Material = "models/hmcd_ammobox_12",
 		Scale = 1.1,
 		Count = 12,
 		Color = Color(154,154,154)
 	},
 	["9x18mm"] = {
-		Icon = "vgui/hud/bullet.png",
-		Model = "models/zcity/ammo/ammo_9x18_pmm.mdl",
-		Scale = 1
-	},
-	["9x18mmpbm"] = {
-		Icon = "vgui/hud/bullet.png",
+		Icon = "vgui/hud/hmcd_round_918",
 		Model = "models/zcity/ammo/ammo_9x18_pmm.mdl",
 		Scale = 1
 	},
 	["9x17mm"] = {
-		Icon = "vgui/hud/bullet.png",
+		Icon = "vgui/hud/hmcd_round_918",
 		Model = "models/zcity/ammo/ammo_9x18_pmm.mdl",
 		Scale = 1
 	},
 	["9x19mmparabellum"] = {
-		Icon = "vgui/hud/m882.png",
-		Material = "models/hmcd_ammobox_9",
-		Scale = 0.8,
-	},
-	["9x19mmpbp"] = {
-		Icon = "vgui/hud/pbpgzh.png",
+		Icon = "vgui/hud/hmcd_round_9",
 		Material = "models/hmcd_ammobox_9",
 		Scale = 0.8,
 	},
 	["9x19mmgreentracer"] = {
-		Icon = "vgui/hud/tracer.png",
+		Icon = "vgui/hud/9x19greentracerzcity",
 		Color = Color(0, 255, 0),
 		Scale = 0.8
 	},
 	["9x19mmqm"] = {
-		Icon = "vgui/hud/quake.png",
+		Icon = "vgui/hud/9x19quakemakerzcity",
 		Material = "models/hmcd_ammobox_9",
 		Color = Color(0, 26, 255),
 		Scale = 0.8
 	},
 	[".45rubber"] = {
-		Icon = "vgui/hud/45rub.png",
+		Icon = "vgui/hud/hmcd_round_beanshot9",
 		Model = "models/ammo/beanbag9_ammo.mdl",
 		Scale = 1
 	},
 	["9mmpakblank"] = {
-		Icon = "vgui/hud/45rub.png",
+		Icon = "vgui/hud/hmcd_round_beanshot9",
 		Model = "models/ammo/beanbag9_ammo.mdl",
 		Scale = 1
 	},
 	["9mmpakflashdefense"] = {
-		Icon = "vgui/hud/45rub.png",
+		Icon = "vgui/hud/hmcd_round_beanshot9",
 		Model = "models/ammo/beanbag9_ammo.mdl",
 		Scale = 1
 	},
 	["18x45mmtraumatic"] = {
-		Icon = "vgui/hud/1845t.png",
+		Icon = "vgui/hud/hmcd_round_beanshot9",
 		Model = "models/zcity/ammo/ammo_12x70_buck.mdl",
 		Scale = 0.8,
 		Color = Color(87, 110, 82),
 		Count = 4,
 	},
 	["18x45mmflashdefense"] = {
-		Icon = "vgui/hud/1845t.png",
+		Icon = "vgui/hud/hmcd_round_beanshot9",
 		Model = "models/zcity/ammo/ammo_12x76_dart.mdl",
 		Scale = 0.8,
 		Color = Color(119, 47, 47),
 		Count = 4,
 	},
 	["4.6x30mm"] = {
-		Icon = "vgui/hud/47fmj.png",
-		Model = "models/4630_ammobox.mdl",
-		Scale = 1,
-	},
-	["4.6x30mmap"] = {
-		Icon = "vgui/hud/47ap.png",
+		Icon = "vgui/hud/hmcd_round_4630",
 		Model = "models/4630_ammobox.mdl",
 		Scale = 1,
 	},
 	[".44remingtonmagnum"] = {
-		Icon = "vgui/hud/44hp.png",
+		Icon = "vgui/hud/44remzcity",
 		Material = "models/hmcd_ammobox_22",
 		Color = Color(125, 155, 95),
 		Scale = 0.8,
 		Count = 20,
 	},
 	[".357magnum"] = {
-		Icon = "vgui/hud/357fmj.png",
+		Icon = "vgui/hud/357zcity",
 		Model = "models/Items/357ammobox.mdl",
 		Scale = 0.5,
 		Count = 20,
 	},
 	[".38special"] = {
-		Icon = "vgui/hud/38special.png",
+		Icon = "vgui/hud/hmcd_round_38",
 		Material = "models/hmcd_ammobox_38",
 		Color = Color(255, 255, 255),
 		Scale = 0.8,
 		Count = 20,
 	},
 	["9x39mm"] = {
-		Icon = "vgui/hud/sp5.png",
-		Model = "models/zcity/ammo/ammo_9x39_sp5.mdl",
-		Scale = 1,
-		Count = 20,
-	},
-	["9x39mmsp6"] = {
-		Icon = "vgui/hud/sp6.png",
+		Icon = "vgui/hud/939zcity",
 		Model = "models/zcity/ammo/ammo_9x39_sp5.mdl",
 		Scale = 1,
 		Count = 20,
 	},
 	["5.7x28mm"] = {
-		Icon = "vgui/hud/ss198lf.png",
-		Material = "models/hmcd_ammobox_22",
-		Scale = 1.2,
-		Color = Color(125, 155, 95)
-	},
-	["5.7x28mmap"] = {
-		Icon = "vgui/hud/ss190.png",
+		Icon = "vgui/hud/5x7zity",
 		Material = "models/hmcd_ammobox_22",
 		Scale = 1.2,
 		Color = Color(125, 155, 95)
 	},
 	[".50actionexpress"] = {
-		Icon = "vgui/hud/50fmj.png",
+		Icon = "vgui/hud/50aezcity",
 		Material = "models/hmcd_ammobox_22",
 		Scale = 1,
 		Color = Color(255, 255, 125),
 		Count = 20,
 	},
 	[".50actionexpressjhp"] = {
-		Icon = "vgui/hud/50jhp.png",
+		Icon = "vgui/hud/50aenotphzcity",
 		Material = "models/hmcd_ammobox_22",
 		Scale = 1,
 		Color = Color(73, 73, 32),
 		Count = 20,
 	},
 	[".50actionexpresscopper"] = {
-		Icon = "vgui/hud/50c.png",
+		Icon = "vgui/hud/50aenotphzcity",
 		Material = "models/hmcd_ammobox_22",
 		Scale = 1,
 		Color = Color(245, 149, 5),
@@ -3203,28 +2788,26 @@ local ammoents = {
 		Count = 20,
 	},
 	[".338lapuamagnum"] = {
-		Icon = "vgui/hud/338fmj.png",
+		Icon = "vgui/hud/388zcity",
 		Material = "models/hmcd_ammobox_792",
 		Scale = 1,
 		Color = Color(125, 255, 125),
 		Count = 20,
 	},
 	["12.7x108mm"] = {
-		Icon = "vgui/hud/127108.png",
 		Material = "models/hmcd_ammobox_792",
 		Scale = 1.6,
 		Color = Color(225, 122, 125),
 		Count = 20,
 	},
 	["12.7x55mm"] = {
-		Icon = "vgui/hud/ps12.png",
 		Material = "models/hmcd_ammobox_792",
 		Scale = 1.2,
 		Color = Color(204, 241, 140),
 		Count = 20,
 	},
 	[".22longrifle"] = {
-		Icon = "vgui/hud/22lr.png",
+		Icon = "vgui/hud/hmcd_round_22",
 		Material = "models/hmcd_ammobox_22",
 		Scale = 1
 	},
@@ -3266,28 +2849,24 @@ local ammoents = {
 		Material = "models/defcon/taser/taser",
 	},
 	[".45acp"] = {
-		Icon = "vgui/hud/45fmj.png",
-		Model = "models/zcity/ammo/ammo_1143x23_fmj.mdl"
-	},
-	[".45acpp"] = {
-		Icon = "vgui/hud/45p.png",
+		Icon = "vgui/hud/45acpzcity",
 		Model = "models/zcity/ammo/ammo_1143x23_fmj.mdl"
 	},
 	["7.62x25mm"] = {
-		Icon = "vgui/hud/akbs.png",
+		Icon = "pwb/sprites/hmcd_round_762",
 		Material = "models/hmcd_ammobox_22",
 		Color = Color(155, 149, 95)
 	},
 	[".45acphydroshock"] = {
-		Icon = "vgui/hud/hydra.png",
+		Icon = "vgui/hud/45acphydroshockzcity",
 		Model = "models/zcity/ammo/ammo_1143x23_hydro.mdl"
 	},
 	["7.65x17mm"] = {
-		Icon = "vgui/hud/45fmj.png",
+		Icon = "vgui/hud/75117zcity",
 		Model = "models/zcity/ammo/ammo_1143x23_fmj.mdl"
 	},
 	[".40sw"] = {
-		Icon = "vgui/hud/40sw.png",
+		Icon = "vgui/hud/40swzcity",
 		Model = "models/zcity/ammo/ammo_1143x23_hydro.mdl"
 	},
 	["20mm"] = {
@@ -3471,7 +3050,7 @@ if CLIENT then
 
 	hook.Add("radialOptions", "hg-ammomenu", function()
 		local organism = LocalPlayer().organism or {}
-		if not organism.otrub and table.Count(LocalPlayer():GetAmmo()) > 0 then
+		if not organism.otrub and table.Count(LocalPlayer():GetAmmo()) > 0 and lply:KeyDown(IN_WALK) then
 			hg.radialOptions[#hg.radialOptions + 1] = {
 				function()
 					RunConsoleCommand("hg_ammomenu")

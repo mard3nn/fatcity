@@ -125,39 +125,39 @@ concommand.Add("-hmcd_holdbreath",function(ply)
 end)
 
 local lowoxy = {
-	"I'm gonna faint right now... There's not enough oxygen.",
-	"There's not enough oxygen... I can't hold much longer...",
-	"I really need some fresh air...",
-	"I'm gasping for air...",
-	"Need to breathe air... or I'm gonna faint right here..."
+	"Меня сейчас вырубит... Здесь недостаточно кислорода.",
+	"Здесь недостаточно кислорода... Я долго не протяну...",
+	"Мне очень нужен свежий воздух...",
+	"Я хватаю ртом воздух...",
+	"Нужно вдохнуть воздуха... или я упаду в обморок прямо здесь..."
 }
 
 local not_enough_intake = {
-	//"I have to breathe...",
-	//"I gotta take a break...",
-	//"Need a break from this... to breathe...",
-	//"Resting sounds like a nice idea.",
-	"I need to breathe...",
-	"I'm struggling to breathe...",
+	--"Я должен дышать...",
+	--"Мне нужно передохнуть...",
+	--"Нужна передышка... чтобы подышать...",
+	--"Отдохнуть — звучит неплохо.",
+	"Мне нужно дышать...",
+	"Мне тяжело дышать...",
 }
 
 local drop_mask = {
-	"I can't breathe in this mask... I need to take it off.",
-	"Drop the mask, it's not worth it...",
-	"It's fucking disgusting... and I surely can't breathe in this...",
-	"Fucking stinks... Gotta take this mask off...",
+	"Я не могу дышать в этой маске... Мне нужно её снять.",
+	"Сними маску, оно того не стоит...",
+	"Это пипец как отвратительно... и я точно не могу в этом дышать...",
+	"Воняет жутко... Нужно снять эту маску...",
 }
 
 local drugged = {
-	"Ohhh hohoohoooo Ie-like it.....",
-	"Fukkenh awesomee..... ffffeeelin gooooood..",
-	"That's theh sStuffff DUDeeee",
-	"I reallly like whatEvER I'm feeling right now....",
-	"Oh yeahhhh this feels gooood!",
-	"I want to feel likhe this for theRRRREST of my life",
-	"Why am I here even?.. wWhatever whuhhh heh",
-	"Whoa re you? Gett outtaheree...",
-	"Don't want anything else... this is pERRRfect!..",
+	"Оооо хохоохооо Мнеее нраица.....",
+	"Ахуеннааа.... чуствууу сяа ооооче харашооо..",
+	"Вот это ПАААШТААА Чувааак",
+	"Мне ооочень нраица то, шо я ща чувствую....",
+	"Ооо даааа это приятно!",
+	"Я хачу чувствовать сибя тааак всю оостальнууу жизнь",
+	"И зачем я ваапще тут?.. П-плевать уууу хех",
+	"А ты кто такоой? Валли атсюдаа...",
+	"Не хачу ничево больше... это ПРЕЕЕЛЕСТЬ!..",
 }
 
 local bit_band,util_PointContents = bit.band,util.PointContents

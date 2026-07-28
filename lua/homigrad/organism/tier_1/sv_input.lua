@@ -491,11 +491,14 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 
 	local dmgtype = dmgInfo:GetDamageType()
 	
-	if org.godmode then return true end
-
+	local org = ent.organism
+	if not org then return end
+	
 	local ply = (ent:IsPlayer() and ent) or hg.RagdollOwner(ent)
 
 	org.isPly = IsValid(ply)
+	
+	if org.godmode then return true end
 
 	if ent == ply and IsValid(ply.FakeRagdoll) and dmgInfo:IsDamageType(DMG_BURN) then
 		return true
@@ -661,9 +664,7 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 		ent.bloodamt = ent.bloodamt or 0
 		ent.bloodamt = ent.bloodamt + 1
 		
-		timer.Simple(0, function()
-			if !IsValid(ent) then return end
-
+		timer.Simple(0,function()
 			/*if IsValid(ent) then
 				timer.Create("Blood_burst"..ent:EntIndex(),0.02,1,function()
 					if IsValid(ent) and ent.bloodamt then
@@ -677,7 +678,7 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 					end
 				end)
 			end*/
-			
+
 			if bullet and true then
 				local mul = distance / pen
 				bullet.Src = outputHole[#outputHole]
@@ -689,7 +690,7 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 				bullet.Tracer = 0
 				bullet.TracerName = "nil"
 				bullet.IgnoreEntity = ent
-				bullet.Filter = {ent, ply and ply:InVehicle() and ply:GetVehicle() or nil}
+				bullet.Filter = {ent}
 				bullet.penetrated = bullet.penetrated or 0
 				bullet.limit_ricochet = bullet.limit_ricochet or 0
 				bullet.penetrated = bullet.penetrated + 1
@@ -1117,7 +1118,7 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 			dmgInfo:GetAttacker():Remove()
 		end
 	end
-
+	
 	return !ent:IsNPC()
 end)
 
@@ -1477,6 +1478,7 @@ local function velocityDamage(ent, data)
 				hg.organism.input_list.spine3(org, bone, dmg * (math.random(4) == 1 and 1 or 0) * 3 * (hadhelmet and 0.5 or 1), dmgInfo)
 			//end
 			if dmg * 10 > 0.5 and !hadhelmet then
+				org.needotrub = true
 				org.otrub = true
 				org.shock = org.shock + 10
 			end

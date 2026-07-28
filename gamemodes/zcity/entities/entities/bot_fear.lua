@@ -145,6 +145,12 @@ if SERVER then
             end
         end
 
+        if #self.Path == 0 then
+            self.Stuck = self.Stuck + 1
+            if self.Stuck > 5 then self:Remove() end
+            return
+        end
+
         self.OpenDoorIds = {}
         
         for i = 1, #self.Path - 1 do
