@@ -387,12 +387,12 @@ MODE.Roles.standard = {
 	},
 
 	gunner = {
-		name = "Наблюдатель",
+		name = "Гражданский",
 		color = Color(158,0,190)
 	},
 
 	innocent = {
-		name = "Наблюдатель",
+		name = "Гражданский",
 		color = Color(0,120,190)
 	},
 }
@@ -405,12 +405,12 @@ MODE.Roles.wildwest = {
 	},
 
 	gunner = {
-		name = "Наблюдатель",
+		name = "Гражданский",
 		color = Color(159,85,0)
 	},
 
 	innocent = {
-		name = "Наблюдатель",
+		name = "Гражданский",
 		color = Color(159,85,0)
 	},
 }
@@ -446,7 +446,7 @@ MODE.Roles.supermario = {
 	},
 
 	innocent = {
-		objective = "Ты Марио-наблюдатель, выживай и избегай ловушек предателя!",
+		objective = "Ты Марио-Гражданский, выживай и избегай ловушек предателя!",
 		name = "Невиновный Марио",
 		color = Color(0,120,190)
 	},

@@ -161,7 +161,7 @@ function WS.WeaponSelectorDraw(ply)
             local x = centerX - w / 2
             local alpha = WS.Transparent * 255
 
-            draw.RoundedBox(0, x, y, w, itemH, ColorAlpha(Color(18, 18, 22), alpha * 0.82))
+            draw.RoundedBox(0, x, y, w, itemH, ColorAlpha(Color(49, 22, 22), alpha * 0.82))
             surface.SetDrawColor(44, 40, 40, alpha * (isSel and 0.9 or 0.2))
             surface.SetMaterial(gradientMat)
             surface.DrawTexturedRect(x, y, w, itemH)

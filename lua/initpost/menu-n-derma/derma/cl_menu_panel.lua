@@ -21,7 +21,7 @@ surface.CreateFont("ZCity_Tiny", {
 })
 
 local COLORS = {
-    bg_overlay   = Color(8, 8, 12, 200),
+    bg_overlay   = Color(24, 14, 14, 200),
     text_normal  = Color(255, 255, 255, 255),
     hover_main   = Color(180, 180, 180, 255),
     hover_danger = Color(255, 70, 70, 255),
