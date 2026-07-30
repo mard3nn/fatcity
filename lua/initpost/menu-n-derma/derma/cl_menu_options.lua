@@ -159,7 +159,7 @@ local function makeCategoryRow(parent, y, text)
         else
             for i = 1, #text do chars[i] = text:sub(i, i) end
         end
-        surface.SetFont("GOMI_SettingsCat")
+    surface.SetFont("GOMI_Btn")
         local cx = ScreenScale(16)
         for i, ch in ipairs(chars) do
             local cw = surface.GetTextSize(ch)
@@ -347,9 +347,129 @@ function hg.DrawSettings(parent)
         end
     end
 
+    local closeBtn = vgui.Create("DButton", parent)
+    closeBtn:SetText("")
+    closeBtn:SetSize(ScreenScale(28), ScreenScale(28))
+    closeBtn:SetPos(parent:GetWide() - ScreenScale(48), ScreenScale(16))
+    closeBtn:SetCursor("hand")
+    closeBtn.hover = 0
+    closeBtn.Paint = function(self, w, h)
+        self.hover = Lerp(FrameTime() * 10, self.hover, self:IsHovered() and 1 or 0)
+        if self.hover > 0.01 then
+            draw.RoundedBox(4, 0, 0, w, h, Color(200, 40, 40, 180 * self.hover))
+        end
+        draw.SimpleText("X", "GOMI_Btn", w/2, h/2, Color(255 - 80 * self.hover, 180 + 60 * self.hover, 180 + 60 * self.hover, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+    closeBtn.DoClick = function()
+        parent:Remove()
+        timer.Simple(0, function()
+            if IsValid(ZCity_MainMenu_Instance) then ZCity_MainMenu_Instance:Remove() end
+            ZCity_MainMenu_Instance = vgui.Create("ZMainMenu")
+        end)
+    end
+
+    local catNames = {}
+    for name, catTable in pairs(hg.settings.tbl) do
+        local hasValid = false
+        for _, optData in pairs(catTable) do
+            local cn = optData.convar or optData[2]
+            if cn and GetConVar(cn) then hasValid = true; break end
+        end
+        if hasValid then catNames[#catNames+1] = name end
+    end
+    if #catNames == 0 then return end
+    table.sort(catNames)
+
+    local activeCat = catNames[1]
+    local catBtns = {}
+    local scroller
+
+    local function rebuildContent()
+        if not IsValid(scroller) then return end
+        scroller:Clear()
+        local catData = hg.settings.tbl[activeCat]
+        if not catData then return end
+
+        local optKeys = {}
+        for k, _ in pairs(catData) do optKeys[#optKeys+1] = k end
+        table.sort(optKeys)
+
+        local y = 0
+        local catPnl = makeCategoryRow(scroller, y, activeCat)
+        y = y + catPnl:GetTall() + ScreenScale(12)
+
+        for _, k in ipairs(optKeys) do
+            local row = makeSettingRow(scroller, y, catData[k])
+            if row then y = y + row:GetTall() + ScreenScale(6) end
+        end
+    end
+
+    local btnArea = vgui.Create("DPanel", parent)
+    btnArea:SetPos(ScreenScale(20), ScreenScale(70))
+    btnArea:SetSize(parent:GetWide() - ScreenScale(40), ScreenScale(26))
+    btnArea:SetMouseInputEnabled(true)
+    btnArea.Paint = function() end
+
+    surface.SetFont("GOMI_SettingsCat")
+    local btnGap = ScreenScale(3)
+    local padX = ScreenScale(6)
+    local btnH = ScreenScale(14)
+    local btnX = 0
+
+    for i, name in ipairs(catNames) do
+        local tw = surface.GetTextSize(name)
+        local btnW = tw + padX * 2
+
+        local btn = vgui.Create("DButton", btnArea)
+        btn:SetText("")
+        btn:SetSize(btnW, btnH)
+        btn:SetPos(btnX, btnArea:GetTall()/2 - btnH/2)
+        btn:SetCursor("hand")
+
+        btn.catName = name
+        btn.isActive = (name == activeCat)
+        btn.hover = 0
+        btn.glow = btn.isActive and 1 or 0
+
+        btn.Paint = function(self, w, h)
+            self.hover = Lerp(FrameTime() * 12, self.hover, self:IsHovered() and 1 or 0)
+            self.glow = Lerp(FrameTime() * 8, self.glow, self.isActive and 1 or 0)
+
+            local g = self.glow
+            if g > 0.01 then
+                draw.RoundedBox(6, -3, -3, w+6, h+6, Color(180, 180, 220, 40 * g))
+            end
+
+            local bg
+            if self.isActive then
+                local b = 60 + 120 * g
+                bg = Color(b, b, b + 20, 220)
+            elseif self.hover > 0.01 then
+                bg = Color(45, 45, 55, 220)
+            else
+                bg = Color(25, 25, 30, 200)
+            end
+            draw.RoundedBox(4, 0, 0, w, h, bg)
+
+            local txtCol = self.isActive and Color(230, 230, 240) or Color(170, 170, 170)
+            draw.SimpleText(self.catName, "GOMI_Btn", w/2, h/2, txtCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        end
+
+        btn.DoClick = function(self)
+            activeCat = self.catName
+            for _, b in ipairs(catBtns) do
+                b.isActive = (b.catName == activeCat)
+            end
+            rebuildContent()
+        end
+
+        catBtns[i] = btn
+        btnX = btnX + btnW + btnGap
+    end
+
     local scroll = vgui.Create("DScrollPanel", parent)
-    scroll:SetSize(parent:GetWide() - ScreenScale(40), parent:GetTall() - ScreenScale(90))
-    scroll:SetPos(ScreenScale(20), ScreenScale(70))
+    scroll:SetSize(parent:GetWide() - ScreenScale(40), parent:GetTall() - ScreenScale(130))
+    scroll:SetPos(ScreenScale(20), ScreenScale(110))
     scroll.Paint = function() end
 
     local vbar = scroll:GetVBar()
@@ -361,28 +481,6 @@ function hg.DrawSettings(parent)
         draw.RoundedBox(4,2,2,w-4,h-4,s:IsHovered() and Color(100,100,130) or Color(70,70,90))
     end
 
-    local y = 0
-    for catName, catTable in pairs(hg.settings.tbl) do
-        local hasValid = false
-        for _, optData in pairs(catTable) do
-            local cn = optData.convar or optData[2]
-            if cn and GetConVar(cn) then
-                hasValid = true
-                break
-            end
-        end
-
-        if hasValid then
-            local catPnl = makeCategoryRow(scroll, y, catName)
-            y = y + catPnl:GetTall() + ScreenScale(12)
-
-            for _, optData in pairs(catTable) do
-                local row = makeSettingRow(scroll, y, optData)
-                if row then
-                    y = y + row:GetTall() + ScreenScale(6)
-                end
-            end
-            y = y + ScreenScale(16)
-        end
-    end
+    scroller = scroll
+    rebuildContent()
 end
