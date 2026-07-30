@@ -52,7 +52,7 @@ jobs:
           cnopts = pysftp.CnOpts()
           cnopts.hostkeys = None
 
-          remote_base = "garrysmod/addons/fatcity"
+          remote_base = "garrysmod/addons/fatcity/"
 
           with pysftp.Connection(host=host, username=user, password=password, port=2022, cnopts=cnopts) as sftp:
               for file_path in changed_files:
