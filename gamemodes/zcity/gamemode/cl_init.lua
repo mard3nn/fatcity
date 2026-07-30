@@ -532,12 +532,12 @@ function GM:ScoreboardShow()
     scoreBoardMenu.Paint = function(self, w, h)
         self.bgAlpha = Lerp(FrameTime() * 8, self.bgAlpha, 1)
         hg.DrawBlur(self, 8)
-        surface.SetDrawColor(30, 30, 35, 230 * self.bgAlpha)
+        surface.SetDrawColor(34, 14, 14, 230 * self.bgAlpha)
         surface.DrawRect(0, 0, w, h)
 
         local grid = ScreenScale(25)
         local off = (RealTime() * 12) % grid
-        surface.SetDrawColor(200, 200, 200, 18 * self.bgAlpha)
+        surface.SetDrawColor(200, 30, 30, 18 * self.bgAlpha)
         for i = -1, math.ceil(w / grid) + 1 do
             surface.DrawRect(i * grid - off, 0, 1, h)
         end
@@ -721,10 +721,10 @@ function GM:ScoreboardShow()
             DScrollPanel:SetSize(sizeX / 2 - 10, sizeY - ScreenScaleH(72))
         end
         DScrollPanel.Paint = function(self, w, h)
-            surface.SetDrawColor(40, 40, 45, 220)
+            surface.SetDrawColor(34, 14, 14, 220)
             surface.DrawRect(0, 0, w, h)
-            surface.SetDrawColor(170, 170, 170, 70)
-            surface.DrawOutlinedRect(0, 0, w, h, 1)
+        surface.SetDrawColor(170, 170, 170, 70)
+        surface.DrawOutlinedRect(0, 0, w, h, 1)
         end
 
         local disappearance = lply:GetNetVar("disappearance", nil)
@@ -753,12 +753,11 @@ function GM:ScoreboardShow()
 
             but.Paint = function(self, w, h)
                 if not IsValid(ply) then return end
-                -- Светло-серые строки
-                local bgTop = Color(70, 70, 75, 255)
-                local bgBot = Color(65, 65, 70, 255)
+                local bgTop = Color(55, 20, 20, 255)
+                local bgBot = Color(45, 15, 15, 255)
                 if isSpectator then
-                    bgTop = Color(75, 75, 80, 255)
-                    bgBot = Color(70, 70, 75, 255)
+                    bgTop = Color(60, 22, 22, 255)
+                    bgBot = Color(50, 18, 18, 255)
                 end
                 surface.SetDrawColor(bgTop)
                 surface.DrawRect(0, 0, w, h)

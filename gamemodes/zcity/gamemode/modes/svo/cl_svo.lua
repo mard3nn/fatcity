@@ -88,7 +88,7 @@ function MODE:HUDPaint()
     local teamInfo = teams[roleKey]
     if not teamInfo then return end
 
-    draw.SimpleText("GOMICITY | ВОЕННАЯ ОПЕРАЦИЯ", "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Война в Украине", "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     local ColorRole = teamInfo.color1
     ColorRole.a = 255 * fade
     draw.SimpleText("Вы " .. teamInfo.name, "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)

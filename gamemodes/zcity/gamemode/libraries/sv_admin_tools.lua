@@ -2,7 +2,9 @@ COMMANDS.sendtospawn = {
 	function(ply, args)
 		if not ply:IsAdmin() then return end
 		local plya = #args > 0 and args[1] or ply:Name()
-		for i, ply2 in pairs(player.GetListByName(plya)) do
+		local targets = player.GetListByName(plya)
+		if not targets then return end
+		for i, ply2 in pairs(targets) do
 			if ply2:Alive() then
 				ply2:Spawn()
 				ply:ChatPrint( ply2:Name().. " | Sended to random spawn..." )
@@ -17,7 +19,9 @@ COMMANDS.give = {
 		if not ply:IsAdmin() then return end
 		local plya = #args > 1 and args[1] or ply:Name()
 		local wep = #args > 1 and args[2] or args[1]
-		for i, ply2 in pairs(player.GetListByName(plya)) do
+		local targets = player.GetListByName(plya)
+		if not targets then return end
+		for i, ply2 in pairs(targets) do
 			if ply2:Alive() then
 				local ent = ply2:Give( wep )
                 if not IsValid(ent) then return end
@@ -34,7 +38,9 @@ COMMANDS.respawn = {
 	function(ply, args)
 		if not ply:IsAdmin() then return end
 		local plya = #args > 0 and args[1] or ply:Name()
-		for i, ply2 in pairs(player.GetListByName(plya)) do
+		local targets = player.GetListByName(plya)
+		if not targets then return end
+		for i, ply2 in pairs(targets) do
 			ply2:Spawn()
             ApplyAppearance( ply2 )
 			local hands = ply2:Give("weapon_hands_sh")

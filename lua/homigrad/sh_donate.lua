@@ -1,23 +1,21 @@
 if SERVER then
     util.AddNetworkString("OpenDonateMenu")
     util.AddNetworkString("DonateLogAdmin")
-
-    hook.Add("ShowSpare1", "DonateMenuF3", function(ply)
-        net.Start("OpenDonateMenu")
-        net.Send(ply)
-    end)
 end
 
 if CLIENT then
+    local DISCORD_INVITE = "https://discord.gg/TFMuxmm3n3"
+    local DISCORD_CHANNEL = "#⭐・донат"
+
     local donateItems = {
-        { name = "VIP Статус", price = "349", desc = "Расширенный доступ к функционалу системы." },
-        { name = "Модератор", price = "700", desc = "Привилегии модерации. Лимит: 0/3 варнов." },
-        { name = "Администратор", price = "1200", desc = "Привилегии администрирования. Лимит: 0/5 варнов." },
-        { name = "Супер админ", price = "3500", desc = "Полный доступ к системе. Лимит: 0/7 варнов." },
-        { name = "Друг создателя", price = "4500", desc = "Эксклюзивный статус. Лимит: 0/12 варнов." },
-        { name = "Снятие Варна", price = "350", desc = "Аннулирование одного дисциплинарного взыскания." },
-        { name = "Снятие бана/мута", price = "300", desc = "Досрочное восстановление доступа." },
-        { name = "Снятие бана (Читы)", price = "1000", desc = "Полная амнистия профиля." }
+        { name = "VIP", price = "299", desc = "Приоритетный вход, префикс и VIP-возможности." },
+        { name = "Модератор", price = "649", desc = "Привилегии модерации. Лимит: 0/3 варнов." },
+        { name = "Администратор", price = "1199", desc = "Привилегии администрирования. Лимит: 0/5 варнов." },
+        { name = "Суперадмин", price = "3499", desc = "Полный доступ к системе. Лимит: 0/7 варнов." },
+        { name = "MVP", price = "4500", desc = "Эксклюзивный статус. Лимит: 0/12 варнов." },
+        { name = "Снятие Варна", price = "349", desc = "Аннулирование одного дисциплинарного взыскания." },
+        { name = "Снятие бана/мута", price = "299", desc = "Досрочное восстановление доступа." },
+        { name = "Снятие бана (Читы)", price = "999", desc = "Полная амнистия профиля." }
     }
 
     local function LerpColor(t, c1, c2)
@@ -75,9 +73,45 @@ if CLIENT then
             draw.SimpleText("ДОНАТЫ", "ZCity_Fixed_Tiny", w/2, 22, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end
 
+        local notice = vgui.Create("DPanel", frame)
+        notice:Dock(TOP)
+        notice:DockMargin(20, 55, 20, 0)
+        notice:SetTall(62)
+        notice.Paint = function(self, w, h)
+            local anim = math.Clamp((CurTime() - startTime) * 3, 0, 1)
+
+            surface.SetDrawColor(15, 15, 15, 220 * anim)
+            surface.DrawRect(0, 0, w, h)
+
+            surface.SetDrawColor(hg.VGUI.MainColor.r, hg.VGUI.MainColor.g, hg.VGUI.MainColor.b, 180 * anim)
+            surface.DrawOutlinedRect(0, 0, w, h, 1)
+
+            draw.SimpleText("ОПЛАТА ПРОХОДИТ НА НАШЕМ DISCORD СЕРВЕРЕ", "ZCity_Fixed_Tiny", 15, h / 2 - 12, hg.VGUI.MainColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            draw.SimpleText("Выберите услугу и завершите оплату в канале " .. DISCORD_CHANNEL, "ZCity_Tiny", 15, h / 2 + 11, Color(180, 180, 180, 255 * anim), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        end
+
+        local openDiscord = vgui.Create("DButton", notice)
+        openDiscord:Dock(RIGHT)
+        openDiscord:DockMargin(10, 12, 12, 12)
+        openDiscord:SetWide(210)
+        openDiscord:SetText("ОТКРЫТЬ DISCORD")
+        openDiscord:SetFont("ZCity_Fixed_Tiny")
+        openDiscord:SetSkin("ZCity")
+        openDiscord:SetTextColor(color_white)
+
+        openDiscord.OnCursorEntered = function(self)
+            surface.PlaySound("arccw_uc/common/cloth_1.ogg")
+        end
+
+        openDiscord.DoClick = function()
+            SetClipboardText(DISCORD_INVITE)
+            gui.OpenURL(DISCORD_INVITE)
+            chat.AddText(hg.VGUI.MainColor, "[ДОНАТ] ", color_white, "Ссылка на Discord скопирована: " .. DISCORD_INVITE)
+        end
+
         local scroll = vgui.Create("DScrollPanel", frame)
         scroll:Dock(FILL)
-        scroll:DockMargin(20, 60, 20, 20)
+        scroll:DockMargin(20, 15, 20, 20)
 
         local layout = vgui.Create("DIconLayout", scroll)
         layout:Dock(FILL)
@@ -134,7 +168,7 @@ if CLIENT then
             desc:SetTextColor(Color(180, 180, 180))
 
             local buy = vgui.Create("DButton", panel)
-            buy:SetText("КУПИТЬ ЗА " .. item.price .. "₽")
+            buy:SetText("ОФОРМИТЬ ЗА " .. item.price .. "₽")
             buy:SetTall(35)
             buy:Dock(BOTTOM)
             buy:DockMargin(10, 5, 10, 10)
@@ -147,23 +181,22 @@ if CLIENT then
             end
 
             buy.DoClick = function()
-                local card = "2200 7012 1206 3041"
                 Derma_Query(
-                    "ЭЛЕКТРОННЫЙ ЧЕК\n\nУслуга: " .. item.name .. "\nЦена: " .. item.price .. "₽\n\nКарта для перевода:\n" .. card .. "\n\nНомер карты будет скопирован автоматически.",
-                    "ПОДТВЕРЖДЕНИЕ ПЛАТЕЖА",
-                    "ОПЛАТИТЬ", function()
-                        SetClipboardText(card:gsub("%s+", ""))
-                        chat.AddText(hg.VGUI.MainColor, "[СИСТЕМА] ", color_white, "Реквизиты скопированы в буфер.")
-                        gui.OpenURL("https://www.tinkoff.ru/rm/r_eFvLWfkaQk.RGmwAZkrar/AnthO35191?money=" .. item.price)
-                        
+                    "ЗАЯВКА НА ДОНАТ\n\nУслуга: " .. item.name .. "\nЦена: " .. item.price .. "₽\n\nОплата происходит на нашем Discord сервере,\nв канале " .. DISCORD_CHANNEL .. ".\n\nЗавершите оплату там и напишите название услуги.\nСсылка будет скопирована автоматически.",
+                    "ОПЛАТА В DISCORD",
+                    "ОТКРЫТЬ DISCORD", function()
+                        SetClipboardText(DISCORD_INVITE)
+                        chat.AddText(hg.VGUI.MainColor, "[ДОНАТ] ", color_white, "Завершите оплату в Discord, канал " .. DISCORD_CHANNEL .. ". Ссылка: " .. DISCORD_INVITE)
+                        gui.OpenURL(DISCORD_INVITE)
+
                         net.Start("DonateLogAdmin")
                         net.WriteString(item.name)
                         net.WriteString(item.price)
                         net.SendToServer()
-                        
+
                         frame:Close()
                     end,
-                    "ЗАКРЫТЬ"
+                    "ОТМЕНА"
                 )
             end
         end
@@ -219,11 +252,11 @@ if SERVER then
         local itemName = net.ReadString()
         local itemPrice = net.ReadString()
         
-        print("[DONATE] " .. ply:Nick() .. " (" .. ply:SteamID() .. ") хочет: " .. itemName .. " за " .. itemPrice .. " руб.")
+        print("[DONATE] " .. ply:Nick() .. " (" .. ply:SteamID() .. ") оформил заявку: " .. itemName .. " за " .. itemPrice .. " руб. (оплата в Discord)")
         
         for _, admin in ipairs(player.GetAll()) do
             if admin:IsAdmin() then
-                admin:ChatPrint("[ДОНАТ] " .. ply:Nick() .. " перешел к оплате " .. itemName .. " (" .. itemPrice .. " руб.). Проверьте банк!")
+                admin:ChatPrint("[ДОНАТ] " .. ply:Nick() .. " оформил заявку на " .. itemName .. " (" .. itemPrice .. " руб.). Проверьте канал доната в Discord!")
             end
         end
     end)

@@ -54,7 +54,7 @@ function MODE:HUDPaint()
     local team_ = LocalPlayer():Team()
     if team_ ~= 0 and team_ ~= 1 then return end
 
-    draw.SimpleText("GOMICITY | ПРОТОКОЛ 01 — ЗАДЕРЖАНИЕ", "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Crisis Response", "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     local rolename = teams[team_].name
     local colorRole = teams[team_].color1
     colorRole.a = 255 * fade

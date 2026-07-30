@@ -1,10 +1,10 @@
-surface.CreateFont("KIRO_WepTitle", {
+surface.CreateFont("GOMI_WepTitle", {
     font = "Bahnschrift",
     size = ScreenScale(14),
     weight = 600,
     antialias = true
 })
-surface.CreateFont("KIRO_WepSmall", {
+surface.CreateFont("GOMI_WepSmall", {
     font = "Bahnschrift",
     size = ScreenScale(8),
     weight = 500,
@@ -144,7 +144,7 @@ function WS.WeaponSelectorDraw(ply)
         local centerX = scrW / 2 + ((offset - (slotCount / 2)) * slotW) + slotW / 2
         local baseY = scrH * 0.05
 
-        WS.DrawText(i + 1, "KIRO_WepTitle", centerX, baseY - ScreenScale(12), Color(215, 215, 215, WS.Transparent * 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        WS.DrawText(i + 1, "GOMI_WepTitle", centerX, baseY - ScreenScale(12), Color(215, 215, 215, WS.Transparent * 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 
         local lastH = 0
         for idx, wep in ipairs(slot) do
@@ -191,7 +191,7 @@ function WS.WeaponSelectorDraw(ply)
 
             if isSel then
                 local name = WS.Typewriter(WS.GetPrintName(wep), wep:GetClass() .. "_name", 20)
-                surface.SetFont("KIRO_WepSmall")
+                surface.SetFont("GOMI_WepSmall")
                 local tw, th = surface.GetTextSize(name)
                 local pad = ScreenScale(2)
                 local maxW = w - pad * 2
@@ -200,26 +200,26 @@ function WS.WeaponSelectorDraw(ply)
                 render.SetScissorRect(x, y, x + w, y + itemH, true)
                 local textY = y + ScreenScale(2)
                 if tw <= maxW then
-                    WS.DrawText(name, "KIRO_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                    WS.DrawText(name, "GOMI_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
                 else
-                    WS.DrawText(name, "KIRO_WepSmall", x + pad + WS.NameScroll[wep], textY, Color(215, 215, 215), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    WS.DrawText(name, "GOMI_WepSmall", x + pad + WS.NameScroll[wep], textY, Color(215, 215, 215), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
                 end
                 render.SetScissorRect(0, 0, 0, 0, false)
             else
                 local name = WS.GetPrintName(wep)
-                surface.SetFont("KIRO_WepSmall")
+                surface.SetFont("GOMI_WepSmall")
                 local tw, _ = surface.GetTextSize(name)
                 local maxW = w - ScreenScale(4)
                 render.SetScissorRect(x, y, x + w, y + itemH, true)
                 local textY = y + ScreenScale(1)
                 if tw <= maxW then
-                    WS.DrawText(name, "KIRO_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                    WS.DrawText(name, "GOMI_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
                 else
                     local trimmed = name
                     while #trimmed > 1 and surface.GetTextSize(trimmed .. "...") > maxW do
                         trimmed = trimmed:sub(1, -2)
                     end
-                    WS.DrawText(trimmed .. "...", "KIRO_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                    WS.DrawText(trimmed .. "...", "GOMI_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
                 end
                 render.SetScissorRect(0, 0, 0, 0, false)
             end

@@ -125,7 +125,7 @@ if CLIENT then
             local spacing = 50
             local offsetX = (CurTime() * speed) % spacing
             local offsetY = (CurTime() * 0.7 * speed) % spacing
-            surface.SetDrawColor(255, 255, 255, 15)
+            surface.SetDrawColor(200, 30, 30, 15)
             for x = offsetX, w, spacing do surface.DrawLine(x, 0, x, h) end
             for y = offsetY, h, spacing do surface.DrawLine(0, y, w, y) end
         end

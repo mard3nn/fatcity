@@ -1,37 +1,37 @@
 local blurMat = Material("pp/blurscreen")
 
-surface.CreateFont("KIRO_Title", {
+surface.CreateFont("GOMI_Title", {
     font = "Bahnschrift",
     size = ScreenScale(40),
     weight = 800,
     antialias = true
 })
-surface.CreateFont("KIRO_Btn", {
+surface.CreateFont("GOMI_Btn", {
     font = "Bahnschrift",
     size = ScreenScale(13),
     weight = 500,
     antialias = true,
     extended = true
 })
-surface.CreateFont("KIRO_Small", {
+surface.CreateFont("GOMI_Small", {
     font = "Bahnschrift",
     size = ScreenScale(9),
     weight = 400,
     antialias = true
 })
-surface.CreateFont("KIRO_SettingsCat", {
+surface.CreateFont("GOMI_SettingsCat", {
     font = "Bahnschrift",
     size = ScreenScale(15),
     weight = 700,
     antialias = true
 })
-surface.CreateFont("KIRO_SettingsLabel", {
+surface.CreateFont("GOMI_SettingsLabel", {
     font = "Bahnschrift",
     size = ScreenScale(12),
     weight = 500,
     antialias = true
 })
-surface.CreateFont("KIRO_SettingsHelp", {
+surface.CreateFont("GOMI_SettingsHelp", {
     font = "Bahnschrift",
     size = ScreenScale(8),
     weight = 400,
@@ -159,15 +159,15 @@ local function makeCategoryRow(parent, y, text)
         else
             for i = 1, #text do chars[i] = text:sub(i, i) end
         end
-        surface.SetFont("KIRO_SettingsCat")
+        surface.SetFont("GOMI_SettingsCat")
         local cx = ScreenScale(16)
         for i, ch in ipairs(chars) do
             local cw = surface.GetTextSize(ch)
             local shimmer = (math.sin(t - i * 0.4) + 1) / 2
             local gray = 130 + shimmer * 90
             local col = Color(gray, gray, gray, alpha)
-            draw.SimpleText(ch, "KIRO_SettingsCat", cx + 1, h/2 + 1, Color(0,0,0,120))
-            draw.SimpleText(ch, "KIRO_SettingsCat", cx, h/2, col)
+            draw.SimpleText(ch, "GOMI_SettingsCat", cx + 1, h/2 + 1, Color(0,0,0,120))
+            draw.SimpleText(ch, "GOMI_SettingsCat", cx, h/2, col)
             cx = cx + cw
         end
     end
@@ -208,7 +208,7 @@ local function makeSettingRow(parent, y, data)
 
     local titleLbl = vgui.Create("DLabel", pnl)
     titleLbl:SetPos(pad, rowH * 0.3)
-    titleLbl:SetFont("KIRO_SettingsLabel")
+    titleLbl:SetFont("GOMI_SettingsLabel")
     titleLbl:SetText(title)
     titleLbl:SetTextColor(textBright)
     titleLbl:SizeToContents()
@@ -216,7 +216,7 @@ local function makeSettingRow(parent, y, data)
     if hasHelp then
         local helpLbl = vgui.Create("DLabel", pnl)
         helpLbl:SetPos(pad, rowH * 0.7)
-        helpLbl:SetFont("KIRO_SettingsHelp")
+        helpLbl:SetFont("GOMI_SettingsHelp")
         helpLbl:SetText(cvar:GetHelpText())
         helpLbl:SetTextColor(textDim)
         helpLbl:SizeToContents()
@@ -263,7 +263,7 @@ local function makeSettingRow(parent, y, data)
         local valLbl = vgui.Create("DLabel", pnl)
         valLbl:SetPos(ctrlX, rowH/2 - ScreenScale(8))
         valLbl:SetSize(valW, ScreenScale(16))
-        valLbl:SetFont("KIRO_Small")
+        valLbl:SetFont("GOMI_Small")
         valLbl:SetTextColor(textBright)
         valLbl:SetContentAlignment(6)
 
@@ -284,7 +284,7 @@ local function makeSettingRow(parent, y, data)
         local entry = vgui.Create("DTextEntry", pnl)
         entry:SetSize(ctrlW, ScreenScale(18))
         entry:SetPos(ctrlX, rowH/2 - ScreenScale(9))
-        entry:SetFont("KIRO_Small")
+        entry:SetFont("GOMI_Small")
         entry:SetText(cvar:GetString())
         entry:SetUpdateOnType(true)
         entry.Paint = function(self, w, h)
@@ -320,7 +320,7 @@ function hg.DrawSettings(parent)
 
     local title = vgui.Create("DLabel", parent)
     title:SetPos(ScreenScale(20), ScreenScale(20))
-    title:SetFont("KIRO_Title")
+    title:SetFont("GOMI_Title")
     title:SetText("Настройки")
     title:SetTextColor(Color(0,0,0,0))
     title.anim = 0
@@ -329,7 +329,7 @@ function hg.DrawSettings(parent)
         local a = self.anim * 255
         local t = RealTime() * 4
         local s = "Настройки"
-        surface.SetFont("KIRO_Title")
+        surface.SetFont("GOMI_Title")
         local chars = {}
         if utf8 then
             for _, c in utf8.codes(s) do chars[#chars+1] = utf8.char(c) end
@@ -341,8 +341,8 @@ function hg.DrawSettings(parent)
             local cw = surface.GetTextSize(ch)
             local shimmer = (math.sin(t - i*0.4) + 1)/2
             local gray = 100 + shimmer*155
-            draw.SimpleText(ch, "KIRO_Title", cx+2, 2, Color(0,0,0,150*(a/255)))
-            draw.SimpleText(ch, "KIRO_Title", cx, 0, Color(gray, gray, gray, a))
+            draw.SimpleText(ch, "GOMI_Title", cx+2, 2, Color(0,0,0,150*(a/255)))
+            draw.SimpleText(ch, "GOMI_Title", cx, 0, Color(gray, gray, gray, a))
             cx = cx + cw
         end
     end

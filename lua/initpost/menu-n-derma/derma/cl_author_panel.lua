@@ -154,7 +154,7 @@ function PANEL:Paint(w, h)
     local gridAlpha = 12
     local offset = gridTime % gridSize
 
-    surface.SetDrawColor(200, 200, 200, gridAlpha)
+    surface.SetDrawColor(200, 30, 30, gridAlpha)
     for i = -1, math.ceil(w / gridSize) + 1 do
         local x = i * gridSize - offset
         surface.DrawRect(x, 0, 1, h)

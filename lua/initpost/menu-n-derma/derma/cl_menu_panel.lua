@@ -36,6 +36,38 @@ local METRICS = {
 
 local blurMat = Material("pp/blurscreen")
 
+local LAYOUT = {
+    MarginX     = ScreenScale(20),
+    TopY        = 0.135,
+    RightEdge   = 0.72,
+    BottomY     = 0.82,
+    GapSplash   = ScreenScale(2),
+    GapImage    = ScreenScale(4)
+}
+
+local SPLASH_IMAGE_BLACKLIST = {
+    ["pluvmadness.png"] = true,
+    ["pluvcry.png"] = true,
+    ["rucamo.png"] = true,
+    ["pluvdead.png"] = true
+}
+
+local splashImages = {}
+do
+    local found = file.Find("materials/pluv/*", "GAME") or {}
+    for _, name in ipairs(found) do
+        local lower = string.lower(name)
+        local ext = string.lower(string.GetExtensionFromFilename(name) or "")
+        if not SPLASH_IMAGE_BLACKLIST[lower] then
+            if ext == "png" or ext == "jpg" or ext == "jpeg" then
+                splashImages[#splashImages + 1] = Material("pluv/" .. name, "smooth mips")
+            elseif ext == "vmt" or ext == "vtf" then
+                splashImages[#splashImages + 1] = Material("pluv/" .. string.StripExtension(name), "smooth mips")
+            end
+        end
+    end
+end
+
 local splashMessages = {
     'В дом тупикрупика влетела ракета, спасибо хорошо',
     'че то чето',
@@ -60,6 +92,21 @@ local function DrawBlur(panel, amount)
         surface.DrawTexturedRect(x * -1, y * -1, ScrW(), ScrH())
     end
 end
+
+local TITLE_WHITE = Color(255, 255, 255, 255)
+local TITLE_COLORS = {
+    [1] = Color(255, 255, 255, 255), // G
+    [2] = Color(255, 255, 255, 255), // O
+    [3] = Color(255, 255, 255, 255), //M
+    [4] = Color(60, 130, 255, 255),  // I
+    [5] = Color(60, 130, 255, 255), // C
+    [6] = Color(230, 45, 45, 255),   // I
+    [7] = Color(230, 45, 45, 255),   // T
+    [8] = Color(230, 45, 45, 255)    // Y
+}
+local TITLE_SWEEP_DELAY = 0
+local TITLE_SWEEP_SPEED = 12.0 
+local TITLE_SWEEP_SOFT  = 1.4 
 
 local function LerpColor(t, c1, c2)
     return Color(
@@ -152,15 +199,10 @@ local Selects = {
         end
     },
     {
-        Title = "Магазин / Донат",
+        Title = "Донат",
         Func = function(menu)
             menu:Close(function()
-                if IGS and type(IGS.UI) == "function" then
-                    IGS.UI()
-                else
-                    RunConsoleCommand("igs")
-                    RunConsoleCommand("say", "!donate")
-                end
+                OpenDonateMenu()
             end)
         end
     },
@@ -218,6 +260,7 @@ function PANEL:Init()
     self.MainTitle = "GOMICITY"
     local mapname = game.GetMap():match("_(.+)$") or game.GetMap()
     self.SubTitle = splashMessages[math.random(#splashMessages)] .. " | " .. string.NiceName(mapname)
+    self.SplashImage = (#splashImages > 0) and splashImages[math.random(#splashImages)] or nil
 
     self:BuildUI()
     timer.Simple(0, function()
@@ -244,7 +287,7 @@ function PANEL:Paint(w, h)
     local gridSpeed = 12
     local gridAlpha = 10
     local offset = RealTime() * gridSpeed % gridSize
-    surface.SetDrawColor(180, 180, 180, gridAlpha)
+    surface.SetDrawColor(180, 30, 30, gridAlpha)
     for i = -1, math.ceil(w / gridSize) + 1 do
         surface.DrawRect(i * gridSize - offset, 0, 1, h)
     end
@@ -259,20 +302,31 @@ function PANEL:Paint(w, h)
     self.TitleAppearLerp = Lerp(FrameTime() * 15, self.TitleAppearLerp or 0, shouldAppear and 1 or 0)
     local v = self.TitleAppearLerp
     local title = self.MainTitle
-    local x = w * 0.5
-    local y = self.TitleY + (1 - v) * (self.TitleAppearOffset or 0)
-    local t = RealTime() * 4
+    local appearOffset = (1 - v) * (self.TitleAppearOffset or 0)
+    local sweepPos = (RealTime() - (openedAt + (self.TitleAppearDelay or 0) + TITLE_SWEEP_DELAY)) * TITLE_SWEEP_SPEED
+
+    local startX = LAYOUT.MarginX
+
+    surface.SetFont("ZCity_Tiny")
+    local _, splashHeight = surface.GetTextSize("A")
+    local splashY = h * LAYOUT.TopY + appearOffset
+    draw.SimpleText(self.SubTitle, "ZCity_Tiny", startX, splashY, Color(105, 105, 105, 255 * v), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
     surface.SetFont("ZC_MM_Title")
-    local tw = surface.GetTextSize(title)
-    local startX = x - tw * 0.5
+    local tw, titleHeight = surface.GetTextSize(title)
+    local y = splashY + splashHeight + LAYOUT.GapSplash
 
     local chars = GetTextChars(title)
     local acc = 0
     for i, char in ipairs(chars) do
         local cw = surface.GetTextSize(char)
-        local shimmer = (math.sin(t - i * 0.4) + 1) * 0.5
-        local col = Color(100, 100, 100):Lerp(Color(255, 255, 255), shimmer)
+        local target = TITLE_COLORS[i] or TITLE_WHITE
+
+        local progress = math.Clamp((sweepPos - (i - 1)) / TITLE_SWEEP_SOFT, 0, 1)
+        progress = progress * progress * (3 - 2 * progress)
+        local col = LerpColor(progress, TITLE_WHITE, target)
+        local glow = math.Clamp(1 - math.abs(sweepPos - (i - 1)) / TITLE_SWEEP_SOFT, 0, 1)
+        col = LerpColor(glow * 0.55, col, TITLE_WHITE)
 
         draw.SimpleText(char, "ZC_MM_Title", startX + acc + 2, y + 2, Color(0, 0, 0, 150 * v), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
         draw.SimpleText(char, "ZC_MM_Title", startX + acc, y, Color(col.r, col.g, col.b, 255 * v), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
@@ -280,7 +334,27 @@ function PANEL:Paint(w, h)
         acc = acc + cw
     end
 
-    draw.SimpleText(self.SubTitle, "ZCity_Tiny", x, y + ScreenScale(36), Color(105, 105, 105, 255 * v), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+    local mat = self.SplashImage
+
+    if mat and not mat:IsError() then
+        local boxX = startX
+        local boxY = y + titleHeight + LAYOUT.GapImage
+        local boxW = w * LAYOUT.RightEdge - boxX
+        local boxH = h * LAYOUT.BottomY - boxY
+
+        if boxW > 0 and boxH > 0 then
+            local mw, mh = math.max(mat:Width(), 1), math.max(mat:Height(), 1)
+            local drawW = boxW
+            local drawH = math.min(drawW * (mh / mw), boxH)
+
+            surface.SetDrawColor(0, 0, 0, 140 * v)
+            surface.DrawRect(boxX, boxY, drawW, drawH)
+
+            surface.SetDrawColor(255, 255, 255, 255 * v)
+            surface.SetMaterial(mat)
+            surface.DrawTexturedRect(boxX, boxY, drawW, drawH)
+        end
+    end
 end
 
 function PANEL:BuildUI()
@@ -297,14 +371,18 @@ function PANEL:BuildUI()
     self.TitleY = (h * 0.48) - (totalBlockHeight / 2)
 
     local yPos = self.TitleY + titleHeight + METRICS.GapTitle
+    local btnWidth = math.max(w * 0.22, ScreenScale(100))
+    local btnMargin = ScreenScale(24)
+    local btnX = w - btnWidth - btnMargin
+    local textPad = ScreenScale(5)
 
     for i, v in ipairs(Selects) do
         local btn = vgui.Create("DButton", self.BtnContainer)
-        btn:SetSize(w * 0.4, btnHeight)
+        btn:SetSize(btnWidth, btnHeight)
         btn:SetText("")
         btn:SetAlpha(0)
-        btn:SetPos(w / 2 - btn:GetWide() / 2, yPos + ScreenScale(15))
-        btn:MoveTo(w / 2 - btn:GetWide() / 2, yPos, 0.5, (i * 0.04), 0.5)
+        btn:SetPos(btnX, yPos + ScreenScale(15))
+        btn:MoveTo(btnX, yPos, 0.5, (i * 0.04), 0.5)
         btn:AlphaTo(255, 0.5, (i * 0.04))
 
         btn.Hov = 0
@@ -321,7 +399,7 @@ function PANEL:BuildUI()
             s.Hov = Lerp(FrameTime() * 8, s.Hov, isHover and 1 or 0)
         end
 
-        btn.Paint = function(s, pw, ph)
+		btn.Paint = function(s, pw, ph)
             local hoverAmount = s.Hov
             local alpha = s:GetAlpha() / 255
             local txt = v.Title
@@ -331,8 +409,8 @@ function PANEL:BuildUI()
 
             surface.SetFont("ZCity_Small")
 
-            draw.SimpleText(txt, "ZCity_Small", pw / 2 + xOffset + 2, ph / 2 + 2, Color(0, 0, 0, 220 * alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-            draw.SimpleText(txt, "ZCity_Small", pw / 2 + xOffset, ph / 2, Color(col.r, col.g, col.b, col.a * alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            draw.SimpleText(txt, "ZCity_Small", textPad + xOffset + 2, ph / 2 + 2, Color(0, 0, 0, 220 * alpha), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            draw.SimpleText(txt, "ZCity_Small", textPad + xOffset, ph / 2, Color(col.r, col.g, col.b, col.a * alpha), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
         end
 
         btn.DoClick = function(s)
@@ -393,7 +471,7 @@ function PANEL:BuildUI()
     local rightAuthors = vgui.Create("DLabel", self)
     rightAuthors:SetFont("ZCity_Tiny")
     rightAuthors:SetTextColor(infoColor)
-    rightAuthors:SetText("GOMICITY COMMIT 1\nburmaldeiko")
+    rightAuthors:SetText("GOMICITY COMMIT большой\nburmaldeiko")
     rightAuthors:SetContentAlignment(3)
     rightAuthors:SizeToContents()
 

@@ -1,6 +1,6 @@
 MODE = MODE or {}
 MODE.name = "hideseek"
-MODE.PrintName = "GOMICITY | ПРЯТКИ"
+MODE.PrintName = "Hunter"
 
 MODE.ForBigMaps = false
 MODE.ROUND_TIME = 480

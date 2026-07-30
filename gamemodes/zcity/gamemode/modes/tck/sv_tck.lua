@@ -1,7 +1,7 @@
 local MODE = MODE
 
 MODE.name = "protocol01"
-MODE.PrintName = "GOMICITY | Протокол 01 — Задержание"
+MODE.PrintName = "Crisis Response"
 
 MODE.ROUND_TIME = 600
 MODE.Chance = 0.0

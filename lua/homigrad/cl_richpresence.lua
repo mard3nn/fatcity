@@ -5,8 +5,8 @@ function StartDiscordPresence(arguments)
 	if not util.IsBinaryModuleInstalled("gdiscord") then return end
 	require("gdiscord")
 
-	local image = "default"
-	local discord_id = "1365734386619646123"
+	local image = "gomicity-logo"
+	local discord_id = "1456652008433127484"
 	local refresh_time = 30
 	local discord_start = discord_start or -1
 

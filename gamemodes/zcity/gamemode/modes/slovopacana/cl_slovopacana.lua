@@ -154,7 +154,7 @@ function MODE:HUDPaint()
     local w, h = ScrW(), ScrH()
     local teamData = teams[lply:Team()] or teams[0]
 
-    draw.SimpleText("GOMICITY | СЛОВО ПАЦАНА", "ZB_HomicideMediumLarge", w * 0.5, h * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Слово Пахана", "ZB_HomicideMediumLarge", w * 0.5, h * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText("Ваша команда: " .. teamData.name, "ZB_HomicideMediumLarge", w * 0.5, h * 0.5, Color(teamData.color.r, teamData.color.g, teamData.color.b, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText(teamData.objective, "ZB_HomicideMedium", w * 0.5, h * 0.9, Color(255, 255, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

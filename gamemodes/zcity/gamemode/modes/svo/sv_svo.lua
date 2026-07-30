@@ -1,7 +1,7 @@
 local MODE = MODE
 
 MODE.name = "svo"
-MODE.PrintName = "GOMICITY | SVO"
+MODE.PrintName = "Война в Украине"
 
 MODE.ROUND_TIME = 720
 MODE.Chance = 0.0

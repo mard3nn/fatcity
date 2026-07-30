@@ -1,37 +1,37 @@
 local blurMat = Material("pp/blurscreen")
 
-surface.CreateFont("KIRO_Title", {
+surface.CreateFont("GOMI_Title", {
     font = "Bahnschrift",
     size = ScreenScale(40),
     weight = 800,
     antialias = true
 })
-surface.CreateFont("KIRO_Btn", {
+surface.CreateFont("GOMI_Btn", {
     font = "Bahnschrift",
     size = ScreenScale(13),
     weight = 500,
     antialias = true,
     extended = true
 })
-surface.CreateFont("KIRO_Small", {
+surface.CreateFont("GOMI_Small", {
     font = "Bahnschrift",
     size = ScreenScale(9),
     weight = 400,
     antialias = true
 })
-surface.CreateFont("KIRO_RulesCat", {
+surface.CreateFont("GOMI_RulesCat", {
     font = "Bahnschrift",
     size = ScreenScale(16),
     weight = 700,
     antialias = true
 })
-surface.CreateFont("KIRO_RulesNum", {
+surface.CreateFont("GOMI_RulesNum", {
     font = "Bahnschrift",
     size = ScreenScale(12),
     weight = 600,
     antialias = true
 })
-surface.CreateFont("KIRO_RulesDesc", {
+surface.CreateFont("GOMI_RulesDesc", {
     font = "Bahnschrift",
     size = ScreenScale(10),
     weight = 400,
@@ -102,7 +102,7 @@ function hg.DrawRules(parent)
 
         local gridSize = ScreenScale(25)
         local offset = (RealTime() * 12) % gridSize
-        surface.SetDrawColor(200, 200, 200, 15 * self.anim)
+        surface.SetDrawColor(200, 30, 30, 15 * self.anim)
         for i = -1, math.ceil(w / gridSize) + 1 do
             surface.DrawRect(i * gridSize - offset, 0, 1, h)
         end
@@ -115,7 +115,7 @@ function hg.DrawRules(parent)
 
     local titleLabel = vgui.Create("DLabel", parent)
     titleLabel:SetPos(ScreenScale(20), ScreenScale(20))
-    titleLabel:SetFont("KIRO_Title")
+    titleLabel:SetFont("GOMI_Title")
     titleLabel:SetText("ПРАВИЛА")
     titleLabel:SizeToContents()
     titleLabel:SetTextColor(Color(255, 255, 255, 0))
@@ -125,7 +125,7 @@ function hg.DrawRules(parent)
         local a = self.alpha * 255
         local t = RealTime() * 4
         local title = "ПРАВИЛА"
-        surface.SetFont("KIRO_Title")
+        surface.SetFont("GOMI_Title")
         local tw = surface.GetTextSize(title)
         local sx = 0
         local chars = {}
@@ -140,8 +140,8 @@ function hg.DrawRules(parent)
             local shimmer = (math.sin(t - i * 0.4) + 1) / 2
             local gray = 100 + shimmer * 155
             local col = Color(gray, gray, gray, a)
-            draw.SimpleText(ch, "KIRO_Title", cx + 2, 2, Color(0, 0, 0, 150 * (a/255)))
-            draw.SimpleText(ch, "KIRO_Title", cx, 0, col)
+            draw.SimpleText(ch, "GOMI_Title", cx + 2, 2, Color(0, 0, 0, 150 * (a/255)))
+            draw.SimpleText(ch, "GOMI_Title", cx, 0, col)
             cx = cx + cw
         end
     end
@@ -166,7 +166,7 @@ function hg.DrawRules(parent)
     for _, cat in ipairs(rulesList) do
         local catLabel = vgui.Create("DLabel", scroll)
         catLabel:SetPos(ScreenScale(10), y)
-        catLabel:SetFont("KIRO_RulesCat")
+        catLabel:SetFont("GOMI_RulesCat")
         catLabel:SetText(cat.category)
         catLabel:SetTextColor(Color(200, 200, 200))
         catLabel:SizeToContents()
@@ -189,14 +189,14 @@ function hg.DrawRules(parent)
 
             local nameLabel = vgui.Create("DLabel", rulePanel)
             nameLabel:SetPos(ScreenScale(10), ScreenScale(5))
-            nameLabel:SetFont("KIRO_RulesNum")
+            nameLabel:SetFont("GOMI_RulesNum")
             nameLabel:SetText(item.name)
             nameLabel:SetTextColor(Color(180, 180, 180))
             nameLabel:SizeToContents()
 
             local descLabel = vgui.Create("DLabel", rulePanel)
             descLabel:SetPos(ScreenScale(10), ScreenScale(22))
-            descLabel:SetFont("KIRO_RulesDesc")
+            descLabel:SetFont("GOMI_RulesDesc")
             descLabel:SetText(item.desc)
             descLabel:SetTextColor(Color(150, 150, 150))
             descLabel:SetWide(rulePanel:GetWide() - ScreenScale(20))
@@ -206,7 +206,7 @@ function hg.DrawRules(parent)
             if item.punishment then
                 local punLabel = vgui.Create("DLabel", rulePanel)
                 punLabel:SetPos(ScreenScale(10), ScreenScale(35))
-                punLabel:SetFont("KIRO_RulesDesc")
+                punLabel:SetFont("GOMI_RulesDesc")
                 punLabel:SetText("Наказание: " .. item.punishment)
                 punLabel:SetTextColor(item.color or Color(255, 100, 100))
                 punLabel:SizeToContents()

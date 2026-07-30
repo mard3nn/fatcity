@@ -73,14 +73,14 @@ local teams = {
         color2 = Color(68, 10, 255)
     },
     [1] = {
-        objective = "У некоторых людей злые намерения. Спрячься от искателей, они скоро прибудут.",
+        objective = "Прячься пока не стало слишком поздно.",
         name = "Прячущийся",
         color1 = Color(0, 190, 190),
         color2 = Color(0, 190, 190)
     },
     [2] = {
-        objective = "Дороги назад нету, уничтожьте всех, кто прячется.",
-        name = "Искатель",
+        objective = "Они это заслужили.",
+        name = "Охотник",
         color1 = Color(255, 0, 0),
         color2 = Color(228, 49, 49)
     },
@@ -140,18 +140,12 @@ function MODE:HUDPaint()
         drawSeekerWaitingScreen()
         local timeLeft = math.ceil(zb.ROUND_START + 61 - CurTime())
         if timeLeft > 0 then
-            local txt = "Искатель прибудет через: " .. string.FormattedTime(timeLeft, "%02i:%02i")
-            draw.SimpleText(txt, "ZB_HomicideMedium", ScrW() * 0.02, ScrH() * 0.93, Color(0,0,0), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-            draw.SimpleText(txt, "ZB_HomicideMedium", (ScrW() * 0.02) - 2, (ScrH() * 0.93) - 2, Color(255,0,0), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
         end
         return
     end
 
     if zb.ROUND_START + 60 > CurTime() then
         posadd = Lerp(FrameTime() * 5, posadd or 0, zb.ROUND_START + 7.3 < CurTime() and 0 or -ScrW() * 0.4)
-        local text = "Искатель прибудет через: "..string.FormattedTime(zb.ROUND_START + 60 - CurTime(), "%02i:%02i")
-        draw.SimpleText(text, "ZB_HomicideMedium", ScrW() * 0.02 + posadd, ScrH() * 0.95, Color(0,0,0), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-        draw.SimpleText(text, "ZB_HomicideMedium", (ScrW() * 0.02) - 2 + posadd, (ScrH() * 0.95) - 2, Color(255,0,0), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
     end
 
     if zb.ROUND_START + 60 < CurTime() then
@@ -172,7 +166,7 @@ function MODE:HUDPaint()
         if not ply:Alive() then return end
         local fade = math.Clamp(zb.ROUND_START + 8 - CurTime(), 0, 1)
         local team_ = ply:Team()
-        draw.SimpleText("GOMICITY | ПРЯТКИ", "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.1, Color(195, 0, 0, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Hunter", "ZB_HomicideMediumLarge", ScrW() * 0.5, ScrH() * 0.1, Color(195, 117, 0, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         local Rolename = teams[team_].name
         local ColorRole = teams[team_].color1
         ColorRole.a = 255 * fade

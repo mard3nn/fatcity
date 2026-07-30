@@ -173,7 +173,7 @@ local function SendDiscordMessage()
                 chat.AddText(red, "=====================================================================")
                 chat.AddText(red, "{GOMICITY RU 1} ", white, "Переходите в наш Discord и следите за новостями!")
                 chat.AddText(red, "{GOMICITY RU 1}", white, " Ссылка: ", yellow, "https://discord.gg/3ccXTadFrA")
-                chat.AddText(red, "{GOMICITY RU 1} ", white, "Донат на сервере вы можете приобрести в F3 меню")
+                chat.AddText(red, "{GOMICITY RU 1} ", white, "Донат на сервере вы можете приобрести в ESC меню")
                 chat.AddText(red, "=====================================================================")
             ]])
         end
