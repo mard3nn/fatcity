@@ -511,6 +511,29 @@ local function GetFakePing(ply)
     return math.Clamp(math.Round(fake), 5, 70)
 end
 
+local SB_TITLE_WHITE = Color(255, 255, 255, 255)
+local SB_TITLE_COLORS = {
+    [1] = Color(255, 255, 255, 255), // G
+    [2] = Color(255, 255, 255, 255), // O
+    [3] = Color(255, 255, 255, 255), // M
+    [4] = Color(60, 130, 255, 255),  // I
+    [5] = Color(60, 130, 255, 255),  // C
+    [6] = Color(230, 45, 45, 255),   // I
+    [7] = Color(230, 45, 45, 255),   // T
+    [8] = Color(230, 45, 45, 255)    // Y
+}
+local SB_TITLE_SWEEP_SPEED = 12.0
+local SB_TITLE_SWEEP_SOFT = 1.4
+
+local function SB_LerpColor(t, c1, c2)
+    return Color(
+        Lerp(t, c1.r, c2.r),
+        Lerp(t, c1.g, c2.g),
+        Lerp(t, c1.b, c2.b),
+        Lerp(t, c1.a, c2.a)
+    )
+end
+
 function GM:ScoreboardShow()
     if IsValid(scoreBoardMenu) then
         scoreBoardMenu:Remove()
@@ -529,6 +552,7 @@ function GM:ScoreboardShow()
     scoreBoardMenu:ShowCloseButton(false)
 
     scoreBoardMenu.bgAlpha = 0
+    scoreBoardMenu.OpenedAt = RealTime()
     scoreBoardMenu.Paint = function(self, w, h)
         self.bgAlpha = Lerp(FrameTime() * 8, self.bgAlpha, 1)
         hg.DrawBlur(self, 8)
@@ -598,7 +622,6 @@ function GM:ScoreboardShow()
 
     scoreBoardMenu.PaintOver = function(self, w, h)
         local title = "GOMICITY"
-        local t = RealTime() * 4
         surface.SetFont("ZB_InterfaceLarge")
         local tw = surface.GetTextSize(title)
         local sx = w / 2 - tw / 2
@@ -608,13 +631,23 @@ function GM:ScoreboardShow()
         else
             for i = 1, #title do chars[i] = title:sub(i, i) end
         end
+
+        local openedAt = self.OpenedAt or RealTime()
+        local sweepPos = (RealTime() - openedAt) * SB_TITLE_SWEEP_SPEED
+
         local cx = sx
         for i, ch in ipairs(chars) do
             local cw = surface.GetTextSize(ch)
-            local shimmer = (math.sin(t - i * 0.4) + 1) * 0.5
-            local gray = 170 + shimmer * 60
+            local target = SB_TITLE_COLORS[i] or SB_TITLE_WHITE
+
+            local progress = math.Clamp((sweepPos - (i - 1)) / SB_TITLE_SWEEP_SOFT, 0, 1)
+            progress = progress * progress * (3 - 2 * progress)
+            local col = SB_LerpColor(progress, SB_TITLE_WHITE, target)
+            local glow = math.Clamp(1 - math.abs(sweepPos - (i - 1)) / SB_TITLE_SWEEP_SOFT, 0, 1)
+            col = SB_LerpColor(glow * 0.55, col, SB_TITLE_WHITE)
+
             draw.SimpleText(ch, "ZB_InterfaceLarge", cx + 1, 11, Color(0, 0, 0, 150))
-            draw.SimpleText(ch, "ZB_InterfaceLarge", cx, 10, Color(gray, gray, gray))
+            draw.SimpleText(ch, "ZB_InterfaceLarge", cx, 10, col)
             cx = cx + cw
         end
 

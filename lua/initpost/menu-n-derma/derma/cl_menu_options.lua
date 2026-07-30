@@ -48,6 +48,16 @@ local sliderKnob = Color(180, 180, 180)
 local toggleOff = Color(50, 50, 55, 200)
 local toggleOn = Color(180, 180, 180, 255)
 
+local WBR_WHITE = Color(255, 255, 255, 255)
+local WBR_COLORS = {
+    Color(255, 255, 255, 255), -- W
+    Color(60, 130, 255, 255),  -- B
+    Color(230, 45, 45, 255)    -- R
+}
+local function GetWBRColor(idx)
+    return WBR_COLORS[(idx - 1) % 3 + 1]
+end
+
 local function drawBlur(panel, amount)
     local x, y = panel:LocalToScreen(0, 0)
     local frac = panel:GetAlpha() / 255
@@ -151,8 +161,11 @@ local function makeCategoryRow(parent, y, text)
     pnl.anim = 0
     pnl.Paint = function(self, w, h)
         self.anim = Lerp(FrameTime() * 8, self.anim, 1)
-        local t = RealTime() * 4
         local alpha = self.anim * 255
+        local root = self:GetParent():GetParent()
+        local openTime = IsValid(root) and (root.openTime or RealTime()) or RealTime()
+        local sweepPos = (RealTime() - openTime) * 12.0
+        local soft = 1.4
         local chars = {}
         if utf8 then
             for _, c in utf8.codes(text) do chars[#chars+1] = utf8.char(c) end
@@ -163,9 +176,10 @@ local function makeCategoryRow(parent, y, text)
         local cx = ScreenScale(16)
         for i, ch in ipairs(chars) do
             local cw = surface.GetTextSize(ch)
-            local shimmer = (math.sin(t - i * 0.4) + 1) / 2
-            local gray = 130 + shimmer * 90
-            local col = Color(gray, gray, gray, alpha)
+            local progress = math.Clamp((sweepPos - (i - 1)) / soft, 0, 1)
+            progress = progress * progress * (3 - 2 * progress)
+            local target = GetWBRColor(i)
+            local col = Color(Lerp(progress, 255, target.r), Lerp(progress, 255, target.g), Lerp(progress, 255, target.b), alpha)
             draw.SimpleText(ch, "GOMI_SettingsCat", cx + 1, h/2 + 1, Color(0,0,0,120))
             draw.SimpleText(ch, "GOMI_SettingsCat", cx, h/2, col)
             cx = cx + cw
@@ -317,6 +331,7 @@ function hg.DrawSettings(parent)
         for i = -1, math.ceil(h/grid)+1 do surface.DrawRect(0, i*grid + off, w, 1) end
     end
     parent:AlphaTo(255, 0.15, 0)
+    parent.openTime = RealTime()
 
     local title = vgui.Create("DLabel", parent)
     title:SetPos(ScreenScale(20), ScreenScale(20))
@@ -327,7 +342,10 @@ function hg.DrawSettings(parent)
     title.Paint = function(self, w, h)
         self.anim = Lerp(FrameTime() * 10, self.anim, 1)
         local a = self.anim * 255
-        local t = RealTime() * 4
+        local parentPnl = self:GetParent()
+        local openTime = IsValid(parentPnl) and (parentPnl.openTime or RealTime()) or RealTime()
+        local sweepPos = (RealTime() - openTime) * 12.0
+        local soft = 1.4
         local s = "Настройки"
         surface.SetFont("GOMI_Title")
         local chars = {}
@@ -339,10 +357,12 @@ function hg.DrawSettings(parent)
         local cx = 0
         for i, ch in ipairs(chars) do
             local cw = surface.GetTextSize(ch)
-            local shimmer = (math.sin(t - i*0.4) + 1)/2
-            local gray = 100 + shimmer*155
+            local progress = math.Clamp((sweepPos - (i - 1)) / soft, 0, 1)
+            progress = progress * progress * (3 - 2 * progress)
+            local target = GetWBRColor(i)
+            local col = Color(Lerp(progress, 255, target.r), Lerp(progress, 255, target.g), Lerp(progress, 255, target.b), a)
             draw.SimpleText(ch, "GOMI_Title", cx+2, 2, Color(0,0,0,150*(a/255)))
-            draw.SimpleText(ch, "GOMI_Title", cx, 0, Color(gray, gray, gray, a))
+            draw.SimpleText(ch, "GOMI_Title", cx, 0, col)
             cx = cx + cw
         end
     end

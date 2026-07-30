@@ -27,12 +27,28 @@ local AuthorData = {
     }
 }
 
+local WBR_WHITE = Color(255, 255, 255, 255)
+local WBR_COLORS = {
+    Color(255, 255, 255, 255), -- W
+    Color(60, 130, 255, 255),  -- B
+    Color(230, 45, 45, 255)    -- R
+}
+
+local function LerpColor(t, c1, c2)
+    return Color(Lerp(t, c1.r, c2.r), Lerp(t, c1.g, c2.g), Lerp(t, c1.b, c2.b), Lerp(t, c1.a, c2.a))
+end
+
+local function GetWBRColor(idx)
+    return WBR_COLORS[(idx - 1) % 3 + 1]
+end
+
 function PANEL:Init()
     self:SetSize(ScrW(), ScrH())
     self:Center()
     self:MakePopup()
     self:SetAlpha(0)
     self:AlphaTo(255, 0.2)
+    self.OpenedAt = RealTime()
 
     self.AuthorPanels = {}
 
@@ -68,7 +84,18 @@ function PANEL:Init()
             for j, char in ipairs(chars) do
                 local offset = surface.GetTextSize(table.concat(chars, "", 1, j - 1))
                 local shimmer = (math.sin(t - j * 0.4) + 1) * 0.5
-                local col_shimmer = Color(40, 40, 40):Lerp(Color(255, 255, 255), shimmer)
+                local s2 = shimmer * 3
+                local p2 = math.floor(s2)
+                local f2 = s2 - p2
+                local cr, cg, cb
+                if p2 == 0 then
+                    cr = 255; cg = Lerp(f2, 255, 50); cb = Lerp(f2, 255, 50)
+                elseif p2 == 1 then
+                    cr = Lerp(f2, 255, 50); cg = Lerp(f2, 50, 100); cb = Lerp(f2, 50, 255)
+                else
+                    cr = Lerp(f2, 50, 255); cg = Lerp(f2, 100, 255); cb = Lerp(f2, 255, 255)
+                end
+                local col_shimmer = Color(40, 40, 40):Lerp(Color(cr, cg, cb), shimmer)
                 local col = clr_text:Lerp(col_shimmer, v)
                 
                 draw.SimpleText(char, "ZC_MM_Title", startX + offset + 1, h / 2 + 1, Color(0, 0, 0, 200), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -125,7 +152,18 @@ function PANEL:Init()
         for i, char in ipairs(chars) do
             local offset = surface.GetTextSize(table.concat(chars, "", 1, i - 1))
             local shimmer = (math.sin(t - i * 0.4) + 1) * 0.5
-            local col_shimmer = Color(40, 40, 40):Lerp(Color(255, 255, 255), shimmer)
+            local s2 = shimmer * 3
+            local p2 = math.floor(s2)
+            local f2 = s2 - p2
+            local cr, cg, cb
+            if p2 == 0 then
+                cr = 255; cg = Lerp(f2, 255, 50); cb = Lerp(f2, 255, 50)
+            elseif p2 == 1 then
+                cr = Lerp(f2, 255, 50); cg = Lerp(f2, 50, 100); cb = Lerp(f2, 50, 255)
+            else
+                cr = Lerp(f2, 50, 255); cg = Lerp(f2, 100, 255); cb = Lerp(f2, 255, 255)
+            end
+            local col_shimmer = Color(40, 40, 40):Lerp(Color(cr, cg, cb), shimmer)
             local col = clr_text:Lerp(col_shimmer, v)
             
             draw.SimpleText(char, s:GetFont(), startX + offset + 1, h / 2 + 1, Color(0, 0, 0, 200 * v), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -173,25 +211,25 @@ function PANEL:Paint(w, h)
     surface.SetTexture(gradient_d)
     surface.DrawTexturedRect(0, 0, w, h)
 
-    -- Заголовок GOMICITY (Центр сверху)
     local title = "GOMICITY"
     local x, y = w / 2, h * 0.25
-    local t = RealTime() * 4
+    local sweepPos = (RealTime() - self.OpenedAt) * 12.0
+    local soft = 1.4
 
     surface.SetFont("ZC_MM_Title")
     draw.SimpleText(title, "ZC_MM_Title", x + 1, y + 1, Color(0, 0, 0, 150), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local chars = GetTextChars(title)
-    local totalTitleW, _ = surface.GetTextSize(title)
-    local startX = x - totalTitleW / 2
-    local accumulatedW = 0
+    local totalW, _ = surface.GetTextSize(title)
+    local startX = x - totalW / 2
+    local ax = 0
     for i, char in ipairs(chars) do
-        local shimmer = (math.sin(t - i * 0.4) + 1) * 0.5
-        local col = Color(100, 100, 100):Lerp(Color(255, 255, 255), shimmer)
-        draw.SimpleText(char, "ZC_MM_Title", startX + accumulatedW, y, col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-        
-        local currentStr = table.concat(chars, "", 1, i)
-        accumulatedW = surface.GetTextSize(currentStr)
+        local progress = math.Clamp((sweepPos - (i - 1)) / soft, 0, 1)
+        progress = progress * progress * (3 - 2 * progress)
+        local target = GetWBRColor(i)
+        local col = LerpColor(progress, WBR_WHITE, target)
+        draw.SimpleText(char, "ZC_MM_Title", startX + ax, y, col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        ax = ax + surface.GetTextSize(char)
     end
 
     draw.SimpleText("PROJECT AUTHORS", "ZCity_Tiny", w / 2, y + ScreenScale(26), clr_text_sub, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)

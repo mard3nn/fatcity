@@ -77,6 +77,7 @@ local splashMessages = {
     'Мало вам говна, которое вы заварили?',
     'Эй, американец! Что там ООН насчёт Гондураса решил?',
     'Мы Тарков от вас вычистим, мрази!',
+    'ЭТО МОЯ СБОРКА!ЭТОЪЭЪЭЪ МОЪ РЕЖЪМ',
     'Без воды помру нахуй.'
 }
 
@@ -447,9 +448,9 @@ function PANEL:BuildUI()
     local infoColor = Color(178, 178, 178, 220)
     local labelsData = {
         { text = "Authors: uzelezz, Sadsalat,", index = 0 },
-        { text = "Mr.Point, Zac70, Deka, Mannytko", index = 1 },
-        { text = "Release " .. tostring(hg and hg.Version or "1.4.0"), index = 2 },
-        { text = "GitHub: github.com/uzelezz123/Z-City", index = 3 },
+        { text = "Mr.Point, Zac70, Deka, Mannytko, ok1ro", index = 1 },
+        { text = "GOMICITY is a fork of KIROCITY, licensed under AGPLv3", index = 2 },
+        { text = "GitHub: github.com/uzelezz123/Z-City | github.com/ok1ro/KIROCITY-OFF", index = 3 }
     }
 
     for _, data in ipairs(labelsData) do
@@ -471,7 +472,7 @@ function PANEL:BuildUI()
     local rightAuthors = vgui.Create("DLabel", self)
     rightAuthors:SetFont("ZCity_Tiny")
     rightAuthors:SetTextColor(infoColor)
-    rightAuthors:SetText("GOMICITY COMMIT большой\nburmaldeiko")
+    rightAuthors:SetText("GOMICITY Authors: Полковник Мардененко, aboba017\nа вы знали что дворовые собаки умнее чем\nнекоторые люди?")
     rightAuthors:SetContentAlignment(3)
     rightAuthors:SizeToContents()
 

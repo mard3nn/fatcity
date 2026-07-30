@@ -161,7 +161,7 @@ if SERVER then
     function zb.StartRTV()
         if zb.votestarted then return end
         obnovit_karti()
-        rtvtime = CurTime() + 30
+        rtvtime = CurTime() + 20
 
         golosovanie_zaversheno = false --ыыыы флаг ванючий, тебя забыл поставить и всё наебнулось
         table.Empty(golosa)

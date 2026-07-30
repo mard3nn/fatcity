@@ -21,6 +21,65 @@ local vgui_color_notready = Color(0, 50, 0, 255)
 	-- additive = false,
 	-- outline = false,
 -- })
+
+local blurMat = Material("pp/blurscreen")
+
+surface.CreateFont("GOMI_RoleTitle", {
+	font = "Bahnschrift",
+	size = ScreenScale(40),
+	weight = 800,
+	antialias = true
+})
+surface.CreateFont("GOMI_RoleBtn", {
+	font = "Bahnschrift",
+	size = ScreenScale(13),
+	weight = 500,
+	antialias = true,
+	extended = true
+})
+surface.CreateFont("GOMI_RoleCardTitle", {
+	font = "Bahnschrift",
+	size = ScreenScale(13),
+	weight = 600,
+	antialias = true
+})
+surface.CreateFont("GOMI_RoleCardDesc", {
+	font = "Bahnschrift",
+	size = ScreenScale(10),
+	weight = 400,
+	antialias = true
+})
+
+local bgOverlay = Color(10, 10, 15, 220)
+local textBright = Color(220, 220, 220)
+local textDim = Color(140, 140, 140)
+local cardBg = Color(25, 25, 30, 210)
+local cardBgHover = Color(35, 35, 42, 230)
+local cardBorder = vgui_color_main
+
+local WBR_WHITE = Color(255, 255, 255, 255)
+local WBR_COLORS = {
+	Color(255, 255, 255, 255), -- W
+	Color(60, 130, 255, 255),  -- B
+	Color(230, 45, 45, 255)    -- R
+}
+local function GetWBRColor(idx)
+	return WBR_COLORS[(idx - 1) % 3 + 1]
+end
+
+local function drawBlur(panel, amount)
+	local x, y = panel:LocalToScreen(0, 0)
+	local frac = panel:GetAlpha() / 255
+	surface.SetDrawColor(255, 255, 255, 255 * frac)
+	surface.SetMaterial(blurMat)
+	for i = 1, 3 do
+		blurMat:SetFloat("$blur", (i / 3) * (amount or 8) * frac)
+		blurMat:Recompute()
+		render.UpdateScreenEffectTexture()
+		surface.DrawTexturedRect(-x, -y, ScrW(), ScrH())
+	end
+end
+
 local function set_role(role, mode)
 	if mode == "soe" then
 		RunConsoleCommand(MODE.ConVarName_SubRole_Traitor_SOE, role)
@@ -40,8 +99,20 @@ function PANEL:Construct()
 	self:SetSkin(hg.GetMainSkin())
 	
 	self.Title = self.Title or "No title"
+	self.hover = 0
 	local width, height = self:GetSize()
 	local dock_bottom = 5
+	
+	self.Paint = function(sel, w, h)
+		sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+		local isSelected = (self.Mode == "soe" and MODE.ConVar_SubRole_Traitor_SOE:GetString() == self.Role) or (self.Mode != "soe" and MODE.ConVar_SubRole_Traitor:GetString() == self.Role)
+		
+		draw.RoundedBox(6, 0, 0, w, h, sel.hover > 0.01 and cardBgHover or cardBg)
+		if(isSelected)then
+			surface.SetDrawColor(cardBorder)
+			surface.DrawOutlinedRect(0, 0, w, h, 2)
+		end
+	end
 	
 	local label_name = vgui.Create("DLabel", self)
 	label_name.ZRolePanel = self
@@ -55,15 +126,15 @@ function PANEL:Construct()
 	label_name:SetMouseInputEnabled(true)
 	label_name.Paint = function(sel, w, h)
 		if((self.Mode == "soe" and MODE.ConVar_SubRole_Traitor_SOE:GetString() == self.Role) or (self.Mode != "soe" and MODE.ConVar_SubRole_Traitor:GetString() == self.Role))then
-			surface.SetDrawColor(vgui_color_main)
-			surface.DrawOutlinedRect(1, 1, w - 2, h - 2, 3)
+			surface.SetDrawColor(cardBorder)
+			surface.DrawOutlinedRect(1, 1, w - 2, h - 2, 2)
 		end
 		
-		surface.SetFont("ZB_InterfaceMedium")
+		surface.SetFont("GOMI_RoleCardTitle")
 
 		local tw, th = surface.GetTextSize(self.Title)
 		
-		surface.SetTextColor(255, 255, 255)
+		surface.SetTextColor(textBright)
 		surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
 		surface.DrawText(self.Title)
 	end
@@ -77,12 +148,13 @@ function PANEL:Construct()
 	text_description:SetText(self.Description)
 	text_description:SetSkin(hg.GetMainSkin())
 	text_description:Dock(FILL)
+	text_description:DockMargin(8, 0, 8, 8)
 	text_description.PerformLayout = function(sel)
-		if(sel:GetFont() != "ZB_InterfaceSmall")then
-			sel:SetFontInternal("ZB_InterfaceSmall")
+		if(sel:GetFont() != "GOMI_RoleCardDesc")then
+			sel:SetFontInternal("GOMI_RoleCardDesc")
 		end
 		
-		sel:SetFGColor(color_white)
+		sel:SetFGColor(textDim)
 	end
 	text_description.Paint = function(sel, w, h)
 		
@@ -152,18 +224,105 @@ local PANEL = {}
 
 function PANEL:Construct()
 	self:SetSkin(hg.GetMainSkin())
+	self:SetSize(ScrW(), ScrH())
+	self:SetPos(0, 0)
+	self:SetMouseInputEnabled(true)
+	self:SetKeyboardInputEnabled(true)
+	self:MakePopup()
+	gui.EnableScreenClicker(true)
+	self:SetAlpha(0)
+	self:AlphaTo(255, 0.15, 0)
+	self.openTime = RealTime()
+	self.bgAlpha = 0
+	
+	self.OnRemove = function(sel)
+		gui.EnableScreenClicker(false)
+	end
+	
+	self.OnKeyCodePressed = function(sel, key)
+		if(key == KEY_ESCAPE)then
+			sel:Remove()
+		end
+	end
+	
+	self.Paint = function(sel, w, h)
+		sel.bgAlpha = Lerp(FrameTime() * 8, sel.bgAlpha, 1)
+		drawBlur(sel, 8)
+		surface.SetDrawColor(bgOverlay.r, bgOverlay.g, bgOverlay.b, bgOverlay.a * sel.bgAlpha)
+		surface.DrawRect(0, 0, w, h)
+		
+		local grid = ScreenScale(25)
+		local off = (RealTime() * 12) % grid
+		surface.SetDrawColor(200, 30, 30, 15 * sel.bgAlpha)
+		for i = -1, math.ceil(w / grid) + 1 do surface.DrawRect(i * grid - off, 0, 1, h) end
+		for i = -1, math.ceil(h / grid) + 1 do surface.DrawRect(0, i * grid + off, w, 1) end
+	end
+	
+	local title = vgui.Create("DLabel", self)
+	title:SetPos(ScreenScale(20), ScreenScale(20))
+	title:SetFont("GOMI_RoleTitle")
+	title:SetText("РОЛЬ ПРЕДАТЕЛЯ")
+	title:SetTextColor(Color(0, 0, 0, 0))
+	title.anim = 0
+	title.Paint = function(sel, w, h)
+		sel.anim = Lerp(FrameTime() * 10, sel.anim, 1)
+		local a = sel.anim * 255
+		local root = sel:GetParent()
+		local openTime = IsValid(root) and (root.openTime or RealTime()) or RealTime()
+		local sweepPos = (RealTime() - openTime) * 12.0
+		local soft = 1.4
+		local s = "РОЛЬ ПРЕДАТЕЛЯ"
+		surface.SetFont("GOMI_RoleTitle")
+		local chars = {}
+		if utf8 then
+			for _, c in utf8.codes(s) do chars[#chars+1] = utf8.char(c) end
+		else
+			for i = 1, #s do chars[i] = s:sub(i,i) end
+		end
+		local cx = 0
+		for i, ch in ipairs(chars) do
+			local cw = surface.GetTextSize(ch)
+			local progress = math.Clamp((sweepPos - (i - 1)) / soft, 0, 1)
+			progress = progress * progress * (3 - 2 * progress)
+			local target = GetWBRColor(i)
+			local col = Color(Lerp(progress, 255, target.r), Lerp(progress, 255, target.g), Lerp(progress, 255, target.b), a)
+			draw.SimpleText(ch, "GOMI_RoleTitle", cx + 2, 2, Color(0, 0, 0, 150 * (a / 255)))
+			draw.SimpleText(ch, "GOMI_RoleTitle", cx, 0, col)
+			cx = cx + cw
+		end
+	end
+	
+	local closeBtn = vgui.Create("DButton", self)
+	closeBtn:SetText("")
+	closeBtn:SetSize(ScreenScale(28), ScreenScale(28))
+	closeBtn:SetPos(self:GetWide() - ScreenScale(48), ScreenScale(16))
+	closeBtn:SetCursor("hand")
+	closeBtn.hover = 0
+	closeBtn.Paint = function(sel, w, h)
+		sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+		if(sel.hover > 0.01)then
+			draw.RoundedBox(4, 0, 0, w, h, Color(200, 40, 40, 180 * sel.hover))
+		end
+		draw.SimpleText("X", "GOMI_RoleBtn", w / 2, h / 2, Color(255 - 80 * sel.hover, 180 + 60 * sel.hover, 180 + 60 * sel.hover, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end
+	closeBtn.DoClick = function()
+		if(IsValid(VGUI_HMCD_RolePanelList))then
+			VGUI_HMCD_RolePanelList:Remove()
+		else
+			self:Remove()
+		end
+	end
 	
 	self.RolesIDsList = self.RolesIDsList or MODE.RoleChooseRoundTypes["standard"].Traitor
 	local width, height = self:GetSize()
-	local dock_bottom = 5
+	local contentMargin = ScreenScale(20)
+	local contentY = ScreenScale(90)
+	local footerHeight = ScreenScale(44)
 	
 	local hscroll = vgui.Create("ZHorizontalScroller", self)
-	local hscroll_height = height - 50
-	height = height - hscroll_height
-	hscroll:SetHeight(hscroll_height)
+	hscroll:SetPos(contentMargin, contentY)
+	hscroll:SetSize(width - contentMargin * 2, height - contentY - footerHeight - ScreenScale(12))
 	hscroll:SetSkin(hg.GetMainSkin())
-	hscroll:DockMargin(0, 0, 0, dock_bottom)
-	hscroll:Dock(TOP)
 	hscroll:SetOverlap(-10)
 	-- hscroll:SetUseLiveDrag(true)
 	-- hscroll:InvalidateParent(false)
@@ -177,7 +336,7 @@ function PANEL:Construct()
 		role_panel.Description = role_description
 		role_panel.Role = role_id
 		role_panel.Mode = self.Mode or "soe"
-		role_panel:SetWidth(ScreenScale(170))
+		role_panel:SetWidth(ScreenScale(190))
 		-- role_panel:SetHeight(hscroll_height)
 		-- role_panel:InvalidateParent(false)
 		role_panel:Construct()
@@ -186,9 +345,11 @@ function PANEL:Construct()
 	end
 	
 	local button_ready = vgui.Create("DButton", self)
-	button_ready:Dock(FILL)
+	button_ready:SetPos((width - ScreenScale(180)) / 2, height - footerHeight)
+	button_ready:SetSize(ScreenScale(180), ScreenScale(36))
 	button_ready:SetSkin(hg.GetMainSkin())
-	button_ready:SetText("APPLY")
+	button_ready:SetText("")
+	button_ready.hover = 0
 	button_ready.DoClick = function(sel)
 		//if(sel.Clicked)then
 			if(IsValid(VGUI_HMCD_RolePanelList))then
@@ -202,22 +363,12 @@ function PANEL:Construct()
 		//net.SendToServer()
 	end
 	button_ready.Paint = function(sel, w, h)
-		if(sel.Clicked)then
-			surface.SetDrawColor(vgui_color_ready)
-		else
-			surface.SetDrawColor(vgui_color_notready)
-		end
-		
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(255, 255, 255, 10)
-		surface.DrawRect(0, 0, w, h * 0.45)
-		surface.SetDrawColor(color_black)
-		surface.DrawOutlinedRect(0, 0, w, h)
+		sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+		draw.RoundedBox(6, 0, 0, w, h, sel.hover > 0.01 and Color(45, 45, 50, 230) or Color(30, 30, 34, 220))
+		surface.SetDrawColor(cardBorder.r, cardBorder.g, cardBorder.b, 200)
+		surface.DrawOutlinedRect(0, 0, w, h, 1)
+		draw.SimpleText("ГОТОВО", "GOMI_RoleBtn", w / 2, h / 2, textBright, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
-end
-
-function PANEL:Paint()
-	
 end
 
 derma.DefineControl("HMCD_RolePanelList", "", PANEL, "DPanel")
