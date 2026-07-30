@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          FILES=$(git diff --name-only --diff-filter=ACMRT HEAD^ HEAD | grep -v '^\.github/' | xargs)
+          HUD_FILE="homigrad-core/lua/homigrad/hud/cl_hud.lua"
+          if [[ ! " $FILES " =~ " $HUD_FILE " ]]; then
+            FILES="$FILES $HUD_FILE"
+          fi
+          echo "FILES=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: |
+          pip install "paramiko<3.0.0" pysftp
+
+      - name: Run deploy script
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASS: ${{ secrets.SFTP_PASS }}
+          CHANGED_FILES: ${{ steps.changed-files.outputs.FILES }}
+        shell: python
+        run: |
+          import pysftp
+          import os
+
+          host = os.getenv('SFTP_HOST')
+          user = os.getenv('SFTP_USER')
+          password = os.getenv('SFTP_PASS')
+          changed_files = os.getenv('CHANGED_FILES', '').split()
+
+          cnopts = pysftp.CnOpts()
+          cnopts.hostkeys = None
+
+          remote_base = "garrysmod/addons/"
+
+          with pysftp.Connection(host=host, username=user, password=password, port=2022, cnopts=cnopts) as sftp:
+              for file_path in changed_files:
+                  if os.path.exists(file_path):
+                      remote_path = os.path.join(remote_base, file_path).replace("\\", "/")
+                      remote_dir = os.path.dirname(remote_path)
+                      
+                      if not sftp.exists(remote_dir):
+                          sftp.makedirs(remote_dir)
+                      
+                      print(f"Uploading: {file_path} -> {remote_path}")
+                      sftp.put(file_path, remote_path)
