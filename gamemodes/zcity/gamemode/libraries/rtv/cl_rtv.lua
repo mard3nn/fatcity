@@ -8,6 +8,16 @@ if CLIENT then
     surface.CreateFont('RTV.TimeFont',  { font = 'Roboto', size = ScreenScale(8), weight = 1, italic = true })
     surface.CreateFont('RTV.StayFont', { font = 'Roboto', size = ScreenScale(10), weight = 1000 })
 
+    -- peremeshivaet massiv (Fisher-Yates), ispolzuetsya chtobi poryadok kart bil raznii kajdii RTV
+    local function PeremeshatMassiv(tbl)
+        local n = #tbl
+        for i = n, 2, -1 do
+            local j = math.random(i)
+            tbl[i], tbl[j] = tbl[j], tbl[i]
+        end
+        return tbl
+    end
+
     -- --KartaKartochkaKartaKartochkaKartaKartochkaKartaKartochka eto kvadratic v korotom naxoditca karta
     local KartaKartochka = {}
     function KartaKartochka:Init()
@@ -16,6 +26,7 @@ if CLIENT then
         self.Pobeditel = false
         self.Vybrannaya = false
         self.Mat = nil
+        self.MoveGlow = 0
     end
 
     function KartaKartochka:Setup(name, parent)
@@ -50,6 +61,17 @@ if CLIENT then
             local alpha = math.abs(math.sin(RealTime() * 10)) * 255
             surface.SetDrawColor(255,255,0,alpha)
             surface.DrawOutlinedRect(0,0,w,h,3)
+        end
+
+        if self.MoveGlow and self.MoveGlow > 0 then
+            surface.SetDrawColor(80,190,255,self.MoveGlow)
+            surface.DrawOutlinedRect(0,0,w,h,3)
+        end
+    end
+
+    function KartaKartochka:Think()
+        if self.MoveGlow and self.MoveGlow > 0 then
+            self.MoveGlow = math.max(0, self.MoveGlow - FrameTime() * 450)
         end
     end
 
@@ -115,6 +137,7 @@ if CLIENT then
         self.Votes = {}
         self.WinnerMap = nil
         self.Kartochki = {}
+        self.KartochkiOrder = {}
         self.VoteCooldown = 0
         self.MoySteamID64 = LocalPlayer():SteamID64()
         self.MoyGolos = nil
@@ -250,6 +273,8 @@ if CLIENT then
                 card:UpdateAvatars(self.Votes[m] or {})
             end
         end
+
+        self:BringToFront(mapName) -- vibrannaya karta stanovitsya pervoy, s krasivoy animaciey
         if self.KnopkaOst then
             self.KnopkaOst.Vybrannaya = (mapName == 'stay')
             for _, av in ipairs(self.KnopkaOst.AvatarkiOst) do if av:IsValid() then av:Remove() end end
@@ -270,18 +295,26 @@ if CLIENT then
     function PanelGolosovaniya:ZapolnitKartami(maps)
         self.MapsInner:Clear()
         self.Kartochki = {}
+        self.KartochkiOrder = {}
+
+        local spisokKart = {}
         for _, m in ipairs(maps) do
-            if m ~= 'stay' then
-                local card = vgui.Create('RTVMapCard', self.MapsInner)
-                card:Setup(m, self)
-                self.Kartochki[m] = card
-            end
+            if m ~= 'stay' then table.insert(spisokKart, m) end
         end
-        timer.Simple(0, function() if IsValid(self) then self:PereRisovka() end end)
+        PeremeshatMassiv(spisokKart) -- kajdiy RTV karti peremeshivayutsya v novom poryadke
+
+        for _, m in ipairs(spisokKart) do
+            local card = vgui.Create('RTVMapCard', self.MapsInner)
+            card:Setup(m, self)
+            card:SetAlpha(0)
+            self.Kartochki[m] = card
+            table.insert(self.KartochkiOrder, m)
+        end
+        timer.Simple(0, function() if IsValid(self) then self:PereRisovka(true) end end)
     end
 
-    function PanelGolosovaniya:PereRisovka() --scolko vsego mi mosem razmestit kartochek y igroka na ekrane
-        local cardCount = table.Count(self.Kartochki)
+    function PanelGolosovaniya:PereRisovka(animatePoyavlenie) --scolko vsego mi mosem razmestit kartochek y igroka na ekrane
+        local cardCount = #self.KartochkiOrder
         if cardCount == 0 then return end
         local parentW = self.MapsContainer:GetWide()
         if parentW <= 0 then return end
@@ -290,22 +323,53 @@ if CLIENT then
         local totalSpacing = spacing * (cols + 1)
         local cardW = (parentW - totalSpacing) / cols
         local cardH = cardW
-        local x, y = spacing, spacing
-        local col = 0
-        for _, card in pairs(self.Kartochki) do
-            if card:IsValid() then
+
+        for i, m in ipairs(self.KartochkiOrder) do
+            local card = self.Kartochki[m]
+            if card and card:IsValid() then
+                local col = (i - 1) % cols
+                local row = math.floor((i - 1) / cols)
+                local x = spacing + col * (cardW + spacing)
+                local y = spacing + row * (cardH + spacing)
+
                 card:SetSize(cardW, cardH)
-                card:SetPos(x, y)
-                col = col + 1
-                if col >= cols then
-                    col = 0; x = spacing; y = y + cardH + spacing
+
+                if animatePoyavlenie then
+                    -- karti krasivo "vilitayut" snizu po ocheredi pri otkritii golosovaniya
+                    card:SetPos(x, y + 30)
+                    card:SetAlpha(0)
+                    local zaderjka = (i - 1) * 0.045
+                    card:AlphaTo(255, 0.25, zaderjka)
+                    card:MoveTo(x, y, 0.3, zaderjka, 0.3)
                 else
-                    x = x + cardW + spacing
+                    -- plavnaya animaciya pri perestanovke kartochek mestami
+                    card:AlphaTo(255, 0.15, 0)
+                    card:MoveTo(x, y, 0.3, 0, 0.3)
                 end
             end
         end
         local totalRows = math.ceil(cardCount / cols)
         self.MapsInner:SetSize(parentW, totalRows * (cardH + spacing) + spacing)
+    end
+
+    function PanelGolosovaniya:BringToFront(mapName)
+        if not mapName or mapName == 'stay' then return end
+        local idx = nil
+        for i, m in ipairs(self.KartochkiOrder) do
+            if m == mapName then idx = i break end
+        end
+        if not idx or idx == 1 then return end
+
+        table.remove(self.KartochkiOrder, idx)
+        table.insert(self.KartochkiOrder, 1, mapName)
+
+        self:PereRisovka()
+
+        local card = self.Kartochki[mapName]
+        if card and card:IsValid() then
+            card.MoveGlow = 255 -- krasivaya podsvetka karti kotoraya stala pervoy
+            surface.PlaySound('buttons/button15.wav')
+        end
     end
 
     function PanelGolosovaniya:PerformLayout(w, h)

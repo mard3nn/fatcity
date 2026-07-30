@@ -84,6 +84,7 @@ function zb:EndRound()
 	net.Start("RoundInfo")
 		net.WriteString(mode.name or "hmcd")
 		net.WriteInt(zb.ROUND_STATE, 4)
+		net.WriteString(zb.GetNextRoundDisplayName())
 	net.Broadcast()
 
 	--PrintMessage(HUD_PRINTTALK, "Раунд закончен.")
@@ -168,6 +169,7 @@ function zb:EndRoundThink()
 			net.Start("RoundInfo")
 				net.WriteString(mode.name or "hmcd")
 				net.WriteInt(zb.ROUND_STATE, 4)
+				net.WriteString(zb.GetNextRoundDisplayName())
 			net.Broadcast()
 
 			hg.UpdateRoundTime(CurrentRound().ROUND_TIME, CurTime(), CurTime() + (CurrentRound().start_time or 5))
@@ -195,6 +197,7 @@ hook.Add("PlayerInitialSpawn", "zb_SendRoundInfo", function(ply)
 		net.Start("RoundInfo")
 			net.WriteString(mode.name or "hmcd")
 			net.WriteInt(zb.ROUND_STATE, 4)
+			net.WriteString(zb.GetNextRoundDisplayName())
 		net.Send(ply)
 	end
 
@@ -202,6 +205,11 @@ hook.Add("PlayerInitialSpawn", "zb_SendRoundInfo", function(ply)
 end)
 
 util.AddNetworkString("RoundInfo")
+
+function zb.GetNextRoundDisplayName()
+	return (zb.nextround and zb.GetRoundName(zb.nextround)) or ""
+end
+
 function zb:Think(time)
 	if (zb.thinkTime or CurTime()) > time then return end
 	zb.thinkTime = time + 1
@@ -596,6 +604,7 @@ function zb:RoundStart()
 	net.Start("RoundInfo")
 		net.WriteString(mode.name or "hmcd")
 		net.WriteInt(zb.ROUND_STATE, 4)
+		net.WriteString(zb.GetNextRoundDisplayName())
 	net.Broadcast()
 
 	if forcemodeconvar:GetString() != "" then

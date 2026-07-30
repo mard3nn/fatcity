@@ -251,6 +251,7 @@ hook.Add("RenderScreenspaceEffects", "huyhuyUwU", function()
 end)
 
 zb.ROUND_STATE = 0
+zb.NEXTROUND_NAME = zb.NEXTROUND_NAME or ""
 net.Receive("RoundInfo", function()
 	local rnd = net.ReadString()
 	
@@ -265,6 +266,7 @@ net.Receive("RoundInfo", function()
 	zb.CROUND = rnd
 
 	zb.ROUND_STATE = net.ReadInt(4)
+	zb.NEXTROUND_NAME = net.ReadString()
 	
 	if zb.ROUND_STATE == 0 then
 		zb.fade = 7
@@ -649,6 +651,33 @@ function GM:ScoreboardShow()
             draw.SimpleText(ch, "ZB_InterfaceLarge", cx + 1, 11, Color(0, 0, 0, 150))
             draw.SimpleText(ch, "ZB_InterfaceLarge", cx, 10, col)
             cx = cx + cw
+        end
+
+        do
+            local cr = CurrentRound()
+            local curModeName = cr and (cr.PrintName or cr.name) or "???"
+            local nextModeName = (zb.NEXTROUND_NAME ~= "" and zb.NEXTROUND_NAME) or "???"
+
+            surface.SetFont("ZB_InterfaceSmall")
+
+            local curLabel = "Текущий режим: "
+            local lw = surface.GetTextSize(curLabel)
+            surface.SetTextColor(170, 170, 170, 255)
+            surface.SetTextPos(w * 0.01, h * 0.01)
+            surface.DrawText(curLabel)
+            surface.SetTextColor(230, 230, 230, 255)
+            surface.SetTextPos(w * 0.01 + lw, h * 0.01)
+            surface.DrawText(curModeName)
+
+            local nextLabel = "Следующий режим: "
+            local nlw, nlh = surface.GetTextSize(nextLabel)
+            local nvw = surface.GetTextSize(nextModeName)
+            surface.SetTextColor(170, 170, 170, 255)
+            surface.SetTextPos(w * 0.99 - nlw - nvw, h * 0.01)
+            surface.DrawText(nextLabel)
+            surface.SetTextColor(230, 230, 230, 255)
+            surface.SetTextPos(w * 0.99 - nvw, h * 0.01)
+            surface.DrawText(nextModeName)
         end
 
         surface.SetFont("ZB_InterfaceSmall")

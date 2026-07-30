@@ -219,6 +219,7 @@ function MODE:GiveEquipment()
                     end
 
                     ply:Give("weapon_melee")
+                    ply:Give("weapon_radar")
                     ply:Give("weapon_fentanyl")
 
                     ply:Give("weapon_hands_sh")
