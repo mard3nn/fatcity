@@ -24,56 +24,115 @@ if CLIENT then
         )
     end
 
+    surface.CreateFont("GOMI_DonateTitle", {
+        font = "Bahnschrift",
+        size = ScreenScale(40),
+        weight = 800,
+        antialias = true
+    })
+    surface.CreateFont("GOMI_DonateBtn", {
+        font = "Bahnschrift",
+        size = ScreenScale(13),
+        weight = 500,
+        antialias = true,
+        extended = true
+    })
+
+    local WBR_COLORS = {
+        Color(255, 255, 255, 255), -- W
+        Color(60, 130, 255, 255),  -- B
+        Color(230, 45, 45, 255)    -- R
+    }
+    local function GetWBRColor(idx)
+        return WBR_COLORS[(idx - 1) % 3 + 1]
+    end
+
     function OpenDonateMenu()
         if IsValid(DonateFrame) then DonateFrame:Remove() end
 
         local startTime = CurTime()
         local frame = vgui.Create("DFrame")
-        frame:SetSize(900, 650)
+        frame:SetSize(ScrW(), ScrH())
+        frame:SetPos(0, 0)
         frame:SetTitle("")
-        frame:Center()
+        frame:SetDraggable(false)
+        frame:ShowCloseButton(false)
         frame:MakePopup()
         frame:SetSkin("ZCity")
         DonateFrame = frame
 
+        frame.OnKeyCodePressed = function(self, key)
+            if key == KEY_ESCAPE then
+                self:Close()
+            end
+        end
+
         frame.Paint = function(self, w, h)
             local anim = math.Clamp((CurTime() - startTime) * 3, 0, 1)
-            
+
             if hg and hg.DrawBlur then hg.DrawBlur(self, 8 * anim) end
-            
-            surface.SetDrawColor(10, 10, 10, 245 * anim)
+
+            surface.SetDrawColor(10, 10, 15, 220 * anim)
             surface.DrawRect(0, 0, w, h)
 
-            surface.SetDrawColor(255, 255, 255, 2 * anim)
-            for i = 0, w, 30 do surface.DrawRect(i, 0, 1, h) end
-            for i = 0, h, 30 do surface.DrawRect(0, i, w, 1) end
-
-            local scan = (CurTime() * 150) % (h + 100) - 50
+            local grid = ScreenScale(25)
+            local off = (CurTime() * 12) % grid
             surface.SetDrawColor(hg.VGUI.MainColor.r, hg.VGUI.MainColor.g, hg.VGUI.MainColor.b, 15 * anim)
-            surface.DrawRect(0, scan, w, 2)
-            
-            surface.SetDrawColor(hg.VGUI.MainColor.r, hg.VGUI.MainColor.g, hg.VGUI.MainColor.b, 200 * anim)
-            surface.DrawOutlinedRect(0, 0, w, h, 1)
+            for i = -1, math.ceil(w / grid) + 1 do surface.DrawRect(i * grid - off, 0, 1, h) end
+            for i = -1, math.ceil(h / grid) + 1 do surface.DrawRect(0, i * grid + off, w, 1) end
+        end
 
-            local cs = 20
-            surface.SetDrawColor(hg.VGUI.MainColor)
-            surface.DrawRect(0, 0, cs, 3) surface.DrawRect(0, 0, 3, cs)
-            surface.DrawRect(w-cs, 0, cs, 3) surface.DrawRect(w-3, 0, 3, cs)
-            surface.DrawRect(0, h-3, cs, 3) surface.DrawRect(0, h-cs, 3, cs)
-            surface.DrawRect(w-cs, h-3, cs, 3) surface.DrawRect(w-3, h-cs, 3, cs)
+        local title = vgui.Create("DLabel", frame)
+        title:SetPos(ScreenScale(20), ScreenScale(20))
+        title:SetFont("GOMI_DonateTitle")
+        title:SetText("ДОНАТЫ")
+        title:SetTextColor(Color(0, 0, 0, 0))
+        title.Paint = function(sel, w, h)
+            local a = math.Clamp((CurTime() - startTime) * 3, 0, 1) * 255
+            local sweepPos = (CurTime() - startTime) * 12.0
+            local soft = 1.4
+            local s = "ДОНАТЫ"
+            surface.SetFont("GOMI_DonateTitle")
+            local chars = {}
+            if utf8 then
+                for _, c in utf8.codes(s) do chars[#chars+1] = utf8.char(c) end
+            else
+                for i = 1, #s do chars[i] = s:sub(i,i) end
+            end
+            local cx = 0
+            for i, ch in ipairs(chars) do
+                local cw = surface.GetTextSize(ch)
+                local progress = math.Clamp((sweepPos - (i - 1)) / soft, 0, 1)
+                progress = progress * progress * (3 - 2 * progress)
+                local target = GetWBRColor(i)
+                local col = Color(Lerp(progress, 255, target.r), Lerp(progress, 255, target.g), Lerp(progress, 255, target.b), a)
+                draw.SimpleText(ch, "GOMI_DonateTitle", cx + 2, 2, Color(0, 0, 0, 150 * (a / 255)))
+                draw.SimpleText(ch, "GOMI_DonateTitle", cx, 0, col)
+                cx = cx + cw
+            end
+        end
 
-            surface.SetDrawColor(0, 0, 0, 180 * anim)
-            surface.DrawRect(0, 0, w, 45)
-            surface.SetDrawColor(hg.VGUI.MainColor.r, hg.VGUI.MainColor.g, hg.VGUI.MainColor.b, 255 * anim)
-            surface.DrawRect(0, 44, w, 1)
-
-            draw.SimpleText("ДОНАТЫ", "ZCity_Fixed_Tiny", w/2, 22, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        local closeBtn = vgui.Create("DButton", frame)
+        closeBtn:SetText("")
+        closeBtn:SetSize(ScreenScale(28), ScreenScale(28))
+        closeBtn:SetPos(frame:GetWide() - ScreenScale(48), ScreenScale(16))
+        closeBtn:SetCursor("hand")
+        closeBtn.hover = 0
+        closeBtn.Paint = function(sel, w, h)
+            sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+            if sel.hover > 0.01 then
+                draw.RoundedBox(4, 0, 0, w, h, Color(200, 40, 40, 180 * sel.hover))
+            end
+            draw.SimpleText("X", "GOMI_DonateBtn", w / 2, h / 2, Color(255 - 80 * sel.hover, 180 + 60 * sel.hover, 180 + 60 * sel.hover, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        end
+        closeBtn.DoClick = function()
+            frame:Close()
         end
 
         local notice = vgui.Create("DPanel", frame)
         notice:Dock(TOP)
-        notice:DockMargin(20, 55, 20, 0)
-        notice:SetTall(62)
+        notice:DockMargin(ScreenScale(20), ScreenScale(90), ScreenScale(20), 0)
+        notice:SetTall(ScreenScale(62))
         notice.Paint = function(self, w, h)
             local anim = math.Clamp((CurTime() - startTime) * 3, 0, 1)
 
@@ -108,7 +167,7 @@ if CLIENT then
 
         local scroll = vgui.Create("DScrollPanel", frame)
         scroll:Dock(FILL)
-        scroll:DockMargin(20, 15, 20, 20)
+        scroll:DockMargin(ScreenScale(20), ScreenScale(15), ScreenScale(20), ScreenScale(20))
 
         local layout = vgui.Create("DIconLayout", scroll)
         layout:Dock(FILL)
