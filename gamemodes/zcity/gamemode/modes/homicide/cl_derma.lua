@@ -1,5 +1,5 @@
 local MODE = MODE
-local vgui_color_main = Color(155, 0, 0, 255)
+local vgui_color_main = Color(155, 0, 0, 255) // Claude Popusk 4.8
 local vgui_color_bg = Color(50, 50, 50, 255)
 local vgui_color_ready = Color(0, 150, 50, 255)
 local vgui_color_notready = Color(0, 50, 0, 255)
