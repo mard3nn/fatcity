@@ -12,7 +12,6 @@ surface.CreateFont("GOMI_WepSmall", {
 })
 
 local scrW, scrH = ScrW(), ScrH()
-local gradientMat = Material("vgui/gradient-d")
 
 hg = hg or {}
 hg.WeaponSelector = hg.WeaponSelector or {}
@@ -34,6 +33,16 @@ WS.BoxAnim = WS.BoxAnim or {}
 WS.TypeState = WS.TypeState or {}
 WS.NameScroll = WS.NameScroll or {}
 WS.Anim = WS.Anim or {}
+WS.ShapeAnim = WS.ShapeAnim or {}
+
+local M3 = {
+    surfaceContainer = Color(48, 43, 55),
+    surfaceContainerHigh = Color(59, 53, 67),
+    primaryContainer = Color(105, 80, 164),
+    primaryContainerHigh = Color(123, 96, 185),
+    onPrimaryContainer = Color(239, 220, 255),
+    outline = Color(211, 196, 220)
+}
 
 local function EaseOutCubic(t)
     t = math.Clamp(t, 0, 1)
@@ -48,6 +57,119 @@ end
 function WS.DrawText(text, font, x, y, color, alignX, alignY)
     draw.DrawText(text, font, x + 1, y + 1, Color(0, 0, 0, 180), alignX, alignY)
     draw.DrawText(text, font, x, y, color, alignX, alignY)
+end
+
+local function DrawEllipse(cx, cy, radiusX, radiusY, rotation, color)
+    local vertices = {}
+    local cosRotation = math.cos(rotation)
+    local sinRotation = math.sin(rotation)
+
+    for i = 0, 24 do
+        local angle = math.pi * 2 * i / 24
+        local ellipseX = math.cos(angle) * radiusX
+        local ellipseY = math.sin(angle) * radiusY
+
+        vertices[#vertices + 1] = {
+            x = cx + ellipseX * cosRotation - ellipseY * sinRotation,
+            y = cy + ellipseX * sinRotation + ellipseY * cosRotation
+        }
+    end
+
+    draw.NoTexture()
+    surface.SetDrawColor(color)
+    surface.DrawPoly(vertices)
+end
+
+local function DrawRoundedGrid(x, y, w, h, radius, driftX, driftY, cell, color)
+    local right = x + w
+    local bottom = y + h
+    local innerLeft = x + radius
+    local innerRight = right - radius
+    local innerTop = y + radius
+    local innerBottom = bottom - radius
+
+    surface.SetDrawColor(color)
+
+    local firstX = x + (cell - driftX) % cell
+    local firstY = y + (cell - driftY) % cell
+
+    for lineX = firstX, right, cell do
+        lineX = math.floor(lineX)
+        local topOffset = 0
+        local bottomOffset = 0
+
+        if lineX < innerLeft then
+            local dx = innerLeft - lineX
+            topOffset = radius - math.sqrt(math.max(0, radius * radius - dx * dx))
+            bottomOffset = topOffset
+        elseif lineX > innerRight then
+            local dx = lineX - innerRight
+            topOffset = radius - math.sqrt(math.max(0, radius * radius - dx * dx))
+            bottomOffset = topOffset
+        end
+
+        surface.DrawRect(lineX, y + topOffset, 1, h - topOffset - bottomOffset)
+    end
+
+    for lineY = firstY, bottom, cell do
+        lineY = math.floor(lineY)
+        local leftOffset = 0
+        local rightOffset = 0
+
+        if lineY < innerTop then
+            local dy = innerTop - lineY
+            leftOffset = radius - math.sqrt(math.max(0, radius * radius - dy * dy))
+            rightOffset = leftOffset
+        elseif lineY > innerBottom then
+            local dy = lineY - innerBottom
+            leftOffset = radius - math.sqrt(math.max(0, radius * radius - dy * dy))
+            rightOffset = leftOffset
+        end
+
+        surface.DrawRect(x + leftOffset, lineY, w - leftOffset - rightOffset, 1)
+    end
+
+end
+
+local function DrawSevenLeafShape(x, y, w, h, progress, alpha)
+    progress = EaseOutCubic(progress)
+    if progress <= 0.001 or alpha <= 0 then return end
+
+    local cx, cy = x + w * 0.5, y + h * 0.52
+    local petalScale = Lerp(progress, 0.62, 1)
+    local radiusX = w * 0.2 * petalScale
+    local radiusY = h * 0.22 * petalScale
+    local orbitX = w * 0.36 * petalScale
+    local orbitY = h * 0.34 * petalScale
+    local visibleAlpha = alpha * progress
+
+    local function DrawLayer(scale, offsetY, color)
+        for leaf = 0, 6 do
+            local direction = -math.pi * 0.5 + leaf * (math.pi * 2 / 7)
+            local leafX = cx + math.cos(direction) * orbitX * scale
+            local leafY = cy + math.sin(direction) * orbitY * scale + offsetY
+            DrawEllipse(leafX, leafY, radiusX * scale, radiusY * scale, direction, color)
+        end
+    end
+
+    DrawLayer(1.055, ScreenScale(1), Color(10, 7, 13, visibleAlpha * 0.42))
+    DrawLayer(1, 0, Color(M3.primaryContainer.r, M3.primaryContainer.g, M3.primaryContainer.b, visibleAlpha))
+
+    draw.RoundedBox(
+        math.floor(math.min(w, h) * 0.18),
+        cx - w * 0.255,
+        cy - h * 0.235,
+        w * 0.51,
+        h * 0.47,
+        Color(M3.primaryContainer.r, M3.primaryContainer.g, M3.primaryContainer.b, visibleAlpha)
+    )
+
+    DrawLayer(0.72, -ScreenScale(0.4), Color(
+        M3.primaryContainerHigh.r,
+        M3.primaryContainerHigh.g,
+        M3.primaryContainerHigh.b,
+        visibleAlpha * 0.26
+    ))
 end
 
 function WS.GetSelectedWeapon()
@@ -118,6 +240,7 @@ function WS.WeaponSelectorDraw(ply)
     if not isShown and WS.Transparent < 0.02 then
         WS.BoxAnim = {}
         WS.TypeState = {}
+        WS.ShapeAnim = {}
         WS.SelectedSlot = WS.LastSelectedSlot
         WS.SelectedSlotPos = 0
         return
@@ -161,32 +284,38 @@ function WS.WeaponSelectorDraw(ply)
             local x = centerX - w / 2
             local alpha = WS.Transparent * 255
 
-            draw.RoundedBox(0, x, y, w, itemH, ColorAlpha(Color(49, 22, 22), alpha * 0.82))
-            surface.SetDrawColor(44, 40, 40, alpha * (isSel and 0.9 or 0.2))
-            surface.SetMaterial(gradientMat)
-            surface.DrawTexturedRect(x, y, w, itemH)
+            WS.ShapeAnim[wep] = LerpFT(0.16, WS.ShapeAnim[wep] or 0, isSel and 1 or 0)
+            local shapeProgress = WS.ShapeAnim[wep]
+            local boxAlpha = alpha
 
-            local cell = 18
-            local driftX = (CurTime() * 18) % cell
-            local driftY = (CurTime() * 10) % cell
-            render.SetScissorRect(x, y, x + w, y + itemH, true)
-            local pulse = 0.85 + math.abs(math.sin(CurTime() * 2.5)) * 0.15
-            surface.SetDrawColor(200, 200, 200, alpha * 0.15 * pulse)
-            for gx = -driftX, w, cell do
-                surface.DrawRect(x + gx, y, 1, itemH)
-            end
-            for gy = -driftY, itemH, cell do
-                surface.DrawRect(x, y + gy, w, 1)
-            end
-            render.SetScissorRect(0, 0, 0, 0, false)
+            DrawSevenLeafShape(x, y, w, itemH, shapeProgress, alpha)
 
-            if isSel then
-                surface.SetDrawColor(180, 180, 180, alpha)
-                surface.DrawOutlinedRect(x, y, w, itemH, 2)
-                for j = 1, 6 do
-                    surface.SetDrawColor(180, 180, 180, alpha * (0.5 / j))
-                    surface.DrawOutlinedRect(x - j, y - j, w + j*2, itemH + j*2, 1)
-                end
+            if boxAlpha > 1 and not isSel then
+                local boxColor = isSel and M3.surfaceContainerHigh or M3.surfaceContainer
+                local cornerRadius = math.floor(math.min(w, itemH) * 0.28)
+                draw.RoundedBox(cornerRadius, x, y, w, itemH, Color(
+                    boxColor.r,
+                    boxColor.g,
+                    boxColor.b,
+                    boxAlpha * (isSel and 0.94 or 0.78)
+                ))
+
+                local cell = 18
+                local driftX = (CurTime() * 18) % cell
+                local driftY = (CurTime() * 10) % cell
+                local pulse = 0.85 + math.abs(math.sin(CurTime() * 2.5)) * 0.15
+
+                DrawRoundedGrid(
+                    x,
+                    y,
+                    w,
+                    itemH,
+                    cornerRadius,
+                    driftX,
+                    driftY,
+                    cell,
+                    Color(220, 211, 225, boxAlpha * 0.12 * pulse)
+                )
             end
 
             if isSel then
@@ -200,9 +329,19 @@ function WS.WeaponSelectorDraw(ply)
                 render.SetScissorRect(x, y, x + w, y + itemH, true)
                 local textY = y + ScreenScale(2)
                 if tw <= maxW then
-                    WS.DrawText(name, "GOMI_WepSmall", x + w / 2, textY, Color(215, 215, 215), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+                    WS.DrawText(name, "GOMI_WepSmall", x + w / 2, textY, Color(
+                        M3.onPrimaryContainer.r,
+                        M3.onPrimaryContainer.g,
+                        M3.onPrimaryContainer.b,
+                        alpha
+                    ), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
                 else
-                    WS.DrawText(name, "GOMI_WepSmall", x + pad + WS.NameScroll[wep], textY, Color(215, 215, 215), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    WS.DrawText(name, "GOMI_WepSmall", x + pad + WS.NameScroll[wep], textY, Color(
+                        M3.onPrimaryContainer.r,
+                        M3.onPrimaryContainer.g,
+                        M3.onPrimaryContainer.b,
+                        alpha
+                    ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
                 end
                 render.SetScissorRect(0, 0, 0, 0, false)
             else
@@ -352,23 +491,15 @@ function WS.Scramble(target)
 end
 
 function WS.Typewriter(target, key, rate)
-    target = WS.Scramble(target)
-    local state = WS.TypeState[key] or {t = 0}
-    local len = #target
+    target = tostring(target or "")
+    local state = WS.TypeState[key]
+    if not state or state.target ~= target then
+        state = {t = 0, target = target}
+    end
+    local len = utf8.len(target)
     state.t = math.min(len, state.t + FrameTime() * (rate or 20))
     WS.TypeState[key] = state
     local progress = math.floor(state.t)
-    local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+<>/?|\\"
-    local out = ""
-    for i = 1, len do
-        local ch = target:sub(i, i)
-        if ch == " " then
-            out = out .. " "
-        elseif i <= progress then
-            out = out .. ch
-        else
-            out = out .. chars:sub(math.random(#chars), math.random(#chars))
-        end
-    end
-    return out
+    local cursor = progress < len or math.floor(CurTime() * 2) % 2 == 0
+    return utf8.sub(target, 1, progress) .. (cursor and "|" or "")
 end

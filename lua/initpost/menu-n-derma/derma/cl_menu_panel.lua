@@ -211,7 +211,9 @@ local Selects = {
         Title = "Роль предателя",
         Func = function(menu)
             menu:Close(function()
-                if hg then hg.SelectPlayerRole(nil, "soe") end
+                if hg and hg.SelectPlayerRole then
+                    hg.SelectPlayerRole()
+                end
             end)
         end
     },

@@ -222,6 +222,50 @@ derma.DefineControl("HMCD_RolePanel", "", PANEL, "DPanel")
 --||Sub role carousel
 local PANEL = {}
 
+function PANEL:BuildRoleScroller()
+	if(IsValid(self.RoleScroller))then
+		self.RoleScroller:Remove()
+	end
+
+	local mode_info = MODE.RoleChooseRoundTypes[self.Mode]
+	local roles = mode_info and mode_info[self.RoleType]
+	if not roles then return end
+
+	self.RolesIDsList = roles
+
+	local width, height = self:GetSize()
+	local hscroll = vgui.Create("ZHorizontalScroller", self)
+	hscroll:SetPos(self.ContentMargin, self.ContentY)
+	hscroll:SetSize(width - self.ContentMargin * 2, height - self.ContentY - self.FooterHeight - ScreenScale(12))
+	hscroll:SetSkin(hg.GetMainSkin())
+	hscroll:SetOverlap(-10)
+	self.RoleScroller = hscroll
+
+	for role_id, _ in pairs(roles) do
+		local role_info = MODE.SubRoles[role_id]
+		if not role_info then continue end
+
+		local role_panel = vgui.Create("HMCD_RolePanel", hscroll)
+		role_panel.Title = role_info.Name
+		role_panel.Description = role_info.Description
+		role_panel.Role = role_id
+		role_panel.Mode = self.Mode
+		role_panel:SetWidth(ScreenScale(190))
+		role_panel:Construct()
+
+		hscroll:AddPanel(role_panel)
+	end
+end
+
+function PANEL:SwitchRoleMode(mode)
+	local mode_info = MODE.RoleChooseRoundTypes[mode]
+	if not mode_info or not mode_info[self.RoleType] then return end
+	if self.Mode == mode and IsValid(self.RoleScroller) then return end
+
+	self.Mode = mode
+	self:BuildRoleScroller()
+end
+
 function PANEL:Construct()
 	self:SetSkin(hg.GetMainSkin())
 	self:SetSize(ScrW(), ScrH())
@@ -313,39 +357,56 @@ function PANEL:Construct()
 		end
 	end
 	
-	self.RolesIDsList = self.RolesIDsList or MODE.RoleChooseRoundTypes["standard"].Traitor
 	local width, height = self:GetSize()
-	local contentMargin = ScreenScale(20)
-	local contentY = ScreenScale(90)
-	local footerHeight = ScreenScale(44)
-	
-	local hscroll = vgui.Create("ZHorizontalScroller", self)
-	hscroll:SetPos(contentMargin, contentY)
-	hscroll:SetSize(width - contentMargin * 2, height - contentY - footerHeight - ScreenScale(12))
-	hscroll:SetSkin(hg.GetMainSkin())
-	hscroll:SetOverlap(-10)
-	-- hscroll:SetUseLiveDrag(true)
-	-- hscroll:InvalidateParent(false)
-	for role_id, _ in pairs(self.RolesIDsList) do
-		local role_info = MODE.SubRoles[role_id]
-		local role_name = role_info.Name
-		local role_description = role_info.Description
-		
-		local role_panel = vgui.Create("HMCD_RolePanel", hscroll)
-		role_panel.Title = role_name
-		role_panel.Description = role_description
-		role_panel.Role = role_id
-		role_panel.Mode = self.Mode or "soe"
-		role_panel:SetWidth(ScreenScale(190))
-		-- role_panel:SetHeight(hscroll_height)
-		-- role_panel:InvalidateParent(false)
-		role_panel:Construct()
-		
-		hscroll:AddPanel(role_panel)
+	self.RoleType = self.RoleType or "Traitor"
+	self.Mode = MODE.RoleChooseRoundTypes[self.Mode] and self.Mode or "standard"
+	self.ContentMargin = ScreenScale(20)
+	self.ContentY = ScreenScale(105)
+	self.FooterHeight = ScreenScale(44)
+
+	local mode_switch = vgui.Create("DPanel", self)
+	local switch_width = ScreenScale(190)
+	local switch_height = ScreenScale(24)
+	mode_switch:SetSize(switch_width, switch_height)
+	mode_switch:SetPos((width - switch_width) / 2, ScreenScale(68))
+	mode_switch.Paint = function(sel, w, h)
+		draw.RoundedBox(6, 0, 0, w, h, Color(20, 20, 24, 220))
 	end
+
+	local mode_options = {
+		{ id = "standard", label = "СТАНДАРТ" },
+		{ id = "soe", label = "SOE" },
+	}
+
+	for index, option in ipairs(mode_options) do
+		local mode_id = option.id
+		local mode_label = option.label
+		local mode_button = vgui.Create("DButton", mode_switch)
+		mode_button:SetText("")
+		mode_button:SetSize(switch_width / #mode_options, switch_height)
+		mode_button:SetPos((index - 1) * switch_width / #mode_options, 0)
+		mode_button:SetCursor("hand")
+		mode_button.hover = 0
+		mode_button.Paint = function(sel, w, h)
+			sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+			local active = self.Mode == mode_id
+			local bg = active and Color(110, 20, 25, 235) or Color(32 + 12 * sel.hover, 32 + 12 * sel.hover, 38 + 12 * sel.hover, 220)
+			draw.RoundedBox(5, 1, 1, w - 2, h - 2, bg)
+			if active then
+				surface.SetDrawColor(cardBorder)
+				surface.DrawOutlinedRect(1, 1, w - 2, h - 2, 1)
+			end
+			draw.SimpleText(mode_label, "GOMI_RoleBtn", w / 2, h / 2, active and textBright or textDim, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		end
+		mode_button.DoClick = function()
+			self:SwitchRoleMode(mode_id)
+		end
+	end
+
+	self:BuildRoleScroller()
 	
 	local button_ready = vgui.Create("DButton", self)
-	button_ready:SetPos((width - ScreenScale(180)) / 2, height - footerHeight)
+	button_ready:SetPos((width - ScreenScale(180)) / 2, height - self.FooterHeight)
 	button_ready:SetSize(ScreenScale(180), ScreenScale(36))
 	button_ready:SetSkin(hg.GetMainSkin())
 	button_ready:SetText("")
