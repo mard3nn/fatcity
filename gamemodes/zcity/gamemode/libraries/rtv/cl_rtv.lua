@@ -9,10 +9,17 @@ if CLIENT then
     surface.CreateFont('RTV.StayFont', { font = 'Roboto', size = ScreenScale(10), weight = 1000 })
 
     -- peremeshivaet massiv (Fisher-Yates), ispolzuetsya chtobi poryadok kart bil raznii kajdii RTV
-    local function PeremeshatMassiv(tbl)
+    local function PeremeshatMassiv(tbl, seedValue)
+        local seed = 0
+        seedValue = tostring(seedValue or '')
+        for i = 1, #seedValue do
+            seed = (seed * 31 + string.byte(seedValue, i)) % 2147483647
+        end
+        if seed == 0 then seed = 1 end
         local n = #tbl
         for i = n, 2, -1 do
-            local j = math.random(i)
+            seed = (seed * 16807) % 2147483647
+            local j = (seed % i) + 1
             tbl[i], tbl[j] = tbl[j], tbl[i]
         end
         return tbl
@@ -274,7 +281,8 @@ if CLIENT then
             end
         end
 
-        self:BringToFront(mapName) -- vibrannaya karta stanovitsya pervoy, s krasivoy animaciey
+        self:SinhronizirovatPoryadok(mapName)
+        self:PereRisovka()
         if self.KnopkaOst then
             self.KnopkaOst.Vybrannaya = (mapName == 'stay')
             for _, av in ipairs(self.KnopkaOst.AvatarkiOst) do if av:IsValid() then av:Remove() end end
@@ -301,7 +309,8 @@ if CLIENT then
         for _, m in ipairs(maps) do
             if m ~= 'stay' then table.insert(spisokKart, m) end
         end
-        PeremeshatMassiv(spisokKart) -- kajdiy RTV karti peremeshivayutsya v novom poryadke
+        PeremeshatMassiv(spisokKart, self.DeckSeed)
+        self.BazoviyPoryadok = table.Copy(spisokKart)
 
         for _, m in ipairs(spisokKart) do
             local card = vgui.Create('RTVMapCard', self.MapsInner)
@@ -310,7 +319,32 @@ if CLIENT then
             self.Kartochki[m] = card
             table.insert(self.KartochkiOrder, m)
         end
+        self:SinhronizirovatPoryadok()
         timer.Simple(0, function() if IsValid(self) then self:PereRisovka(true) end end)
+    end
+
+    function PanelGolosovaniya:SinhronizirovatPoryadok(mapName)
+        if not self.BazoviyPoryadok then return end
+
+        if mapName and mapName ~= 'stay' and self.Kartochki[mapName] then
+            table.RemoveByValue(self.KartochkiOrder, mapName)
+            table.insert(self.KartochkiOrder, 1, mapName)
+        end
+
+        local noviyPoryadok = {}
+        local dobavleno = {}
+        for _, currentMap in ipairs(self.KartochkiOrder) do
+            if #(self.Votes[currentMap] or {}) > 0 then
+                table.insert(noviyPoryadok, currentMap)
+                dobavleno[currentMap] = true
+            end
+        end
+        for _, currentMap in ipairs(self.BazoviyPoryadok) do
+            if not dobavleno[currentMap] then
+                table.insert(noviyPoryadok, currentMap)
+            end
+        end
+        self.KartochkiOrder = noviyPoryadok
     end
 
     function PanelGolosovaniya:PereRisovka(animatePoyavlenie) --scolko vsego mi mosem razmestit kartochek y igroka na ekrane
@@ -352,26 +386,6 @@ if CLIENT then
         self.MapsInner:SetSize(parentW, totalRows * (cardH + spacing) + spacing)
     end
 
-    function PanelGolosovaniya:BringToFront(mapName)
-        if not mapName or mapName == 'stay' then return end
-        local idx = nil
-        for i, m in ipairs(self.KartochkiOrder) do
-            if m == mapName then idx = i break end
-        end
-        if not idx or idx == 1 then return end
-
-        table.remove(self.KartochkiOrder, idx)
-        table.insert(self.KartochkiOrder, 1, mapName)
-
-        self:PereRisovka()
-
-        local card = self.Kartochki[mapName]
-        if card and card:IsValid() then
-            card.MoveGlow = 255 -- krasivaya podsvetka karti kotoraya stala pervoy
-            surface.PlaySound('buttons/button15.wav')
-        end
-    end
-
     function PanelGolosovaniya:PerformLayout(w, h)
         self:PereRisovka()
         if self.KnopkaOst then self.KnopkaOst:SetPos(w * 0.62, ScrH() * 0.065) end
@@ -406,7 +420,17 @@ if CLIENT then
         RTVPanel.VoteEndTime = endTime
         RTVPanel.TotalDuration = endTime - CurTime()
         RTVPanel.Votes = votes or {}
+        RTVPanel.DeckSeed = endTime
         RTVPanel.MoyGolos = nil
+        for mapName, voters in pairs(RTVPanel.Votes) do
+            for _, sid64 in ipairs(voters) do
+                if sid64 == RTVPanel.MoySteamID64 then
+                    RTVPanel.MoyGolos = mapName
+                    break
+                end
+            end
+            if RTVPanel.MoyGolos then break end
+        end
         RTVPanel:ZapolnitKartami(maps)
 
         RTV_Music = CreateSound(LocalPlayer(), "rtv/rtv_musica.wav")
@@ -424,13 +448,32 @@ if CLIENT then
         local votes = net.ReadTable()
         CachedVotes = votes
         if IsValid(RTVPanel) then
+            local izmenennayaKarta = nil
+            for mapName, voters in pairs(votes) do
+                if mapName ~= 'stay' and #voters > #(RTVPanel.Votes[mapName] or {}) then
+                    izmenennayaKarta = mapName
+                    break
+                end
+            end
             RTVPanel.Votes = votes
+            RTVPanel.MoyGolos = nil
+            for mapName, voters in pairs(votes) do
+                for _, sid64 in ipairs(voters) do
+                    if sid64 == RTVPanel.MoySteamID64 then
+                        RTVPanel.MoyGolos = mapName
+                        break
+                    end
+                end
+                if RTVPanel.MoyGolos then break end
+            end
             for map, card in pairs(RTVPanel.Kartochki) do
                 if card:IsValid() then
                     card:UpdateAvatars(votes[map] or {})
                     card.Vybrannaya = (map == RTVPanel.MoyGolos)
                 end
             end
+            RTVPanel:SinhronizirovatPoryadok(izmenennayaKarta)
+            RTVPanel:PereRisovka()
             if RTVPanel.KnopkaOst then
                 RTVPanel.KnopkaOst.Vybrannaya = (RTVPanel.MoyGolos == 'stay')
                 for _, av in ipairs(RTVPanel.KnopkaOst.AvatarkiOst) do av:Remove() end
