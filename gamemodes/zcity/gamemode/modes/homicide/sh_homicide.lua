@@ -58,7 +58,7 @@ MODE.SubRoles = {
 		Name = "Дефоко",
 		Description = [[Стандартный.
 Ты долго готовился к этому моменту.
-Ты экипирован различным оружием, ядами и взрывчаткой, гранатами, твоим любимым тяжёлым ножом и глушённым пистолетом с дополнительным магазином, чтобы помочь тебе убивать.]],
+Ты экипирован различным оружием, ядами и взрывчаткой, также у тебя имеется радар, твои любимый тяжёлый нож и пистолет с гулшителем с дополнительным магазином, чтобы помочь тебе убивать.]],
 		Objective = "Ты вооружён предметами, ядами, взрывчаткой и оружием, спрятанными в твоих карманах. Убей всех здесь.",
 		SpawnFunction = function(ply)
 			if not IsValid(ply) then return end
@@ -69,6 +69,7 @@ MODE.SubRoles = {
 			hg.AddAttachmentForce(ply, p22, "supressor4")
 			ply:Give("weapon_sogknife")	
 			ply:Give("weapon_hg_rgd_tpik")
+			ply:give("weapon_radar")
 			-- ply:Give("weapon_walkie_talkie")
 			ply:Give("weapon_adrenaline")
 			ply:Give("weapon_hg_smokenade_tpik")
@@ -97,6 +98,7 @@ MODE.SubRoles = {
 		SpawnFunction = function(ply)
 			ply:Give("weapon_sogknife")
 			ply:Give("weapon_adrenaline")
+			ply:give("weapon_radar")
 			ply:Give("weapon_hg_smokenade_tpik")
 			
 			ply.organism.stamina.max = 220
