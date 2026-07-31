@@ -512,6 +512,8 @@ hook.Add("Think", "RequestTraitorStatus", function()
 	end
 end)
 
+local HMCD_FRIENDLY_NAME_DIST = 700
+
 hook.Add("HUDPaint", "HMCD_TraitorFriendlyTag", function()
     local ply = LocalPlayer()
     if not ply:Alive() or not ply.isTraitor then return end
@@ -533,7 +535,17 @@ hook.Add("HUDPaint", "HMCD_TraitorFriendlyTag", function()
         local screen = pos:ToScreen()
         if not screen.visible then continue end
 
-        draw.SimpleText("СВОЙ", "ZB_HomicideSmall", screen.x + 1, screen.y + 2, Color(0, 0, 0, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-        draw.SimpleText("СВОЙ", "ZB_HomicideSmall", screen.x, screen.y, Color(255, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        local dist = ply:GetPos():Distance(v:GetPos())
+        local alpha = math.Clamp(255 - dist * 0.07, 80, 255)
+
+        if dist <= HMCD_FRIENDLY_NAME_DIST then
+            draw.SimpleText(v:Nick(), "ChatFont", screen.x + 1, screen.y + 1, Color(0, 0, 0, alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            draw.SimpleText(v:Nick(), "ChatFont", screen.x, screen.y, Color(255, 0, 0, alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        else
+            surface.SetDrawColor(255, 0, 0, alpha)
+            surface.DrawRect(screen.x - 4, screen.y - 4, 8, 8)
+            surface.SetDrawColor(0, 0, 0, alpha)
+            surface.DrawOutlinedRect(screen.x - 4, screen.y - 4, 8, 8, 1)
+        end
     end
 end)
