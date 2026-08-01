@@ -315,7 +315,7 @@ if CLIENT then
         for _, m in ipairs(spisokKart) do
             local card = vgui.Create('RTVMapCard', self.MapsInner)
             card:Setup(m, self)
-            card:SetAlpha(0)
+            card:SetAlpha(255)
             self.Kartochki[m] = card
             table.insert(self.KartochkiOrder, m)
         end
@@ -369,12 +369,8 @@ if CLIENT then
                 card:SetSize(cardW, cardH)
 
                 if animatePoyavlenie then
-                    -- karti krasivo "vilitayut" snizu po ocheredi pri otkritii golosovaniya
-                    card:SetPos(x, y + 30)
-                    card:SetAlpha(0)
-                    local zaderjka = (i - 1) * 0.045
-                    card:AlphaTo(255, 0.25, zaderjka)
-                    card:MoveTo(x, y, 0.3, zaderjka, 0.3)
+                    card:SetAlpha(255)
+                    card:SetPos(x, y)
                 else
                     -- plavnaya animaciya pri perestanovke kartochek mestami
                     card:AlphaTo(255, 0.15, 0)
