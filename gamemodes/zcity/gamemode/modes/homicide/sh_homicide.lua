@@ -69,7 +69,7 @@ MODE.SubRoles = {
 			hg.AddAttachmentForce(ply, p22, "supressor4")
 			ply:Give("weapon_sogknife")	
 			ply:Give("weapon_hg_rgd_tpik")
-			ply:give("weapon_radar")
+			ply:Give("weapon_radar")
 			-- ply:Give("weapon_walkie_talkie")
 			ply:Give("weapon_adrenaline")
 			ply:Give("weapon_hg_smokenade_tpik")
@@ -98,7 +98,7 @@ MODE.SubRoles = {
 		SpawnFunction = function(ply)
 			ply:Give("weapon_sogknife")
 			ply:Give("weapon_adrenaline")
-			ply:give("weapon_radar")
+			ply:Give("weapon_radar")
 			ply:Give("weapon_hg_smokenade_tpik")
 			
 			ply.organism.stamina.max = 220
