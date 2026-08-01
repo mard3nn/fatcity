@@ -174,7 +174,7 @@ MODE.SubRoles = {
 		Objective = "Ты эксперт по оружию и обезоруживанию. Обезоружь стрелка и используй его оружие против других",
 		SpawnFunction = function(ply)
 			ply:Give("weapon_sogknife")	
-			ply:Give("weapon_adrenaline")
+			ply:Give("weapon_adrenaline") // хз
 			-- ply:Give("weapon_walkie_talkie")
 			-- ply:Give("weapon_hg_smokenade_tpik")
 			-- ply:Give("weapon_hg_shuriken")
