@@ -52,6 +52,8 @@ function MODE:RenderScreenspaceEffects()
     surface.DrawRect(-1, -1, ScrW() + 1, ScrH() + 1)
 end
 
+local FRIENDLY_NAME_DIST = 700
+
 local function DrawFriendlyMarkers()
     if not IsValid(lply) then return end
     local myTeam = lply:Team()
@@ -69,23 +71,16 @@ local function DrawFriendlyMarkers()
         if not screenPos.visible then continue end
 
         local alpha = math.Clamp(255 - dist * 0.07, 80, 255)
-        local text = "СВОЙ"
 
-        surface.SetFont("ZB_InterfaceMedium")
-        local tw, th = surface.GetTextSize(text)
-        local bw, bh = tw + 16, th + 8
-        local bx, by = screenPos.x - bw * 0.5, screenPos.y - 42
-
-        draw.RoundedBox(6, bx, by, bw, bh, Color(25, 120, 25, alpha))
-        surface.SetDrawColor(80, 255, 80, alpha)
-        surface.DrawOutlinedRect(bx, by, bw, bh, 2)
-
-        draw.SimpleText(text, "ZB_InterfaceMedium", screenPos.x, by + bh * 0.5, Color(210, 255, 210, alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-
-        local y = by + bh
-        surface.DrawLine(screenPos.x, y, screenPos.x - 6, y + 9)
-        surface.DrawLine(screenPos.x, y, screenPos.x + 6, y + 9)
-        surface.DrawLine(screenPos.x - 6, y + 9, screenPos.x + 6, y + 9)
+        if dist <= FRIENDLY_NAME_DIST then
+            draw.SimpleText(ply:Nick(), "ChatFont", screenPos.x + 1, screenPos.y + 1, Color(0, 0, 0, alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            draw.SimpleText(ply:Nick(), "ChatFont", screenPos.x, screenPos.y, Color(80, 255, 80, alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        else
+            surface.SetDrawColor(80, 255, 80, alpha)
+            surface.DrawRect(screenPos.x - 4, screenPos.y - 4, 8, 8)
+            surface.SetDrawColor(0, 0, 0, alpha)
+            surface.DrawOutlinedRect(screenPos.x - 4, screenPos.y - 4, 8, 8, 1)
+        end
     end
 end
 
