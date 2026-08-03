@@ -1,4 +1,4 @@
-if SERVER then
+--[[if SERVER then
     util.AddNetworkString("OpenDonateMenu")
     util.AddNetworkString("DonateLogAdmin")
 end
@@ -316,4 +316,4 @@ if SERVER then
             end
         end
     end)
-end
+end]]
