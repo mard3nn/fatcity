@@ -199,14 +199,7 @@ local Selects = {
             end)
         end
     },
-    {
-        Title = "Донат",
-        Func = function(menu)
-            menu:Close(function()
-                OpenDonateMenu()
-            end)
-        end
-    },
+	
     {
         Title = "Роль предателя",
         Func = function(menu)
