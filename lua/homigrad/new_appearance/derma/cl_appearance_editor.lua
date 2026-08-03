@@ -547,7 +547,7 @@ function PANEL:PostInit()
         local presetName = presetNameEntry:GetValue()
         if presetName == "" or #presetName < 2 then
             surface.PlaySound("buttons/button10.wav")
-            notification.AddLegacy("Enter a preset name (min 2 chars)", NOTIFY_ERROR, 3)
+            notification.AddLegacy("Введите имя вашего апиренса (минимальное кол символов 2)", NOTIFY_ERROR, 3)
             return
         end
         
@@ -555,14 +555,14 @@ function PANEL:PostInit()
         
         SavePreset(presetName, main.AppearanceTable)
         surface.PlaySound("buttons/button14.wav")
-        notification.AddLegacy("Preset '" .. presetName .. "' saved!", NOTIFY_GENERIC, 3)
+        notification.AddLegacy("Пресет '" .. presetName .. "' сохранен!", NOTIFY_GENERIC, 3)
     end
 
     local loadPresetBtn = vgui.Create("DButton", presetsPanel)
     loadPresetBtn:Dock(LEFT)
     loadPresetBtn:SetSize(ScreenScale(30), ScreenScale(20))
     loadPresetBtn:SetFont("ZCity_Tiny")
-    loadPresetBtn:SetText("Load")
+    loadPresetBtn:SetText("Загрузить")
     loadPresetBtn:SetTextColor(colors.mainText)
     loadPresetBtn:DockMargin(0,0,5,0)
     function loadPresetBtn:Paint(w, h)
@@ -575,12 +575,12 @@ function PANEL:PostInit()
         local presetList = GetPresetList()
         if #presetList == 0 then
             surface.PlaySound("buttons/button10.wav")
-            notification.AddLegacy("No presets saved yet!", NOTIFY_ERROR, 3)
+            notification.AddLegacy("Не одного сохраненного пресета!", NOTIFY_ERROR, 3)
             return
         end
         
         local presetMenu = vgui.Create("DFrame")
-        presetMenu:SetTitle("Load Preset")
+        presetMenu:SetTitle("Загрузить пресет")
         presetMenu:SetSize(ScreenScale(120), ScreenScale(100))
         presetMenu:Center()
         presetMenu:MakePopup()
@@ -624,7 +624,7 @@ function PANEL:PostInit()
                     notification.AddLegacy("Preset '" .. presetName .. "' loaded!", NOTIFY_GENERIC, 3)
                 else
                     surface.PlaySound("buttons/button10.wav")
-                    notification.AddLegacy("Failed to load preset!", NOTIFY_ERROR, 3)
+                    notification.AddLegacy("Ошибка при загрузке апиренса!", NOTIFY_ERROR, 3)
                 end
                 presetMenu:Close()
             end
@@ -646,7 +646,7 @@ function PANEL:PostInit()
     deletePresetBtn:Dock(LEFT)
     deletePresetBtn:SetSize(ScreenScale(35), ScreenScale(20))
     deletePresetBtn:SetFont("ZCity_Tiny")
-    deletePresetBtn:SetText("Delete")
+    deletePresetBtn:SetText("Удалить")
     deletePresetBtn:SetTextColor(colors.mainText)
     function deletePresetBtn:Paint(w, h)
         local bgCol = self:IsHovered() and Color(180, 50, 50, 255) or Color(140, 40, 40, 230)
@@ -658,17 +658,17 @@ function PANEL:PostInit()
         local presetName = presetNameEntry:GetValue()
         if presetName == "" then
             surface.PlaySound("buttons/button10.wav")
-            notification.AddLegacy("Enter preset name to delete", NOTIFY_ERROR, 3)
+            notification.AddLegacy("Введите имя для удаление", NOTIFY_ERROR, 3)
             return
         end
         
         if DeletePreset(presetName) then
             surface.PlaySound("buttons/button15.wav")
-            notification.AddLegacy("Preset '" .. presetName .. "' deleted!", NOTIFY_HINT, 3)
+            notification.AddLegacy("Пресет '" .. presetName .. "' deleted!", NOTIFY_HINT, 3)
             presetNameEntry:SetText("")
         else
             surface.PlaySound("buttons/button10.wav")
-            notification.AddLegacy("Preset not found!", NOTIFY_ERROR, 3)
+            notification.AddLegacy("Пресет не найден!", NOTIFY_ERROR, 3)
         end
     end
 
@@ -676,7 +676,7 @@ function PANEL:PostInit()
     presetNameEntry:Dock(FILL)
     presetNameEntry:SetSize(ScreenScale(80), ScreenScale(20))
     presetNameEntry:SetFont("ZCity_Tiny")
-    presetNameEntry:SetPlaceholderText("Preset name...")
+    presetNameEntry:SetPlaceholderText("Пресет имя...")
     presetNameEntry:SetContentAlignment(5)
     presetNameEntry:DockMargin(5,0,0,0)
     function presetNameEntry:Paint(w, h)
@@ -715,7 +715,7 @@ function PANEL:PostInit()
     local hatSelector = vgui.Create("DButton", main)
     hatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     hatSelector:SetFont("ZCity_Tiny")
-    hatSelector:SetText("Hats")
+    hatSelector:SetText("Шляпы")
     SetupCharacterButton(hatSelector)
     function hatSelector:Think()
         if funpos1x then
@@ -730,7 +730,7 @@ function PANEL:PostInit()
     end
     
     function hatSelector:DoClick()
-        main.modelPosID = "Head"
+        main.modelPosID = "Для головы"
         CloseAllAccessoryMenus()
         
         originalAccessory[1] = main.AppearanceTable.AAttachments[1]
@@ -780,7 +780,7 @@ function PANEL:PostInit()
     local faceSelector = vgui.Create("DButton", main)
     faceSelector:SetSize(ScreenScale(100),ScreenScale(16))
     faceSelector:SetFont("ZCity_Tiny")
-    faceSelector:SetText("Face")
+    faceSelector:SetText("Лицо")
     SetupCharacterButton(faceSelector)
     function faceSelector:Think()
         if funpos1x then
@@ -844,7 +844,7 @@ function PANEL:PostInit()
     local bodySelector = vgui.Create("DButton", main)
     bodySelector:SetSize(ScreenScale(100),ScreenScale(16))
     bodySelector:SetFont("ZCity_Tiny")
-    bodySelector:SetText("Body")
+    bodySelector:SetText("Туловище")
     SetupCharacterButton(bodySelector)
     function bodySelector:Think()
         if funpos3x then
@@ -859,7 +859,7 @@ function PANEL:PostInit()
     bodySelector:SetPos(sizeX * 0.1, sizeY * 0.5)
     
     function bodySelector:DoClick()
-        main.modelPosID = "Torso"
+        main.modelPosID = "Торс"
         CloseAllAccessoryMenus()
         
         originalAccessory[3] = main.AppearanceTable.AAttachments[3]
@@ -910,7 +910,7 @@ function PANEL:PostInit()
     local bodyMatSelector = vgui.Create("DButton", main)
     bodyMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     bodyMatSelector:SetFont("ZCity_Tiny")
-    bodyMatSelector:SetText("Jacket")
+    bodyMatSelector:SetText("Рубашка")
     SetupCharacterButton(bodyMatSelector)
     function bodyMatSelector:Think()
         if funpos3x then
@@ -955,7 +955,7 @@ function PANEL:PostInit()
     local legsMatSelector = vgui.Create("DButton", main)
     legsMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     legsMatSelector:SetFont("ZCity_Tiny")
-    legsMatSelector:SetText("Pants")
+    legsMatSelector:SetText("Штаны")
     SetupCharacterButton(legsMatSelector)
     function legsMatSelector:Think()
         if funpos3x then
@@ -994,7 +994,7 @@ function PANEL:PostInit()
     local bootsMatSelector = vgui.Create("DButton", main)
     bootsMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     bootsMatSelector:SetFont("ZCity_Tiny")
-    bootsMatSelector:SetText("Boots")
+    bootsMatSelector:SetText("Ботинки")
     SetupCharacterButton(bootsMatSelector)
     function bootsMatSelector:Think()
         if funpos3x then
@@ -1035,7 +1035,7 @@ function PANEL:PostInit()
     local glovesSelector = vgui.Create("DButton", main)
     glovesSelector:SetSize(ScreenScale(100),ScreenScale(16))
     glovesSelector:SetFont("ZCity_Tiny")
-    glovesSelector:SetText("Gloves")
+    glovesSelector:SetText("Перчатки")
     SetupCharacterButton(glovesSelector)
     function glovesSelector:Think()
         if funpos3x then
@@ -1068,7 +1068,7 @@ function PANEL:PostInit()
     local faceMatSelector = vgui.Create("DButton", main)
     faceMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     faceMatSelector:SetFont("ZCity_Tiny")
-    faceMatSelector:SetText("Facemap")
+    faceMatSelector:SetText("Феймапы")
     SetupCharacterButton(faceMatSelector)
     function faceMatSelector:Think()
         if funpos3x then
@@ -1114,7 +1114,7 @@ end
 vgui.Register( "HG_AppearanceMenu", PANEL, "ZFrame")
 
 concommand.Add("hg_appearance_menu",function()
-    print('use esc menu')
+    print('юзай эскейп')
 end)
 
 function hg.CreateApperanceMenu(ParentPanel)
@@ -1144,3 +1144,4 @@ function hg.CreateApperanceMenu(ParentPanel)
     end)
     
 end
+// простой перевод
