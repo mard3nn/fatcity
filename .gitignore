@@ -5,3 +5,4 @@
 /shaders
 /sound
 lua/autorun/sv_discord_logs.lua
+gamemodes/zcity/gamemode/libraries/sv_gomiac.lua
