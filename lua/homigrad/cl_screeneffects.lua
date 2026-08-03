@@ -186,44 +186,6 @@ local haloents = {
 	["weapon_hg_f1_tpik"] = true
 }
 
---[[hook.Add( "PreDrawHalos", "AddPropHalos", function() -- вариант с подсветкой всего в радиусе
-	local pickuphalo = {}
-	 
-	local lpos = lply:GetPos()
-	for _, ent in ipairs(ents.FindInSphere(lpos, 256)) do
-		if IsValid(ent) and (haloents[ent.Base] or haloents[ent:GetClass()]) and not IsValid(ent:GetOwner()) then
-		table.insert(pickuphalo, ent)
-		local dist = lpos:Distance(ent:GetPos()) * 0.02
-		--print(dist)
-		color_red.r = Lerp(FrameTime()*5,color_red.r,56 / dist)
-		color_red.g = Lerp(FrameTime()*5,color_red.g,43 / dist)
-		end
-	end
-	halo.Add( pickuphalo, color_red, 1, 1, 1 )
-end )]]
-
---[[hook.Add( "PreDrawHalos", "AddPropHalos", function() -- вариант с подсвечиванием только когда смотришь
-	local pickuphalo = {}
-	 
-	local tr = hg.eyeTrace(lply,72)
-	if IsValid(tr.Entity) and haloents[tr.Entity.Base] then
-		table.insert(pickuphalo, tr.Entity)
-		local dist = lply:GetPos():Distance(tr.Entity:GetPos()) * 0.03
-		--print(dist)
-		color_red.r = Lerp(FrameTime()*2,color_red.r,56 / dist)
-		color_red.g = Lerp(FrameTime()*2,color_red.g,43 / dist)
-	else
-		color_red.r = Lerp(FrameTime()*2,color_red.r,0)
-		color_red.g = Lerp(FrameTime()*2,color_red.g,0)
-	end
-	halo.Add( pickuphalo, color_red, 1, 1, 1 )
-end )]]
-
--- funny :)
-
---that one furry game
-
-
 local painMat = Material("effects/shaders/zb_grain")
 local noiseMat = Material("effects/shaders/zb_grainwhite")
 local vignetteMat = Material("effects/shaders/zb_vignette")
@@ -261,11 +223,6 @@ local function stopthings()
 
 	lply.tinnitus = 0
 	
-	--[[if IsValid(PainStation) then
-		PainStation:Stop()
-		PainStation = nil
-	end--]]
-
 	if IsValid(NoiseStation) then
 		NoiseStation:Stop()
 		NoiseStation = nil
@@ -456,17 +413,17 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		local consciousness = 1 - consciousnessLerp
 		render.UpdateScreenEffectTexture()
 		render.UpdateFullScreenDepthTexture()
-		
-		grainMat:SetFloat("$c0_x", CurTime()) -- time
-		grainMat:SetFloat("$c0_y", 0.5) -- gate
-		grainMat:SetFloat("$c0_z", consciousness * 3) -- Pixelize
-		grainMat:SetFloat("$c1_x", consciousness) -- lerp
-		grainMat:SetFloat("$c1_y", 10) -- vignette intensity
-		grainMat:SetFloat("$c1_z", consciousness) -- BlurIntensity
-		grainMat:SetFloat("$c2_x", 0) -- r
-		grainMat:SetFloat("$c2_y", 0) -- g
-		grainMat:SetFloat("$c2_z", 0) -- b
-		grainMat:SetFloat("$c3_x", 0) -- ImageIntensity
+		// для вроде отруба
+		grainMat:SetFloat("$c0_x", CurTime()) // time
+		grainMat:SetFloat("$c0_y", 0.5) // gate
+		grainMat:SetFloat("$c0_z", consciousness * 3) // Pixelize
+		grainMat:SetFloat("$c1_x", consciousness) // lerp
+		grainMat:SetFloat("$c1_y", 10) // vignette intensity
+		grainMat:SetFloat("$c1_z", consciousness) // BlurIntensity
+		grainMat:SetFloat("$c2_x", 0) // r
+		grainMat:SetFloat("$c2_y", 0) // g
+		grainMat:SetFloat("$c2_z", 0) // b
+		grainMat:SetFloat("$c3_x", 0) // ImageIntensity
 	
 		render.SetMaterial(grainMat)
 		render.DrawScreenQuad()
