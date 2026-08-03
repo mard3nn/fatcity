@@ -14,7 +14,7 @@ end
 local function PaintMarkupOverride(text, font, x, y, color, alignX, alignY, alpha)
 	alpha = alpha or 255
 
-	-- background for easier reading
+	// задник
 	surface.SetTextPos(x + 1, y + 1)
 	surface.SetTextColor(0, 0, 0, alpha)
 	surface.SetFont(font)
@@ -122,7 +122,7 @@ function PANEL:AllowInput(newCharacter)
 	local text = self:GetText()
 	local maxLen = maxLength:GetInt()
 
-	-- we can't check for the proper length using utf-8 since AllowInput is called for single bytes instead of full characters
+	// Мы не можем проверить корректность длины при использовании UTF-8, так как метод AllowInput вызывается для отдельных байтов, а не для полных символов.
 	if (string.len(text .. newCharacter) > maxLen) then
 		surface.PlaySound("common/talk.wav")
 		return true
@@ -144,12 +144,8 @@ end
 local gradient_l = Material("vgui/gradient-l")
 
 function PANEL:Paint(w, h)
-	surface.SetDrawColor(40, 40, 40, 180) -- Темно-серый фон для сообщений чата
+	surface.SetDrawColor(40, 40, 40, 180) // color for gui chata
 	surface.DrawRect(0, 0, w, h)
-
-	-- surface.SetDrawColor(137, 137, 137, 150)
-	-- surface.SetMaterial(gradient_l)
-	-- surface.DrawTexturedRect(0, 0, w * 0.9, h)
 
 	for k, v in ipairs(self.droppedCharacters) do
 		local text = v.text
@@ -202,16 +198,9 @@ function PANEL:OnValueChange(text)
 				data.text = v
 
 				surface.SetFont("zChatFont")
-				-- local tw1 = surface.GetTextSize(text)
 				local tw2 = surface.GetTextSize(v)
 
 				data.x = tw2 * (self:GetCaretPos())
-
-				-- local panelWide = self:GetWide()
-
-				-- if data.x > panelWide then
-				-- 	data.x = data.x - (data.x - panelWide)
-				-- end
 
 				data.y = 8
 
@@ -245,7 +234,7 @@ function PANEL:Init()
 	self.realAlpha = 255
 
 	self:SetSize(ScrW() * 0.3, ScrH() * 0.2)
-	self:SetPos(ScrW() * 0.02, ScrH() * 0.67) --six seven!!!!!!!!!!
+	self:SetPos(ScrW() * 0.02, ScrH() * 0.67)
 
 	local entryPanel = self:Add("Panel")
 	entryPanel:SetZPos(1)
@@ -254,8 +243,6 @@ function PANEL:Init()
 
 	self.entry = entryPanel:Add("zChatboxEntry")
 	self.entry:Dock(FILL)
-	-- self.entry.OnValueChange = ix.util.Bind(self, self.OnTextChanged)
-	-- self.entry.OnKeyCodeTyped = ix.util.Bind(self, self.OnKeyCodeTyped)
 	self.entry.OnEnter = CallbackBind(self, self.OnMessageSent)
 
 	self.history = self:Add("DScrollPanel")
@@ -285,8 +272,8 @@ function PANEL:Paint(w, h)
 	surface.SetAlphaMultiplier(self:GetAlpha() / 255)
 
 	DisableClipping(true)
-		draw.SimpleText("Hold left ALT and press ENTER to whisper", "zChatFontSmall", 5, h * 1.01 + 1, black)
-		draw.SimpleText("Hold left ALT and press ENTER to whisper", "zChatFontSmall", 4, h * 1.01, gray)
+		draw.SimpleText("Держите левый альт и нажмите энтер что бы отправить личное сообщение", "zChatFontSmall", 5, h * 1.01 + 1, black)
+		draw.SimpleText("Держите левый альт и нажмите энтер что бы отправить личное сообщение", "zChatFontSmall", 4, h * 1.01, gray)
 
 		if LocalPlayer().organism and LocalPlayer().organism.otrub  then
 			draw.SimpleText("Your messages are currently not visible to anyone.", "zChatFontSmall", ScrW() * 0.3 + 1, h * 1.01 + 1, black, TEXT_ALIGN_RIGHT)
@@ -353,7 +340,6 @@ function PANEL:OnMessageSent()
 	if (text:find("%S")) then
 		local lastEntry = hg.chat.messageHistory[#hg.chat.messageHistory]
 
-		-- only add line to textentry history if it isn't the same message
 		if (lastEntry != text) then
 			if (#hg.chat.messageHistory >= 20) then
 				table.remove(hg.chat.messageHistory, 1)
@@ -410,7 +396,7 @@ function PANEL:AddLine(elements)
 	end
 
 	local bar = self.history:GetVBar()
-	local bScroll = !self:GetActive() or bar.Scroll == bar.CanvasSize -- only scroll when we're not at the bottom/inactive
+	local bScroll = !self:GetActive() or bar.Scroll == bar.CanvasSize
 
 	if bScroll then
 		bar:SetScroll(bar.CanvasSize)
