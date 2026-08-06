@@ -1,7 +1,7 @@
 SWEP.Base = "homigrad_base"
 SWEP.Spawnable = true
 SWEP.AdminOnly = false
-SWEP.PrintName = "Colt M1911"
+SWEP.PrintName = "Colt M1911 rework"
 SWEP.Author = "Colt"
 SWEP.Instructions = "Pistol chambered in .45 ACP"
 SWEP.Category = "Weapons - Pistols"
@@ -9,34 +9,38 @@ SWEP.Slot = 2
 SWEP.SlotPos = 10
 SWEP.ViewModel = ""
 SWEP.WorldModel = "models/weapons/w_pist_elite_single.mdl"
-SWEP.WorldModelFake = "models/weapons/arccw/c_ur_m1911.mdl"
+SWEP.WorldModelFake = "models/weapons/arc9/darsu_eft/c_m1911.mdl" // ну корочк контент арц9 ефт от дарсу
 -- SWEP.GetDebug = false
 
 SWEP.WepSelectIcon2 = Material("entities/arc9_eft_m1911.png")
 SWEP.IconOverride = "entities/arc9_eft_m1911.png"
 SWEP.WepSelectIcon2box = true
-SWEP.FakeBodyGroups = "00000000"
-
-SWEP.FakeBodyGroupsPresets = {
-	"00000000",
-	"00000100",
-	"11000000",
-	"11000100",
-}
+SWEP.FakeBodyGroups = "01111100111"
 
 SWEP.FakeAttachment = "1"
 SWEP.FakePos = Vector(-22, 2.2, 9)
 SWEP.FakeAng = Angle(0, 0, 3)
-SWEP.AttachmentPos = Vector(4.35,1.5,0.5)
+SWEP.AttachmentPos = Vector(-0.6,1.2,0.6)
 SWEP.AttachmentAng = Angle(0,0,0)
 SWEP.MagIndex = nil
+
+SWEP.ModularParts = {
+	magazine = {
+		model = "models/weapons/arc9/darsu_eft/mods/mag_1911_11.mdl",
+		bonemerge = false,
+		bone = "mod_magazine",
+		pos = Vector(0, 0, 0),
+		ang = Angle(0, -90, 0),
+	},
+}
 
 SWEP.FakeEjectBrassATT = "2"
 
 SWEP.AnimList = {
 	["idle"] = "idle",
-	["reload"] = "reload",
-	["reload_empty"] = "reload_empty",
+	["reload"] = "reload1",
+	["reload_empty"] = "reload_empty0_1",
+	["inspect"] = "inspect",
 }
 
 SWEP.CustomShell = "45acp"
@@ -83,44 +87,14 @@ SWEP.FakeEmptyReloadSounds = {
 
 local vecfull = Vector(1,1,1)
 
-local function HideMag(model, unhide)
-	if !IsValid(model) then return end
-	local vec = unhide and vecfull or vector_origin
-	model:ManipulateBoneScale(56, vec)
-	model:ManipulateBoneScale(57, vec)
 
-	for i = 60, 66 do
-		model:ManipulateBoneScale(i, vec)
-		model:ManipulateBoneScale(i, vec)
-	end
-end
 
-local function HideMag2(model, unhide)
-	if !IsValid(model) then return end
-	local vec = unhide and vecfull or vector_origin
-	model:ManipulateBoneScale(54, vec)
-	model:ManipulateBoneScale(55, vec)
-
-	for i = 60, 66 do
-		model:ManipulateBoneScale(i, vec)
-		model:ManipulateBoneScale(i, vec)
-	end
-end
-
-function SWEP:ModelCreated(model)
-	HideMag(model)
-
-	model:SetBodyGroups(self:GetRandomBodygroups() or "0")
-
-	if self.AddModelCreated then
-		self:AddModelCreated(model)
-	end
-end
 
 SWEP.AnimsEvents = {
 	["reload_empty"] = {
 		[0.2] = function(self)
 			local ent = hg.CreateMag( self, Vector(0,-45,-12), self:GetRandomBodygroups() or "0", true)
+			if not IsValid(ent) then return end
 			for i = 0, ent:GetBoneCount() - 1 do
 				ent:ManipulateBoneScale(i, vector_origin)
 			end
@@ -128,7 +102,6 @@ SWEP.AnimsEvents = {
 			ent:ManipulateBoneScale(54, Vector(1,1,1))
 			ent:ManipulateBoneScale(55, Vector(1,1,1))
 
-			HideMag2(self:GetWM(),false)
 			local phys = ent:GetPhysicsObject()
 
 			if IsValid(phys) then
@@ -136,22 +109,16 @@ SWEP.AnimsEvents = {
 			end
 		end,
 		[0.4] = function(self)
-			HideMag2(self:GetWM(),true)
 		end
 	},
 	["reload"] = {
 		[-1] = function(self)
-			HideMag2(self:GetWM(), false)
 		end,
 
 		[0.2] = function(self)
-			HideMag(self:GetWM(), true)
-			HideMag2(self:GetWM(), true)
 		end,
 
 		[0.7] = function(self)
-			HideMag2(self:GetWM(), true)
-			HideMag(self:GetWM(), false)
 		end
 	}
 }
@@ -159,10 +126,10 @@ SWEP.AnimsEvents = {
 SWEP.DeploySnd = {"homigrad/weapons/draw_pistol.mp3", 55, 100, 110}
 SWEP.HolsterSnd = {"homigrad/weapons/holster_pistol.mp3", 55, 100, 110}
 SWEP.UseCustomWorldModel = true
-SWEP.WorldPos = Vector(11, -0.8, 2.6)
-SWEP.WorldAng = Angle(0, 0, 0)
+SWEP.WorldPos = Vector(3, -0.8, 2.6)
+SWEP.WorldAng = Angle(0, 0, -1)
 SWEP.HoldType = "revolver"
-SWEP.ZoomPos = Vector(25, -0.05, 7.34)
+SWEP.ZoomPos = Vector(0, -1.9728, 7.0416)
 SWEP.RHandPos = Vector(-13.5, 0, 3)
 SWEP.LHandPos = false
 SWEP.attPos = Vector(0, -2, -0.5)
@@ -179,7 +146,7 @@ SWEP.shouldntDrawHolstered = true
 
 SWEP.availableAttachments = {
 	barrel = {
-		[1] = {"supressor4", Vector(0,0,0), {}},
+		[1] = {"supressor2", Vector(0,0,0), {}},
         ["mount"] = Vector(0.5,0.73,0),
     }
 }
@@ -196,8 +163,8 @@ SWEP.SightSlideOffset = 0.8
 
 SWEP.FakeViewBobBone = "ValveBiped.Bip01_R_Hand"
 SWEP.FakeViewBobBaseBone = "ValveBiped.Bip01_R_Forearm"
-SWEP.ViewPunchDiv = 50
-SWEP.FakeMagDropBone = "vm_mag"
+SWEP.ViewPunchDiv = 1
+SWEP.FakeMagDropBone = "mod_magazine"
 SWEP.MagModel = "models/weapons/arccw/c_ur_m1911.mdl"
 
 SWEP.lmagpos = Vector(0,0,0)
@@ -218,16 +185,95 @@ function SWEP:OnVarChanged( name, old, new )
 	self:GetWM():SetBodyGroups(new)
 end
 
-function SWEP:InitializePost()
-	self:SetRandomBodygroups(self.FakeBodyGroupsPresets[math.random(#self.FakeBodyGroupsPresets)])
+
+function SWEP:GetModularPartModel(partName, fallback, role)
+	if partName == "magazine" then
+		return self:GetActiveMagazineModel(fallback, role)
+	end
+	return fallback
+end
+
+function SWEP:DrawModularParts()
+	local wm = self:GetWM()
+	if not IsValid(wm) then return end
+
+	local parts = self.ModularParts
+	if not istable(parts) then return end
+
+	self.ModularHeldPartModels = self.ModularHeldPartModels or {}
+	self.ModularHeldPartPaths  = self.ModularHeldPartPaths  or {}
+	local positioned = {}
+
+	local function positionPart(partName)
+		if positioned[partName] then return positioned[partName] end
+		local partData = parts[partName]
+		if not istable(partData) then return end
+
+		local modelPath = self:GetModularPartModel(partName, partData.model, "held")
+		local model = self.ModularHeldPartModels[partName]
+		if not isstring(modelPath) or modelPath == "" then
+			if IsValid(model) then model:Remove() end
+			self.ModularHeldPartModels[partName] = nil
+			self.ModularHeldPartPaths[partName]  = nil
+			return
+		end
+		if IsValid(model) and self.ModularHeldPartPaths[partName] ~= modelPath then
+			model:Remove()
+			model = nil
+		end
+		if not IsValid(model) then
+			model = ClientsideModel(modelPath, RENDERGROUP_BOTH)
+			if not IsValid(model) then return end
+			model:SetNoDraw(true)
+			self.ModularHeldPartModels[partName] = model
+			self.ModularHeldPartPaths[partName]  = modelPath
+		end
+
+		local basePos, baseAng
+		if partData.parent then
+			local parent = positionPart(partData.parent)
+			if not IsValid(parent) then return end
+			basePos, baseAng = parent:GetPos(), parent:GetAngles()
+		else
+			local boneID = wm:LookupBone(partData.bone or "")
+			local matrix = boneID and wm:GetBoneMatrix(boneID)
+			if not matrix then return end
+			basePos, baseAng = matrix:GetTranslation(), matrix:GetAngles()
+		end
+
+		local partPos = partData.pos or vector_origin
+		local partAng = partData.ang or angle_zero
+		local pos, ang = LocalToWorld(partPos, partAng, basePos, baseAng)
+		pos, ang = self:ApplyManagedStockPartOffset(partName, pos, ang)
+		model:SetRenderOrigin(pos)
+		model:SetRenderAngles(ang)
+		model:SetPos(pos)
+		model:SetAngles(ang)
+		if partData.skin ~= nil then model:SetSkin(partData.skin) end
+		if isstring(partData.bodygroups) then model:SetBodyGroups(partData.bodygroups) end
+		model:SetupBones()
+		positioned[partName] = model
+		return model
+	end
+
+	for partName in pairs(parts) do positionPart(partName) end
+	for partName in pairs(parts) do
+		local model = positioned[partName]
+		if IsValid(model) then model:DrawModel() end
+	end
+
+	self.HeldMagCSModel = positioned.magazine
 end
 
 function SWEP:DrawPost()
 	local wep = self:GetWeaponEntity()
 	if CLIENT and IsValid(wep) then
-		self.shooanim = LerpFT(0.4,self.shooanim or 0,(self:Clip1() > 0 or self.reload) and 0 or 2.2)
-		wep:ManipulateBonePosition(50,Vector(0, 0, -0.8*self.shooanim),false)
+		self.shooanim = LerpFT(0.4, self.shooanim or 0, (self:Clip1() > 0 or self.reload) and 0 or 2.2)
+		wep:ManipulateBonePosition(108, Vector(0, 1* self.shooanim, 0 ), false)
 	end
+
+	if not self:ShouldUseFakeModel() then return end
+	self:DrawModularParts()
 end
 
 SWEP.InspectAnimWepAng = {
