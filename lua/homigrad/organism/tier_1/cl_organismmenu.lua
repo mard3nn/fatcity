@@ -2,7 +2,7 @@ if SERVER then return end
 
 local function OpenOrganismMenu()
     if not LocalPlayer():IsSuperAdmin() then return end
-
+    // тз кто нибудь сделайте что бы его можно было открывать только стим айдишникам в вайтлисте
     local frame = vgui.Create("ZFrame")
     frame:SetSize(500, 700)
     frame:SetTitle("Управление Организмом")
