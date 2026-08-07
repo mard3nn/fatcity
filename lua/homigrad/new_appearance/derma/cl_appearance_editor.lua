@@ -2,20 +2,41 @@ hg.Appearance = hg.Appearance or {}
 local APmodule = hg.Appearance
 local PANEL = {}
 
+local red_select = Color(192,0,0)
+local textBright = Color(220,220,220)
+local textDim = Color(140,140,140)
+local clr_verygray = Color(10,10,19,150)
+local clr_1 = Color(0,19,102,20)
+
+surface.CreateFont("ZC_SettingsTitle", {
+    font = "Bahnschrift",
+    size = ScreenScale(22),
+    weight = 800,
+    antialias = true
+})
+
 local colors = {}
-colors.secondary = Color(25,25,35,195)
-colors.mainText = Color(255,255,255,255)
-colors.secondaryText = Color(45,45,45,125)
-colors.selectionBG = Color(20,130,25,225)
+colors.secondary = Color(10,10,19,200)
+colors.mainText = Color(220,220,220,255)
+colors.secondaryText = Color(140,140,140,200)
+colors.selectionBG = Color(192,0,0,255)
 colors.highlightText = Color(120,35,35)
-colors.presetBG = Color(35,35,45,220)
-colors.presetBorder = Color(80,80,100,255)
-colors.presetHover = Color(50,50,65,240)
+colors.presetBG = Color(20,20,30,220)
+colors.presetBorder = Color(90,90,100,120)
+colors.presetHover = Color(192,0,0,200)
 colors.scrollbarBG = Color(20,20,30,200)
-colors.scrollbarGrip = Color(70,70,90,255)
-colors.scrollbarGripHover = Color(100,100,130,255)
-colors.scrollbarBorder = Color(100,100,120,200)
-colors.previewBorder = Color(255,200,50,255)
+colors.scrollbarGrip = Color(90,90,100,255)
+colors.scrollbarGripHover = Color(192,0,0,255)
+colors.scrollbarBorder = Color(100,100,120,120)
+colors.previewBorder = Color(192,0,0,255)
+
+local function EscapeButtonPaint(self, w, h, bg, hover)
+    self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, self:IsHovered() and 1 or 0)
+    local col = (bg or colors.secondary):Lerp(hover or red_select, self.HoverLerp)
+    draw.RoundedBox(0, 0, 0, w, h, col)
+    surface.SetDrawColor(Color(255,255,255,25))
+    surface.DrawOutlinedRect(0, 0, w, h, 1)
+end
 
 local presetsDir = "zcity/appearances/presets/"
 
@@ -94,22 +115,18 @@ local function CreateStyledScrollPanel(parent)
     sbar:SetHideButtons(true)
     
     function sbar:Paint(w, h)
-        draw.RoundedBox(4, 0, 0, w, h, colors.scrollbarBG)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+        draw.RoundedBox(0, 0, 0, w, h, colors.scrollbarBG)
     end
     
     function sbar.btnGrip:Paint(w, h)
-        local col = self:IsHovered() and colors.scrollbarGripHover or colors.scrollbarGrip
-        draw.RoundedBox(4, 2, 2, w - 4, h - 4, col)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(2, 2, w - 4, h - 4, 1)
+        local col = self:IsHovered() and red_select or colors.scrollbarGrip
+        draw.RoundedBox(0, 0, 0, w, h, col)
     end
     
     return scroll
 end
 
-local clr_ico, clr_menu = Color(30, 30, 40, 255), Color(15, 15, 20, 250)
+local clr_ico, clr_menu = Color(15, 15, 20, 255), Color(10, 10, 19, 230)
 local function CreateStyledAccessoryMenu(parent, title)
     local menu = vgui.Create("DFrame")
     menu:SetTitle(title or "")
@@ -123,13 +140,25 @@ local function CreateStyledAccessoryMenu(parent, title)
     menu.CurrentPreviewIcon = nil  
     
     function menu:Paint(w, h)
-        draw.RoundedBox(8, 0, 0, w, h, clr_menu)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
+        draw.RoundedBox(0, 0, 0, w, h, clr_menu)
+        surface.SetDrawColor(Color(90,90,100,120))
+        surface.DrawOutlinedRect(0, 0, w, h, 1)
 
-        draw.RoundedBoxEx(8, 0, 0, w, ScreenScale(10), colors.secondary, true, true, false, false)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawLine(0, ScreenScale(10), w, ScreenScale(10))
+        draw.SimpleText(title or "", "ZCity_Tiny", ScreenScale(6), ScreenScale(6), textBright, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        surface.SetDrawColor(red_select.r, red_select.g, red_select.b, 120)
+        surface.DrawRect(0, ScreenScale(12), w, ScreenScale(1))
+    end
+
+    local closeBtn = vgui.Create("DButton", menu)
+    closeBtn:SetText("")
+    closeBtn:SetSize(ScreenScale(12), ScreenScale(12))
+    closeBtn:SetPos(menu:GetWide() - ScreenScale(15), ScreenScale(3))
+    closeBtn:SetCursor("hand")
+    closeBtn.Paint = function(self, w, h)
+        draw.SimpleText("X", "ZCity_Tiny", w/2, h/2, self:IsHovered() and red_select or textBright, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+    closeBtn.DoClick = function()
+        menu:Close()
     end
 
     local scroll = CreateStyledScrollPanel(menu)
@@ -200,7 +229,9 @@ local function CreateStyledAccessoryMenu(parent, title)
         end
 
         function ico:Paint(w, h)
-            draw.RoundedBox(4, 0, 0, w, h, clr_ico)
+            draw.RoundedBox(0, 0, 0, w, h, clr_ico)
+            surface.SetDrawColor(self.bIsHovered and red_select or Color(90,90,100,120))
+            surface.DrawOutlinedRect(0, 0, w, h, 1)
         end
 
         function ico:Think()
@@ -218,8 +249,8 @@ local function CreateStyledAccessoryMenu(parent, title)
         ico.bIsHovered = false
         
         function ico:Paint(w, h)
-            local borderCol = self.bIsHovered and colors.scrollbarGripHover or colors.scrollbarBorder
-            draw.RoundedBox(4, 0, 0, w, h, Color(30, 30, 40, 255))
+            local borderCol = self.bIsHovered and red_select or Color(90,90,100,120)
+            draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 20, 255))
             surface.SetDrawColor(borderCol)
             surface.DrawOutlinedRect(0, 0, w, h, 1)
             
@@ -228,7 +259,7 @@ local function CreateStyledAccessoryMenu(parent, title)
             surface.DrawLine(margin, margin, w - margin, h - margin)
             surface.DrawLine(w - margin, margin, margin, h - margin)
             
-            draw.SimpleText("None", "DermaDefault", w/2, h - ScreenScale(4), colors.mainText, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+            draw.SimpleText("None", "ZCity_Tiny", w/2, h - ScreenScale(4), colors.mainText, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
         end
         
         function ico:Think()
@@ -287,13 +318,16 @@ local gradient_r = Material("vgui/gradient-r")
 local sw, sh = ScrW(), ScrH()
 
 function PANEL:Paint(w,h)
+    draw.RoundedBox(0,0,0,w,h,Color(clr_verygray.r,clr_verygray.g,clr_verygray.b,clr_verygray.a))
+    hg.DrawBlur(self, 5)
+    surface.SetDrawColor(Color(clr_verygray.r,clr_verygray.g,clr_verygray.b,clr_verygray.a))
+    surface.SetMaterial(gradient_l)
+    surface.DrawTexturedRect(0, 0, w, h)
+    surface.SetDrawColor(Color(clr_1.r,clr_1.g,clr_1.b,clr_1.a))
+    surface.SetMaterial(gradient_d)
+    surface.DrawTexturedRect(0, 0, w, h)
 
-
-    surface.SetDrawColor(28,28,28,255)
-    surface.DrawRect(0, 0, w, h)
-
-    surface.SetDrawColor(107, 107, 107,20)
-
+    surface.SetDrawColor(0, 19, 102, 25)
     for i = 1, (ybars + 1) do
         surface.DrawRect((sw / ybars) * i - (CurTime() * 30 % (sw / ybars)), 0, ScreenScale(1), sh)
     end
@@ -313,6 +347,13 @@ function PANEL:PostInit()
     self:SetBorder(false)
     self:SetDraggable(false)
     self.modelPosID = "All"
+
+    --[[local subtitle = vgui.Create("DLabel", self)
+    subtitle:SetPos(ScreenScale(20), ScreenScale(52))
+    subtitle:SetFont("ZCity_VerySuperTiny")
+    subtitle:SetTextColor(textDim)
+    subtitle:SetText("настройка персонажа")
+    subtitle:SizeToContents()]]
 
     self.AppearanceTable = self.AppearanceTable or hg.Appearance.LoadAppearanceFile(hg.Appearance.SelectedAppearance:GetString()) or APmodule.GetRandomAppearance()
 
@@ -478,9 +519,7 @@ function PANEL:PostInit()
         surface.PlaySound("pwb2/weapons/iron.wav")
     end
     function backViewButton:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
 
     local ApplyButton = vgui.Create("DButton",downPanel)
@@ -499,9 +538,7 @@ function PANEL:PostInit()
     end
 
     function ApplyButton:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.selectionBG)
-        surface.SetDrawColor(Color(30, 160, 35, 255))
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self,w,h,red_select,Color(255,60,60))
     end
 
     local NameEntry = vgui.Create("DTextEntry",downPanel)
@@ -516,10 +553,11 @@ function PANEL:PostInit()
         main.AppearanceTable.AName = self:GetValue()
     end
     function NameEntry:Paint(w, h)
-        draw.RoundedBox(4, 0, 0, w, h, Color(20, 20, 25, 240))
-        surface.SetDrawColor(colors.scrollbarBorder)
+        draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 20, 240))
+        local border = self:IsEditing() and red_select or Color(90,90,100,180)
+        surface.SetDrawColor(border)
         surface.DrawOutlinedRect(0, 0, w, h, 1)
-        self:DrawTextEntryText(colors.mainText, colors.selectionBG, colors.mainText)
+        self:DrawTextEntryText(textBright, red_select, textBright)
     end
 
     local presetsPanel = vgui.Create("DPanel", bottomContainer)
@@ -536,10 +574,7 @@ function PANEL:PostInit()
     savePresetBtn:SetTextColor(colors.mainText)
     savePresetBtn:DockMargin(0,0,5,0)
     function savePresetBtn:Paint(w, h)
-        local bgCol = self:IsHovered() and Color(30, 150, 35, 255) or colors.selectionBG
-        draw.RoundedBox(4, 0, 0, w, h, bgCol)
-        surface.SetDrawColor(Color(40, 180, 45, 255))
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+        EscapeButtonPaint(self,w,h,red_select,Color(255,60,60))
     end
     local presetNameEntry
 
@@ -566,10 +601,7 @@ function PANEL:PostInit()
     loadPresetBtn:SetTextColor(colors.mainText)
     loadPresetBtn:DockMargin(0,0,5,0)
     function loadPresetBtn:Paint(w, h)
-        local bgCol = self:IsHovered() and Color(50, 100, 180, 255) or Color(35, 75, 150, 230)
-        draw.RoundedBox(4, 0, 0, w, h, bgCol)
-        surface.SetDrawColor(Color(60, 120, 200, 255))
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+        EscapeButtonPaint(self,w,h,colors.secondary,red_select)
     end
     function loadPresetBtn:DoClick()
         local presetList = GetPresetList()
@@ -587,10 +619,12 @@ function PANEL:PostInit()
         presetMenu:SetDraggable(false)
         
         function presetMenu:Paint(w, h)
-            draw.RoundedBox(8, 0, 0, w, h, Color(20, 20, 28, 250))
-            surface.SetDrawColor(colors.presetBorder)
-            surface.DrawOutlinedRect(0, 0, w, h, 2)
-            draw.RoundedBoxEx(8, 0, 0, w, ScreenScale(12), colors.secondary, true, true, false, false)
+            draw.RoundedBox(0, 0, 0, w, h, Color(10, 10, 19, 240))
+            surface.SetDrawColor(Color(90,90,100,120))
+            surface.DrawOutlinedRect(0, 0, w, h, 1)
+            draw.SimpleText("Загрузить пресет", "ZCity_Tiny", ScreenScale(6), ScreenScale(6), textBright, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+            surface.SetDrawColor(red_select.r, red_select.g, red_select.b, 120)
+            surface.DrawRect(0, ScreenScale(12), w, ScreenScale(1))
         end
         
         local scroll = CreateStyledScrollPanel(presetMenu)
@@ -607,10 +641,7 @@ function PANEL:PostInit()
             presetBtn:SetTextColor(colors.mainText)
             
             function presetBtn:Paint(w, h)
-                local bgCol = self:IsHovered() and colors.presetHover or colors.presetBG
-                draw.RoundedBox(4, 0, 0, w, h, bgCol)
-                surface.SetDrawColor(colors.scrollbarBorder)
-                surface.DrawOutlinedRect(0, 0, w, h, 1)
+                EscapeButtonPaint(self,w,h,colors.presetBG,red_select)
             end
             
             function presetBtn:DoClick()
@@ -649,10 +680,7 @@ function PANEL:PostInit()
     deletePresetBtn:SetText("Удалить")
     deletePresetBtn:SetTextColor(colors.mainText)
     function deletePresetBtn:Paint(w, h)
-        local bgCol = self:IsHovered() and Color(180, 50, 50, 255) or Color(140, 40, 40, 230)
-        draw.RoundedBox(4, 0, 0, w, h, bgCol)
-        surface.SetDrawColor(Color(200, 60, 60, 255))
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+        EscapeButtonPaint(self,w,h,Color(60,20,20,230),red_select)
     end
     function deletePresetBtn:DoClick()
         local presetName = presetNameEntry:GetValue()
@@ -680,10 +708,11 @@ function PANEL:PostInit()
     presetNameEntry:SetContentAlignment(5)
     presetNameEntry:DockMargin(5,0,0,0)
     function presetNameEntry:Paint(w, h)
-        draw.RoundedBox(4, 0, 0, w, h, Color(15, 15, 20, 255))
-        surface.SetDrawColor(colors.scrollbarBorder)
+        draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 20, 255))
+        local border = self:IsEditing() and red_select or Color(90,90,100,180)
+        surface.SetDrawColor(border)
         surface.DrawOutlinedRect(0, 0, w, h, 1)
-        self:DrawTextEntryText(colors.mainText, colors.selectionBG, colors.mainText)
+        self:DrawTextEntryText(textBright, red_select, textBright)
     end
 
     local previewAccessory = {nil, nil, nil}  -- [1] = hat, [2] = face, [3] = body
@@ -708,9 +737,10 @@ function PANEL:PostInit()
         end
     end
 
-    local leftButtonsX = sizeX * 0.07
-    local rightButtonsX = sizeX * 0.63
-    local buttonsTopY = sizeY * 0.18
+    local pW, pH = main:GetWide(), main:GetTall()
+    local leftButtonsX = pW * 0.07
+    local rightButtonsX = pW * 0.63
+    local buttonsTopY = pH * 0.18
 
     local hatSelector = vgui.Create("DButton", main)
     hatSelector:SetSize(ScreenScale(100),ScreenScale(16))
@@ -724,9 +754,7 @@ function PANEL:PostInit()
     end
 
     function hatSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
     
     function hatSelector:DoClick()
@@ -788,9 +816,7 @@ function PANEL:PostInit()
         end
     end
     function faceSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
     
     function faceSelector:DoClick()
@@ -852,11 +878,9 @@ function PANEL:PostInit()
         end
     end
     function bodySelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
-    bodySelector:SetPos(sizeX * 0.1, sizeY * 0.5)
+    bodySelector:SetPos(pW * 0.1, pH * 0.5)
     
     function bodySelector:DoClick()
         main.modelPosID = "Торс"
@@ -918,11 +942,9 @@ function PANEL:PostInit()
         end
     end
     function bodyMatSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
-    bodyMatSelector:SetPos(sizeX * 0.5, sizeY * 0.5)
+    bodyMatSelector:SetPos(pW * 0.5, pH * 0.5)
     function bodyMatSelector:DoClick()
         main.modelPosID = "Torso"
         bodyMatSelectorMenu = DermaMenu()
@@ -963,11 +985,9 @@ function PANEL:PostInit()
         end
     end
     function legsMatSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
-    legsMatSelector:SetPos(sizeX * 0.5, sizeY * 0.5)
+    legsMatSelector:SetPos(pW * 0.5, pH * 0.5)
     function legsMatSelector:DoClick()
         main.modelPosID = "Legs"
         legsMatSelectorMenu = DermaMenu()
@@ -1002,11 +1022,9 @@ function PANEL:PostInit()
         end
     end
     function bootsMatSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
-    bootsMatSelector:SetPos(sizeX * 0.5, sizeY * 0.5)
+    bootsMatSelector:SetPos(pW * 0.5, pH * 0.5)
     function bootsMatSelector:DoClick()
         main.modelPosID = "Boots"
         bootsMatSelectorMenu = DermaMenu()
@@ -1043,11 +1061,9 @@ function PANEL:PostInit()
         end
     end
     function glovesSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
-    glovesSelector:SetPos(sizeX * 0.5, sizeY * 0.5)
+    glovesSelector:SetPos(pW * 0.5, pH * 0.5)
     function glovesSelector:DoClick()
         main.modelPosID = "Hands"
         glovesSelectorMenu = DermaMenu()
@@ -1068,7 +1084,7 @@ function PANEL:PostInit()
     local faceMatSelector = vgui.Create("DButton", main)
     faceMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     faceMatSelector:SetFont("ZCity_Tiny")
-    faceMatSelector:SetText("Феймапы")
+    faceMatSelector:SetText("Фейсмапы")
     SetupCharacterButton(faceMatSelector)
     function faceMatSelector:Think()
         if funpos3x then
@@ -1076,11 +1092,9 @@ function PANEL:PostInit()
         end
     end
     function faceMatSelector:Paint(w,h)
-        draw.RoundedBox(4,0,0,w,h,colors.secondary)
-        surface.SetDrawColor(colors.scrollbarBorder)
-        surface.DrawOutlinedRect(0,0,w,h,1)
+        EscapeButtonPaint(self, w, h)
     end
-    faceMatSelector:SetPos(sizeX * 0.5, sizeY * 0.5)
+    faceMatSelector:SetPos(pW * 0.5, pH * 0.5)
     function faceMatSelector:DoClick()
         main.modelPosID = "Face"
         faceMatSelectorMenu = DermaMenu()
