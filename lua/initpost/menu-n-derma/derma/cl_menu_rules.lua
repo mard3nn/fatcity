@@ -49,13 +49,27 @@ local TITLE_COLORS = {
     [1] = Color(255, 255, 255, 255), -- П
     [2] = Color(255, 255, 255, 255), -- Р
     [3] = Color(255, 255, 255, 255), -- А
-    [4] = Color(60, 130, 255, 255),  -- В
-    [5] = Color(60, 130, 255, 255),  -- И
-    [6] = Color(230, 45, 45, 255),   -- Л
-    [7] = Color(230, 45, 45, 255)    -- А
+    [4] = Color(199, 2, 2, 255),     -- В
+    [5] = Color(199, 2, 2, 255),     -- И
+    [6] = Color(199, 2, 2, 255),     -- Л
+    [7] = Color(199, 2, 2, 255)      -- А
 }
 local TITLE_SWEEP_SPEED = 12.0
 local TITLE_SWEEP_SOFT  = 1.4
+
+local clr_1 = Color(0, 19, 102, 20)
+local colGridW = Color(255, 255, 255, 55)
+local colGridB = Color(0, 19, 102, 55)
+local colGridR = Color(192, 0, 0, 55)
+local gradient_l = surface.GetTextureID("vgui/gradient-l")
+local gradient_d = surface.GetTextureID("vgui/gradient-d")
+
+local function GridColor(t)
+    if t < 0.5 then
+        return colGridW:Lerp(colGridB, t * 2)
+    end
+    return colGridB:Lerp(colGridR, (t - 0.5) * 2)
+end
 
 local function LerpColor(t, c1, c2)
     return Color(
@@ -86,18 +100,28 @@ function hg.DrawRules(parent)
     parent.Paint = function(self, w, h)
         self.anim = Lerp(FrameTime() * 8, self.anim, 1)
         drawBlur(self, 8)
-        surface.SetDrawColor(10, 10, 15, 220 * self.anim)
+        surface.SetDrawColor(10, 10, 19, 220 * self.anim)
         surface.DrawRect(0, 0, w, h)
 
         local gridSize = ScreenScale(25)
         local offset = (RealTime() * 12) % gridSize
-        surface.SetDrawColor(200, 30, 30, 15 * self.anim)
         for i = -1, math.ceil(w / gridSize) + 1 do
-            surface.DrawRect(i * gridSize - offset, 0, 1, h)
+            local sx = i * gridSize - offset
+            surface.SetDrawColor(GridColor(sx / w))
+            surface.DrawRect(sx, 0, 1, h)
         end
         for i = -1, math.ceil(h / gridSize) + 1 do
-            surface.DrawRect(0, i * gridSize + offset, w, 1)
+            local sy = i * gridSize + offset
+            surface.SetDrawColor(GridColor(sy / h))
+            surface.DrawRect(0, sy, w, 1)
         end
+
+        surface.SetDrawColor(10, 10, 19, 200 * self.anim)
+        surface.SetTexture(gradient_l)
+        surface.DrawTexturedRect(0, 0, w, h)
+        surface.SetDrawColor(clr_1)
+        surface.SetTexture(gradient_d)
+        surface.DrawTexturedRect(0, 0, w, h)
     end
     parent:AlphaTo(255, 0.15, 0)
     parent.openTime = RealTime()
@@ -149,7 +173,7 @@ function hg.DrawRules(parent)
     closeBtn.Paint = function(self, w, h)
         self.hover = Lerp(FrameTime() * 10, self.hover, self:IsHovered() and 1 or 0)
         if self.hover > 0.01 then
-            draw.RoundedBox(4, 0, 0, w, h, Color(200, 40, 40, 180 * self.hover))
+            draw.RoundedBox(4, 0, 0, w, h, Color(199, 2, 2, 180 * self.hover))
         end
         draw.SimpleText("X", "GOMI_Btn", w/2, h/2, Color(255 - 80 * self.hover, 180 + 60 * self.hover, 180 + 60 * self.hover, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
@@ -176,7 +200,7 @@ function hg.DrawRules(parent)
         local frac = self:GetAlpha() / 255
         if frac <= 0 then return end
 
-        surface.SetDrawColor(10, 10, 15, 235 * frac)
+        surface.SetDrawColor(10, 10, 19, 235 * frac)
         surface.DrawRect(0, 0, w, h)
 
         local elapsed = RealTime() - self.startTime
@@ -189,7 +213,7 @@ function hg.DrawRules(parent)
             local x = cx + math.cos(ang) * radius
             local y = cy + math.sin(ang) * radius
             local fade = ((i / dots) + RealTime() * 0.9) % 1
-            local col = LerpColor(fade, Color(230, 45, 45), Color(255, 255, 255))
+            local col = LerpColor(fade, Color(199, 2, 2), Color(255, 255, 255))
             local dotSize = ScreenScale(3)
             draw.RoundedBox(dotSize, x - dotSize, y - dotSize, dotSize * 2, dotSize * 2, Color(col.r, col.g, col.b, (50 + 205 * fade) * frac))
         end
@@ -197,7 +221,7 @@ function hg.DrawRules(parent)
         draw.SimpleText("Загрузка страницы...", "GOMI_RulesDesc", cx, cy + radius + ScreenScale(18), Color(200, 200, 200, 255 * frac), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 
         if elapsed > 5 then
-            draw.SimpleText("Похоже, возникли проблемы с соединением", "GOMI_RulesDesc", cx, cy + radius + ScreenScale(36), Color(230, 90, 90, 255 * frac), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+            draw.SimpleText("Похоже, возникли проблемы с соединением", "GOMI_RulesDesc", cx, cy + radius + ScreenScale(36), Color(230, 60, 60, 255 * frac), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
             draw.SimpleText("Нажмите \"нажмите сюда\" ниже, чтобы открыть правила в браузере", "GOMI_RulesDesc", cx, cy + radius + ScreenScale(50), Color(180, 180, 180, 255 * frac), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
         end
     end
@@ -221,8 +245,8 @@ function hg.DrawRules(parent)
     footer:SetPos(ScreenScale(20), parent:GetTall() - ScreenScale(40))
     footer:SetSize(parent:GetWide() - ScreenScale(40), ScreenScale(15))
     footer.Paint = function(self, w, h)
-        draw.RoundedBox(4, 0, 0, w, h, Color(20, 20, 25, 200))
-        surface.SetDrawColor(60, 60, 70, 150)
+        draw.RoundedBox(4, 0, 0, w, h, Color(10, 10, 19, 200))
+        surface.SetDrawColor(0, 19, 102, 150)
         surface.DrawRect(0, 0, w, 1)
     end
 
@@ -243,9 +267,9 @@ function hg.DrawRules(parent)
     linkBtn:SetPos(footerText:GetPos() + footerText:GetWide(), 0)
     linkBtn.Paint = function(self, w, h)
         self.hover = Lerp(FrameTime() * 10, self.hover, self:IsHovered() and 1 or 0)
-        draw.SimpleText("нажмите сюда", "GOMI_SettingsHelp", w/2, h/2, Color(80 + 100 * self.hover, 130 + 80 * self.hover, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("нажмите сюда", "GOMI_SettingsHelp", w/2, h/2, Color(199 + 56 * self.hover, 2 + 78 * self.hover, 2 + 78 * self.hover, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         if self:IsHovered() then
-            surface.SetDrawColor(80, 130, 255, 80)
+            surface.SetDrawColor(199, 2, 2, 80)
             surface.DrawLine(2, h - 3, w - 2, h - 3)
         end
     end
