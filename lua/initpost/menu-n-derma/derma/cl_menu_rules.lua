@@ -37,6 +37,12 @@ surface.CreateFont("GOMI_RulesDesc", {
     weight = 400,
     antialias = true
 })
+surface.CreateFont("GOMI_SettingsHelp", {
+    font = "Bahnschrift",
+    size = ScreenScale(10),
+    weight = 400,
+    antialias = true
+})
 
 local TITLE_WHITE = Color(255, 255, 255, 255)
 local TITLE_COLORS = {
