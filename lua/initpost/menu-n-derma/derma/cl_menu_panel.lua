@@ -2,7 +2,7 @@ local PANEL = {}
 local curent_panel 
 local red_select = Color(192,0,0)
 
-DISCORD_URL = "https://discord.gg/C8JmKUJVaG"
+DISCORD_URL = "https://discord.gg/475EmEdTgH"
 
 local Selects = {
     {Title = "Выйти", Func = function(luaMenu) RunConsoleCommand("disconnect") end},
@@ -18,6 +18,9 @@ local Selects = {
     {Title = "Ачивки", Func = function(luaMenu,pp) 
         hg.DrawAchievmentsMenu(pp)
     end},
+    {Title = "Правила", Func = function(luaMenu,pp) 
+        hg.DrawRules(pp)
+    end},
     {Title = "Настройки", Func = function(luaMenu,pp) 
         hg.DrawSettings(pp) 
     end},
@@ -26,9 +29,21 @@ local Selects = {
 }
 
 local splasheh = {
-    'Асян всесян',
-    'орфан сосите',
-    'гомисити крутой'
+    'LIKE HOMICIDED',
+    'PLUV PLUV PLUVISKI',
+    'LULU IS NOT DEAD | !PLUV',
+    'THE TRAITOR WAS KILLED',
+    'NAB HOMICIDE SERVER',
+    'ALSO TRY MODDED HOMICIDE 2',
+    'HOP ON Z-CITY',
+    'JOHN Z-CITY',
+    ':pluvrare:',
+    'SAW51 IS REAL',
+    'MORE SMALLTOWN',
+    'MORE CLUE2022',
+    'BACKROOMS == CLUE',
+    'HELL IS NEAR',
+    'I WISH YOU GOOD HEALTH, JASON STATHAM'
 }
 
 --print(string.upper('I wish you good health, Jason Statham'))
@@ -102,7 +117,7 @@ function PANEL:Init()
         local logo_h = logo_w * (238 / 753)
         surface.SetDrawColor(color_white)
         surface.SetMaterial(GomiLogo)
-        surface.DrawTexturedRect(ScreenScale(5), ScreenScale(50), logo_w, logo_h)
+        surface.DrawTexturedRect(ScreenScale(5), ScreenScale(40), logo_w, logo_h)
     end
 
     self.Buttons = {}
