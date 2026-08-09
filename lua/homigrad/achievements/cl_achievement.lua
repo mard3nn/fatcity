@@ -14,6 +14,16 @@ end)
 BlurBackground = BlurBackground or hg.DrawBlur
 local gradient_u = Material("vgui/gradient-u")
 gradient_r = Material("vgui/gradient-r")
+gradient_l = Material("vgui/gradient-l")
+
+local tex_gradient_d = surface.GetTextureID("vgui/gradient-d")
+local tex_gradient_l = surface.GetTextureID("vgui/gradient-l")
+
+local clr_verygray = Color(10,10,19,235)
+local clr_1 = Color(0,19,102,35)
+local red_select = Color(192,0,0)
+local textBright = Color(220,220,220)
+local textDim = Color(140,140,140)
 
 local function PaintButton(self,w,h)
     surface.SetDrawColor(155, 0, 0, 108)
@@ -74,30 +84,23 @@ local function createButton_2(frame, ach, text, func, y)
     local desc = markup.Parse("<font=HomigradFontMedium>"..ach.description.."<font>", 500 )
     
     function button:Paint(w,h)
-        PaintButton(self,w,h)
-        local view = render.GetViewSetup(true)
-        local pos,ang = view.origin,view.angles
-        ang:RotateAroundAxis( ang:Up(), -90 )
-        ang:RotateAroundAxis( ang:Forward(), 90 )
-                
         local val = localach[ach.key] and localach[ach.key].value or ach.start_value
-        local amt = ScreenScale(1)
 
-        surface.SetFont("HomigradFont") 
-        
-        self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, curent_panel_ach == ach and 1 or 0)
-        
-        local base = (curent_panel_ach == ach and string.upper(ach.name) or ach.name)..(ach.showpercent and " | " or "")..(ach.showpercent and (val / ach.needed_value * 100).."%" or "")
-        
+        self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, (curent_panel_ach == ach or self:IsHovered()) and 1 or 0)
+
+        local base = ach.name..(ach.showpercent and " | " or "")..(ach.showpercent and (val / ach.needed_value * 100).."%" or "")
+
         local result = ""
         for i = 1, #base do
             result = result .. (i <= math.ceil(#base * self.HoverLerp) and string.upper(base:sub(i,i)) or base:sub(i,i))
         end
-        
-        local wt,ht = surface.GetTextSize(result)
-        surface.SetTextColor(255,255,255)
-        surface.SetTextPos(3, (ht / 2))
-        surface.DrawText(result)
+
+        if self.HoverLerp > 0.01 then
+            surface.SetDrawColor(Color(255,255,255,20 * self.HoverLerp))
+            surface.DrawRect(0, 0, w, h)
+        end
+
+        draw.SimpleText(result, "ZCity_Small", 3, h / 2, textBright:Lerp(red_select, self.HoverLerp), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
     end
 
     button:SetText("")
@@ -136,26 +139,20 @@ function hg.DrawAchievmentsMenu(ParentPanel)
     local frame
     if ParentPanel then
         ParentPanel:SetAlpha(0)
+        ParentPanel.bgAlpha = 0
         ParentPanel.Paint = function(self,w,h)
-            surface.SetDrawColor(28,28,28,255)
-            surface.DrawRect(0, 0, w, h)
+            self.bgAlpha = Lerp(FrameTime() * 8, self.bgAlpha, 1)
+            local a = self.bgAlpha
 
-            surface.SetDrawColor(107, 107, 107,20)
-            for i = 1, (ybars + 1) do
-                surface.DrawRect((sw / ybars) * i - (CurTime() * 30 % (sw / ybars)), 0, ScreenScale(1), sh)
-            end
-
-            for i = 1, (xbars + 1) do
-                surface.DrawRect(0, (sh / xbars) * (i - 1) + (CurTime() * 30 % (sh / xbars)), sw, ScreenScale(1))
-            end
-
-            local border_size = ScreenScale(2)
-
-            surface.SetDrawColor(0, 0, 0)
-            surface.SetMaterial(gradient_l)
-            surface.DrawTexturedRect(0, 0, border_size, sh)
+            draw.RoundedBox(0, 0, 0, w, h, Color(clr_verygray.r, clr_verygray.g, clr_verygray.b, clr_verygray.a * a))
+            hg.DrawBlur(self, 5)
+            surface.SetDrawColor(Color(clr_verygray.r, clr_verygray.g, clr_verygray.b, clr_verygray.a * a))
+            surface.SetTexture(tex_gradient_l)
+            surface.DrawTexturedRect(0,0,w,h)
+            surface.SetDrawColor(Color(clr_1.r, clr_1.g, clr_1.b, clr_1.a * a))
+            surface.SetTexture(tex_gradient_d)
+            surface.DrawTexturedRect(0,0,w,h)
         end
-
     end
     hg.DrawBlur(ParentPanel, 5)
     ParentPanel:AlphaTo(255,0.15,0)
@@ -174,14 +171,14 @@ function hg.DrawAchievmentsMenu(ParentPanel)
     frame.scroll = scroll
 
     local sbar = scroll:GetVBar()
-    sbar:SetWide(0)
+    sbar:SetWide(ScreenScale(6))
     sbar:SetHideButtons(true)
     function sbar:Paint(w, h)
-        draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 100))
+        draw.RoundedBox(0, 0, 0, w, h, Color(20, 20, 30, 200))
     end
     function sbar.btnGrip:Paint(w, h)
         self.lerpcolor = Lerp(FrameTime() * 10, self.lerpcolor or 0.2,(self:IsHovered() and 0.8 or 0.6))
-        draw.RoundedBox(0, 0, 0, w, h, Color(100 * self.lerpcolor, 10, 10))
+        draw.RoundedBox(0, 0, 0, w, h, Color(red_select.r * self.lerpcolor, red_select.g * self.lerpcolor, red_select.b * self.lerpcolor))
     end
 
     function frame:UpdateValues()
@@ -209,32 +206,33 @@ function hg.DrawAchievmentsMenu(ParentPanel)
     frame2:Center()
     frame2:SetPos(frame:GetX()+frame:GetWide(),frame:GetY())
     frame2.Paint = function(self,w,h)
-        surface.SetDrawColor(92,0,0,108)
-        surface.SetMaterial(gradient_d)
+        surface.SetDrawColor(0, 0, 0, 100)
+        surface.DrawRect(0,0,w,h)
+        surface.SetDrawColor(Color(clr_1.r, clr_1.g, clr_1.b, 40))
+        surface.SetTexture(tex_gradient_d)
         surface.DrawTexturedRect(0,0,w,h)
-        surface.SetDrawColor(40,36,36,255)
-        surface.DrawRect(0,h-h/6,w,h/6)
-        surface.SetDrawColor(22,21,21)
+
+        surface.SetDrawColor(red_select.r, red_select.g, red_select.b, 40)
         surface.DrawRect(0,h-3,w,3)
-        
+
         if curent_panel_ach then
             self.HoverLerp = LerpFT(0.2,self.HoverLerp or 0,1)
-            
+
             surface.SetDrawColor(255,255,255,255)
             surface.SetMaterial(curent_panel_ach.img)
             surface.DrawTexturedRect(w/2-w/10,h/2-w/5,w/5,w/5)
-            
+
             surface.SetFont("ZCity_Small")
             local name = curent_panel_ach.name
             local res = ""
             for i=1,#name do
-                res=res..(i<=math.ceil(#name*self.HoverLerp)and name:sub(i,i)or "")
+                res=res..(i<=math.ceil(#name*self.HoverLerp)and string.upper(name:sub(i,i))or name:sub(i,i))
             end
             local wt,ht=surface.GetTextSize(res)
             surface.SetTextColor(255,255,255)
             surface.SetTextPos(w/2-wt/2,h-h/6)
             surface.DrawText(res)
-            
+
             surface.SetFont("ZCity_Tiny")
             local desc = curent_panel_ach.description
             local res2 = ""
