@@ -1,5 +1,3 @@
--- Admin organism control menu (server)
-
 util.AddNetworkString("hg_orgmenu_open")
 util.AddNetworkString("hg_orgmenu_request")
 util.AddNetworkString("hg_orgmenu_snapshot")
