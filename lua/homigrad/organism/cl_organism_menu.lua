@@ -1,5 +1,3 @@
--- Admin organism control menu (client)
-
 local MENU
 local REFRESH_INTERVAL = 0.5
 local nextRefresh = 0
