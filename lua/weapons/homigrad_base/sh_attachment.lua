@@ -123,24 +123,13 @@ end
 local colBlackTransparent = Color(0, 0, 0, 125)
 local angZero = Angle(0, 0, 0)
 local vecZero = Vector(0, 0, 0)
-function SWEP:ThinkAtt()
-	if true then return end
-	if SERVER then return end
-	local att = self:GetMuzzleAtt()
-	local owner = self:GetOwner()
-	if not self:IsLocal() then return end
-end
-
-
-local angZero = Angle(0, 0, 0)
-local vecZero = Vector(0, 0, 0)
 local vecadd = Vector(0,0,0)
 local hg_attachment_draw_distance = ConVarExists("hg_attachment_draw_distance") and GetConVar("hg_attachment_draw_distance") or CreateClientConVar("hg_attachment_draw_distance", 0, true, nil, "distance to draw attachments", 0, 4096)
 
 function SWEP:DrawAttachments()
 	local owner = self:GetOwner()
-	self.attacments = self:GetNetVar("attachments",{})
-	//self.Supressor = (self:HasAttachment("barrel", "supressor") and true) or self.SetSupressor
+	self.attachments_nw = self:GetNetVar("attachments", {})
+	self.attacments = self.attachments_nw -- legacy alias
 	local magwell, magwellData = self:HasAttachment("magwell")
 	if magwellData then 
 		self.Primary.ClipSize = magwellData.capacity

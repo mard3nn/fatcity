@@ -128,7 +128,7 @@ hook.Add("HG.InputMouseApply", "fakeCameraAngles2", function(tbl)
 		follow = follow or lply
 	end]]
 
-	if lply:InVehicle() and not IsValid(follow) and !(hg.NoCameraInCar(lply:GetVehicle()) or hg.NoFakeInCar(lply:GetVehicle())) then
+	if lply:InVehicle() and not IsValid(follow) then
 		tbl.override_angle = true
 		tbl.angle = angle_zero
 		return true
@@ -198,7 +198,7 @@ end)
 
 fakeTimer = fakeTimer or nil
 local hg_cshs_fake = CreateConVar("hg_cshs_fake", "0", FCVAR_ARCHIVE, "Toggle C'SHS-like ragdoll camera view", 0, 1)
-local hg_firstperson_death = CreateClientConVar("hg_firstperson_death", "0", true, false, "Toggle first-person death camera view", 0, 1)
+local hg_firstperson_death = { GetBool = function() return false end }
 local hg_firstperson_ragdoll = CreateConVar("hg_firstperson_ragdoll", "0", FCVAR_ARCHIVE, "Toggle first-person ragdoll camera view", 0, 1)
 local hg_fov = CreateClientConVar("hg_fov", "70", true, false, "Change first-person field of view", 75, 100)
 local hg_gopro = CreateClientConVar("hg_gopro", "0", true, false, "Toggle GoPro-like camera view", 0, 1)
@@ -760,3 +760,52 @@ hook.Add("Move","PushAwayRagdolls",function(ply) --// lagging
 		ent.pushCooldown = CurTime() + 0.1
     end
 end)]]
+
+surface.CreateFont("HGWoundHoldPrompt", {
+	font = "Courier Prime",
+	size = 22,
+	weight = 500,
+	antialias = true,
+	extended = true
+})
+
+local woundHoldPromptFade = 0
+local woundHoldPromptText = "[E + SPACE] to hold your wound"
+local woundHoldPromptActive = false
+
+hook.Add("HUDPaint", "HG_WoundHoldPrompt", function()
+	local ply = LocalPlayer()
+	if not IsValid(ply) or not ply:Alive() then
+		woundHoldPromptFade = 0
+		return
+	end
+
+	local wounds = ply.wounds
+	local arterialwounds = ply.arterialwounds
+	local hasWounds = wounds and #wounds > 0 or arterialwounds and #arterialwounds > 0
+	local inFake = IsValid(ply.FakeRagdoll)
+	local hasBothArms = not (ply.organism and (ply.organism.larmamputated or ply.organism.rarmamputated))
+	local shouldShow = inFake and hasWounds and hasBothArms and not (ply.organism and ply.organism.otrub)
+
+	woundHoldPromptFade = LerpFT(0.12, woundHoldPromptFade, shouldShow and 1 or 0)
+	if woundHoldPromptFade <= 0.01 then return end
+
+	local active = ply:GetNWBool("hg_hold_wound_manual", false)
+	if shouldShow then
+		woundHoldPromptActive = active
+		woundHoldPromptText = active and "Holding wound" or "[E + SPACE] to hold your wound"
+	end
+
+	local flash = woundHoldPromptActive and (0.5 + 0.5 * math.sin(CurTime() * 10)) or 0
+	local alphaMul = woundHoldPromptFade
+	local color = woundHoldPromptActive and Color(225, 225, 225, 220 * alphaMul) or Color(225, 225, 225, 170 * alphaMul)
+	local outlineColor = Color(0, 0, 0, 255 * alphaMul)
+
+	if woundHoldPromptActive then
+		local v = flash * 255
+		local inv = 255 - v
+		outlineColor = Color(inv, inv, inv, 255 * alphaMul)
+	end
+
+	draw.SimpleTextOutlined(woundHoldPromptText, "HGWoundHoldPrompt", ScrW() * 0.5, ScrH() - 62, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, outlineColor)
+end)

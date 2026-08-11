@@ -71,6 +71,7 @@ local function RowAppear(appear, rowIndex, totalRows)
     return EaseSoft(t)
 end
 
+-- Split motion channels so height / glow / icon don't feel glued together
 local function SelHeight(s)
     return math.ease.OutCubic(math.Clamp(s, 0, 1))
 end
@@ -162,6 +163,7 @@ function WS.WeaponSelectorDraw( ply )
             local rowT = RowAppear(WS.Appear, rowIndex, totalRows)
             local selected = IsValid(SelectedWep) and SelectedWep == wep
 
+            -- speed unchanged
             wep.SelectorScale = LerpFT(selected and 0.2 or 0.17, wep.SelectorScale or 0, selected and 1 or 0)
             local s = wep.SelectorScale
             local sH = SelHeight(s)
@@ -171,6 +173,7 @@ function WS.WeaponSelectorDraw( ply )
             local expandedH = sizeX * 0.7
             local sizeH = Lerp(sH, collapsedH, expandedH)
 
+            -- Slight grow + settle, not a hard snap in width
             local boxW = Lerp(sH, sizeX * 0.97, sizeX)
             local boxX = position + (sizeX - boxW) * 0.5
             local boxH = sizeH
@@ -183,6 +186,7 @@ function WS.WeaponSelectorDraw( ply )
             if rowT > 0.005 then
                 draw.RoundedBox(0, boxX, yBase, boxW, boxH, ColorAlpha(color_black, bgAlpha))
 
+                -- Bottom edge softens with selection
                 draw.RoundedBox(
                     0,
                     boxX,
@@ -202,6 +206,7 @@ function WS.WeaponSelectorDraw( ply )
                     surface.DrawOutlinedRect(boxX, yBase, boxW, boxH, math.max(1, math.floor(1 + sG)))
                 end
 
+                -- Title sits near top; eases down a touch as the cell opens
                 local titleY = yBase + Lerp(sH, 2.5, 5)
                 WS.DrawText(
                     WS.GetPrintName(wep),

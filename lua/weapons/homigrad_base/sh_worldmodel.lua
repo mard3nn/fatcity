@@ -71,7 +71,7 @@ function SWEP:ChangeGunPos(dtime)
 	local should = true and not (fakeRagdoll and not (inuse))
 
 	self.lerped_positioning = Lerp(hg.lerpFrameTime2(0.1, dtime), self.lerped_positioning or 0, should and 1 or 0.3)
-	self.lerped_angle = Lerp(hg.lerpFrameTime2(0.1, dtime), self.lerped_angle or 0, should and 1 or (hg.KeyDown(owner, IN_ATTACK2) and 1 or 0))
+	self.lerped_angle = Lerp(hg.lerpFrameTime2(0.1, dtime), self.lerped_angle or 0, should and 1 or (hg.KeyDown(ply, IN_ATTACK2) and 1 or 0))
 	self.restlerp = Lerp(hg.lerpFrameTime(0.0001, dtime), self.restlerp or 0, self:IsResting() and 1 or 0)
 
 	self.weaponAng[1] = 0
@@ -301,7 +301,7 @@ local function DrawWorldModel(self, force)
 	if not IsValid(self) or not self.WorldModel_Transform then return end
 	local owner = self:GetOwner()
 	
-	if IsValid(owner) and (owner != lply) and not owner.shouldTransmit or owner.NotSeen then
+	if IsValid(owner) and (owner ~= lply) and (not owner.shouldTransmit or owner.NotSeen) then
 		return
 	end
 
@@ -570,19 +570,8 @@ function SWEP:WorldModel_Transform(bNoApply, bNoAdditional, model)
 		self.last_transform = SysTime()
 
 		local should = hg.ShouldTPIK(owner) and not (ent ~= owner and not (inuse))
+		-- Keep cached WM when TPIK is off (PVS NotifyShouldTransmit already cleans up).
 		if not should and not IsValid(owner.FakeRagdoll) then
-			if IsValid(model) then
-				-- local ownAngs = owner:EyeAngles()
-				-- model:SetRenderAngles(ownAngs)
-				-- model:SetRenderOrigin(owner:EyePos() + ownAngs:Forward() * 15 + owner:GetUp() * -10)
-
-				model:SetModel(self.WorldModel)
-				model:AddEffects(EF_BONEMERGE)
-				model:SetParent(owner)
-				model:Remove()
-				model = nil
-			end
-
 			return
 		end
 		

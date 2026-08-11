@@ -21,11 +21,16 @@ input_list.heart = function(org, bone, dmg, dmgInfo)
 	local oldDmg = org.heart
 
 	local result = damageOrgan(org, dmg * 0.3, dmgInfo, "heart")
+	local delta = org.heart - oldDmg
 
-	hg.AddHarmToAttacker(dmgInfo, (org.heart - oldDmg) * 10, "Heart damage harm")
+	hg.AddHarmToAttacker(dmgInfo, delta * 10, "Heart damage harm")
 	
 	org.shock = org.shock + dmg * 20
-	org.internalBleed = org.internalBleed + (org.heart - oldDmg) * 10
+	org.painadd = org.painadd + dmg * 18
+	org.internalBleed = org.internalBleed + delta * 10
+	org.heartStrain = math.Clamp((org.heartStrain or 0) + delta * 1.4, 0, 1)
+	if hg.organism.AddCardiacStress then hg.organism.AddCardiacStress(org, delta * (dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT) and 2.4 or 1.2)) end
+	if delta > 0.08 and dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT + DMG_SLASH) and math.Rand(0, 1) < math.Clamp(delta * 1.8, 0, 0.75) and hg.organism.StartFibrillation then hg.organism.StartFibrillation(org) end
 
 	return result
 end
@@ -80,55 +85,114 @@ input_list.intestines = function(org, bone, dmg, dmgInfo)
 	return result
 end
 
-input_list.brain = function(org, bone, dmg, dmgInfo)
-	if dmgInfo:IsDamageType(DMG_BLAST) then dmg = dmg / 50 end
-	local oldDmg = org.brain
-	local result = damageOrgan(org, dmg * 1, dmgInfo, "brain")
+local brainLobeProfiles = {
+	brainFrontal = {brain = 0.8, consciousness = 1.2, disorientation = 1.5, shock = 2, pain = 7, hemorrhage = 0.6},
+	brainParietal = {brain = 0.7, consciousness = 1.4, disorientation = 2.2, shock = 2.5, pain = 8, hemorrhage = 0.7},
+	brainTemporal = {brain = 0.9, consciousness = 1.1, disorientation = 1.3, shock = 2.5, pain = 8, hemorrhage = 0.9},
+	brainOccipital = {brain = 0.75, consciousness = 1.3, disorientation = 1.1, shock = 2, pain = 7, hemorrhage = 0.75}
+}
 
-	hg.AddHarmToAttacker(dmgInfo, (org.brain - oldDmg) * 15, "Brain damage harm")
+local function getBrainLobeDamage(org)
+	return math.min(org.brainFrontal or 0, 0.2) + math.min(org.brainParietal or 0, 0.2) + math.min(org.brainTemporal or 0, 0.2) + math.min(org.brainOccipital or 0, 0.2)
+end
+
+local function addBrainHemorrhage(org, amount, rate)
+	org.brainHemorrhage = math.min((org.brainHemorrhage or 0) + amount, 1)
+	org.brainBleedRate = math.min((org.brainBleedRate or 0) + (rate or amount * 0.0015), 0.008)
+end
+
+hg.organism.AddBrainHemorrhage = addBrainHemorrhage
+
+local function damageBrainLobe(org, bone, dmg, dmgInfo, key)
+	local profile = brainLobeProfiles[key]
+	if not profile then return 0 end
+	if dmgInfo:IsDamageType(DMG_BLAST) then dmg = dmg / 50 end
+
+	local oldBrainLobeDamage = getBrainLobeDamage(org)
+	local oldDmg = org[key] or 0
+	local result = damageOrgan(org, dmg, dmgInfo, key)
+	local delta = (org[key] or 0) - oldDmg
+
+	org.brain = math.min((org.brain or 0) + (getBrainLobeDamage(org) - oldBrainLobeDamage) * 1.5, 1)
+	org.consciousness = math.Approach(org.consciousness, 0, delta * profile.consciousness)
+	org.disorientation = org.disorientation + delta * profile.disorientation
+	org.shock = org.shock + dmg * profile.shock
+	org.painadd = org.painadd + dmg * profile.pain
+
+	hg.AddHarmToAttacker(dmgInfo, delta * 15, key .. " damage harm")
+
+	local penetrating = dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT)
+	local impact = dmgInfo:IsDamageType(DMG_CLUB + DMG_BLAST + DMG_CRUSH)
+	local hemorrhageChance = penetrating and math.Clamp(0.3 + delta * 1.6, 0, 0.95) or impact and math.Clamp(0.04 + delta * profile.hemorrhage, 0, 0.65) or 0.02
+	if delta > 0 and math.Rand(0, 1) <= hemorrhageChance then
+		addBrainHemorrhage(org, delta * profile.hemorrhage, delta * (penetrating and 0.003 or 0.0012))
+	end
+
+	if key == "brainTemporal" and delta > 0.02 and math.random(2) == 1 and IsValid(org.owner) and org.owner.AddTinnitus then
+		org.owner:AddTinnitus(math.Clamp(delta * 35, 1.5, 12), true)
+	end
 
 	if dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT) then
 		local dmgPos = dmgInfo:GetDamagePosition()
 		local dirCool = dmgInfo:GetDamageForce():GetNormalized()
-
 		local effdata = EffectData()
 		effdata:SetOrigin(dmgPos)
 		effdata:SetRadius(dmg / 10)
 		effdata:SetMagnitude(dmg / 10)
 		effdata:SetScale(1)
-		util.Effect("BloodImpact",effdata)
+		util.Effect("BloodImpact", effdata)
 
 		local ent = hg.GetCurrentCharacter(org.owner)
-		
-		if !ent.organism.SpawnedBrainChunks and math.random(5) == 1 then
+		if IsValid(ent) and ent.organism and not ent.organism.SpawnedBrainChunks and math.random(5) == 1 then
 			SpawnMeatGore(ent, dmgPos + dirCool * 5, 3, dirCool * 1000, 0.4)
 			ent.organism.SpawnedBrainChunks = true
 		end
 	end
 
-	if org.brain >= 0.01 and (org.brain - oldDmg) > 0.01 and math.random(3) == 1 then
-		--hg.applyFencingToPlayer(org.owner, org)
+	if org.brain >= 0.01 and delta > 0.01 and math.random(3) == 1 then
 		org.shock = 70
-
-		timer.Simple(0.1, function()
-			local rag = hg.GetCurrentCharacter(org.owner)
-
-			if IsValid(rag) and rag:IsRagdoll() then
-				hg.applyFencingToPlayer(org.owner, org) -- looks more appealing anyways
-				--local stype = "rigor"--hg.getRandomSpasm()
-				--hg.applySpasm(rag, stype)
-				--if rag.organism then rag.organism.spasm, rag.organism.spasmType = true, stype end
-			end
-		end)
 	end
 
-	org.consciousness = math.Approach(org.consciousness, 0, dmg * 3)
-	
-	org.disorientation = org.disorientation + dmg * 1
-	org.shock = org.shock + dmg * 3
-	org.painadd = org.painadd + dmg * 10
 	return result
 end
+
+input_list.brainFrontal = function(org, bone, dmg, dmgInfo) return damageBrainLobe(org, bone, dmg, dmgInfo, "brainFrontal") end
+input_list.brainParietal = function(org, bone, dmg, dmgInfo) return damageBrainLobe(org, bone, dmg, dmgInfo, "brainParietal") end
+input_list.brainTemporal = function(org, bone, dmg, dmgInfo) return damageBrainLobe(org, bone, dmg, dmgInfo, "brainTemporal") end
+input_list.brainOccipital = function(org, bone, dmg, dmgInfo) return damageBrainLobe(org, bone, dmg, dmgInfo, "brainOccipital") end
+input_list.brain = input_list.brainFrontal
+
+local brainLobes = {
+	brainFrontal = true,
+	brainParietal = true,
+	brainTemporal = true,
+	brainOccipital = true,
+	brain = true
+}
+
+hook.Add("PreTraceOrganBulletDamage", "hg_skull_melee_penetration", function(org, bone, dmg, dmgInfo, box, dir, hit, ricochet, organ, hook_info)
+	if not organ or not hook_info then return end
+	if not brainLobes[organ[1]] then return end
+	if not dmgInfo:IsDamageType(DMG_SLASH + DMG_CLUB) then return end
+
+	local skull = org.skull or 0
+	if skull >= 1 then return end
+
+	local chance = math.Clamp(0.04 + skull * 0.18 + dmg * 0.025, 0, 0.28)
+	if math.Rand(0, 1) > chance then hook_info.restricted = true end
+end)
+
+hook.Add("HomigradDamage", "BrainHemorrhageTrauma", function(ply, dmgInfo, hitgroup)
+	local org = ply.organism
+	if not org or hitgroup ~= HITGROUP_HEAD or not org.skull then return end
+	if org.skull < 0.7 then return end
+
+	local chance = dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT) and 0.2 or dmgInfo:IsDamageType(DMG_CLUB + DMG_BLAST + DMG_CRUSH) and 0.08 or 0
+	chance = chance + math.max(org.skull - 0.7, 0) * 0.35
+	if math.Rand(0, 1) <= chance then
+		addBrainHemorrhage(org, math.Rand(0.015, 0.05), math.Rand(0.0002, 0.001))
+	end
+end)
 
 local angZero = Angle(0, 0, 0)
 local vecZero = Vector(0, 0, 0)
@@ -160,10 +224,31 @@ local arteryMessages ={
 	"I'm bleeding out of my neck!"
 }
 
+local slashToArtery = {
+	["rarmup"] = "rarmartery",
+	["rarmdown"] = "rarmartery",
+	["larmup"] = "larmartery",
+	["larmdown"] = "larmartery",
+	["rlegup"] = "rlegartery",
+	["rlegdown"] = "rlegartery",
+	["llegup"] = "llegartery",
+	["llegdown"] = "llegartery",
+}
+
+local function getArteryChanceMul(dmgInfo)
+	local inflictor = dmgInfo:GetInflictor()
+	return IsValid(inflictor) and inflictor.ArteryChance or 1
+end
+
 local function hitArtery(artery, org, dmg, dmgInfo, boneindex, dir, hit)
 	if isCrush(dmgInfo) then return 1 end
 	if dmgInfo:IsDamageType(DMG_BLAST) then return 1 end
-	if dmgInfo:IsDamageType(DMG_SLASH) and (math.random(5) != 1) and dmg < 2 then return end
+	if dmgInfo:IsDamageType(DMG_SLASH) and dmg < 2 then
+		local arteryChanceMul = getArteryChanceMul(dmgInfo)
+		local arteryChance = arteryChanceMul >= 2 and 1 or math.Clamp(0.2 * arteryChanceMul, 0, 1)
+
+		if math.Rand(0, 1) > arteryChance then return end
+	end
 	org.painadd = org.painadd + dmg * 1
 	if org[artery] == 1 then return 0 end
 	if org[string.Replace(artery, "artery", "").."amputated"] then return end
@@ -189,6 +274,19 @@ local function hitArtery(artery, org, dmg, dmgInfo, boneindex, dir, hit)
 	return 0
 end
 
+hook.Add("PreTraceOrganBulletDamage", "hg_melee_artery_chance", function(org, bone, dmg, dmgInfo, box, dir, hit, ricochet, organ)
+	if not dmgInfo:IsDamageType(DMG_SLASH) then return end
+
+	local artery = organ and slashToArtery[organ[1]]
+	if not artery then return end
+	if getArteryChanceMul(dmgInfo) <= 1 then return end
+
+	local arteryChance = math.Clamp(getArteryChanceMul(dmgInfo) - 1, 0, 1)
+	if math.Rand(0, 1) > arteryChance then return end
+
+	hitArtery(artery, org, dmg, dmgInfo, box[6], dir, hit)
+end)
+
 input_list.arteria = function(org, bone, dmg, dmgInfo, boneindex, dir, hit)
 	return hitArtery("arteria", org, dmg, dmgInfo, "ValveBiped.Bip01_Neck1", dir, hit)
 end
@@ -197,7 +295,33 @@ input_list.rarmartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) r
 input_list.larmartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return hitArtery("larmartery", org, dmg, dmgInfo, boneindex, dir, hit) end
 input_list.rlegartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return hitArtery("rlegartery", org, dmg, dmgInfo, boneindex, dir, hit) end
 input_list.llegartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return hitArtery("llegartery", org, dmg, dmgInfo, boneindex, dir, hit) end
-input_list.spineartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return 0 end--hitArtery("spineartery", org, dmg, dmgInfo, boneindex, dir, hit) end
+input_list.spineartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return hitArtery("spineartery", org, dmg, dmgInfo, boneindex, dir, hit) end
+input_list.eyeL = function(org, bone, dmg, dmgInfo)
+	local oldDmg = org.eyeL or 0
+	dmg = dmg * 0.75
+	org.eyeL = math.min((org.eyeL or 0) + dmg, 1)
+
+	hg.AddHarmToAttacker(dmgInfo, dmg * 5, "Left eye damage harm")
+	org.painadd = org.painadd + dmg * 20
+	org.shock = org.shock + dmg * 10
+	
+	dmgInfo:ScaleDamage(0.8)
+	return 0
+end
+
+input_list.eyeR = function(org, bone, dmg, dmgInfo)
+	local oldDmg = org.eyeR or 0
+	dmg = dmg * 0.75
+	org.eyeR = math.min((org.eyeR or 0) + dmg, 1)
+
+	hg.AddHarmToAttacker(dmgInfo, dmg * 5, "Right eye damage harm")
+	org.painadd = org.painadd + dmg * 20
+	org.shock = org.shock + dmg * 10
+	
+	dmgInfo:ScaleDamage(0.8)
+	return 0
+end
+
 input_list.lungsL = function(org, bone, dmg, dmgInfo)
 	local prot = math.max(0.3 - org.lungsL[1],0)
 	local oldval = org.lungsL[1]
@@ -230,7 +354,6 @@ input_list.lungsR = function(org, bone, dmg, dmgInfo)
 end
 
 input_list.trachea = function(org, bone, dmg, dmgInfo)
-	do return 0 end
 	local oldDmg = org.trachea
 
 	if dmgInfo:IsDamageType(DMG_BLAST) then dmg = dmg / 5 end

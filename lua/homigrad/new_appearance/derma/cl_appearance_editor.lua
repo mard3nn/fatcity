@@ -5,8 +5,8 @@ local PANEL = {}
 local red_select = Color(192,0,0)
 local textBright = Color(220,220,220)
 local textDim = Color(140,140,140)
-local clr_verygray = Color(10,10,19,150)
-local clr_1 = Color(0,19,102,20)
+local clr_verygray = Color(10,10,19,90)
+local clr_1 = Color(20,55,150,7)
 
 surface.CreateFont("ZC_SettingsTitle", {
     font = "Bahnschrift",
@@ -317,6 +317,33 @@ local gradient_r = Material("vgui/gradient-r")
 
 local sw, sh = ScrW(), ScrH()
 
+local colGridW = Color(255,255,255,12)
+local colGridB = Color(0,19,102,12)
+local colGridR = Color(192,0,0,12)
+local function GridColor(t)
+    if t < 0.5 then
+        return colGridW:Lerp(colGridB, t * 2)
+    end
+    return colGridB:Lerp(colGridR, (t - 0.5) * 2)
+end
+
+local function DrawGrid()
+    local spacing = ScreenScale(24)
+    local offset = (CurTime() * ScreenScale(10)) % spacing
+
+    for x = -spacing, ScrW() + spacing, spacing do
+        local sx = x + offset
+        surface.SetDrawColor(GridColor(sx / ScrW()))
+        surface.DrawLine(sx, 0, sx, ScrH())
+    end
+
+    for y = -spacing, ScrH() + spacing, spacing do
+        local sy = y + offset
+        surface.SetDrawColor(GridColor(sy / ScrH()))
+        surface.DrawLine(0, sy, ScrW(), sy)
+    end
+end
+
 function PANEL:Paint(w,h)
     draw.RoundedBox(0,0,0,w,h,Color(clr_verygray.r,clr_verygray.g,clr_verygray.b,clr_verygray.a))
     hg.DrawBlur(self, 5)
@@ -327,14 +354,7 @@ function PANEL:Paint(w,h)
     surface.SetMaterial(gradient_d)
     surface.DrawTexturedRect(0, 0, w, h)
 
-    surface.SetDrawColor(0, 19, 102, 25)
-    for i = 1, (ybars + 1) do
-        surface.DrawRect((sw / ybars) * i - (CurTime() * 30 % (sw / ybars)), 0, ScreenScale(1), sh)
-    end
-
-    for i = 1, (xbars + 1) do
-        surface.DrawRect(0, (sh / xbars) * (i - 1) + (CurTime() * 30 % (sh / xbars)), sw, ScreenScale(1))
-    end
+    DrawGrid()
 
     local border_size = 5
     surface.SetDrawColor(0, 0, 0)
@@ -1084,7 +1104,7 @@ function PANEL:PostInit()
     local faceMatSelector = vgui.Create("DButton", main)
     faceMatSelector:SetSize(ScreenScale(100),ScreenScale(16))
     faceMatSelector:SetFont("ZCity_Tiny")
-    faceMatSelector:SetText("Фейсмапы")
+    faceMatSelector:SetText("Феймапы")
     SetupCharacterButton(faceMatSelector)
     function faceMatSelector:Think()
         if funpos3x then

@@ -82,6 +82,8 @@ hook.Add("RenderScreenspaceEffects", "homigrad", function()
 	hook_Run("Post Post Processing")
 
 	hook_Run("Post Post Pre Post Processing")
+
+	hook_Run("Post Pain Processing")
 end)
 
 local postprs = hg.postprocess
@@ -186,6 +188,44 @@ local haloents = {
 	["weapon_hg_f1_tpik"] = true
 }
 
+--[[hook.Add( "PreDrawHalos", "AddPropHalos", function() -- вариант с подсветкой всего в радиусе
+	local pickuphalo = {}
+	 
+	local lpos = lply:GetPos()
+	for _, ent in ipairs(ents.FindInSphere(lpos, 256)) do
+		if IsValid(ent) and (haloents[ent.Base] or haloents[ent:GetClass()]) and not IsValid(ent:GetOwner()) then
+		table.insert(pickuphalo, ent)
+		local dist = lpos:Distance(ent:GetPos()) * 0.02
+		--print(dist)
+		color_red.r = Lerp(FrameTime()*5,color_red.r,56 / dist)
+		color_red.g = Lerp(FrameTime()*5,color_red.g,43 / dist)
+		end
+	end
+	halo.Add( pickuphalo, color_red, 1, 1, 1 )
+end )]]
+
+--[[hook.Add( "PreDrawHalos", "AddPropHalos", function() -- вариант с подсвечиванием только когда смотришь
+	local pickuphalo = {}
+	 
+	local tr = hg.eyeTrace(lply,72)
+	if IsValid(tr.Entity) and haloents[tr.Entity.Base] then
+		table.insert(pickuphalo, tr.Entity)
+		local dist = lply:GetPos():Distance(tr.Entity:GetPos()) * 0.03
+		--print(dist)
+		color_red.r = Lerp(FrameTime()*2,color_red.r,56 / dist)
+		color_red.g = Lerp(FrameTime()*2,color_red.g,43 / dist)
+	else
+		color_red.r = Lerp(FrameTime()*2,color_red.r,0)
+		color_red.g = Lerp(FrameTime()*2,color_red.g,0)
+	end
+	halo.Add( pickuphalo, color_red, 1, 1, 1 )
+end )]]
+
+-- funny :)
+
+--that one furry game
+
+
 local painMat = Material("effects/shaders/zb_grain")
 local noiseMat = Material("effects/shaders/zb_grainwhite")
 local vignetteMat = Material("effects/shaders/zb_vignette")
@@ -194,11 +234,48 @@ local coldMat = Material("effects/shaders/zb_colda")
 local grainMat = Material("effects/shaders/zb_grain2")
 local heatMat = Material("effects/shaders/zb_heat")
 local blindMat = Material("effects/shaders/zb_blind")
+local unconsciousMat = CreateMaterial("fatcity_unconscious_red", "screenspace_general", {
+	["$pixshader"] = "zb_grain2_ps20b",
+	["$basetexture"] = "_rt_FullFrameFB",
+	["$texture1"] = "stickers/steamhappy",
+	["$texture2"] = "",
+	["$texture3"] = "",
+	["$ignorez"] = 1,
+	["$vertexcolor"] = 1,
+	["$vertextransform"] = 1,
+	["$copyalpha"] = 1,
+	["$alpha_blend_color_overlay"] = 0,
+	["$alpha_blend"] = 1,
+	["$linearwrite"] = 1,
+	["$linearread_basetexture"] = 1,
+	["$linearread_texture1"] = 1,
+	["$linearread_texture2"] = 1,
+	["$linearread_texture3"] = 1
+})
 
 local PainLerp = 0
+local painThresholdIntensityLerp = 1
+local PanicAttackLerp = 0
 local O2Lerp = 0
 local assimilatedLerp = 0
 local tempLerp = 36.6
+local brainFrontalLerp = 0
+local brainParietalLerp = 0
+local brainTemporalLerp = 0
+local brainOccipitalLerp = 0
+local brainHemorrhageLerp = 0
+local CardioLerp = 0
+local brainFrontalColor = {
+	["$pp_colour_addr"] = 0,
+	["$pp_colour_addg"] = 0,
+	["$pp_colour_addb"] = 0,
+	["$pp_colour_brightness"] = 0,
+	["$pp_colour_contrast"] = 1,
+	["$pp_colour_colour"] = 1,
+	["$pp_colour_mulr"] = 0,
+	["$pp_colour_mulg"] = 0,
+	["$pp_colour_mulb"] = 0
+}
 
 local show_image_time = 0
 local show_some_images_time = 0
@@ -210,19 +287,343 @@ local lobotomy_mats = {
 	[5] = Material("overlays/peripheralorboverlay.png"),
 	[6] = Material("overlays/tallflash1.png"),
 	[7] = Material("overlays/tallflash2.png"),
-	[8] = Material("overlays/tallflash3.png")
+	[8] = Material("overlays/tallflash3.png"),
+	effectState = {
+		hypoxia = 0,
+		nextMicroShake = 0,
+		microShakeIntervalMin = 0.18,
+		microShakeIntervalMax = 0.65,
+		microShakeMul = 0.28,
+		hypoxiaColor = {
+			["$pp_colour_addr"] = 0,
+			["$pp_colour_addg"] = 0,
+			["$pp_colour_addb"] = 0,
+			["$pp_colour_brightness"] = 0,
+			["$pp_colour_contrast"] = 1,
+			["$pp_colour_colour"] = 1,
+			["$pp_colour_mulr"] = 0,
+			["$pp_colour_mulg"] = 0,
+			["$pp_colour_mulb"] = 0
+		},
+		unconsciousAudio = {
+			state = "idle",
+			generation = 0,
+			allowed = nil,
+			introLoading = false,
+			dyingLoading = false
+		}
+	}
 }
+
+local consciousnessTypeBeatVolume = 0.18
+local dying2Volume = 0.4
+local painBeatOverlayPath = "sound/rem_pain.mp3"
+local panicattackOverlayPath = "sound/rem_panicattack.mp3"
+local panicattackFadeStart = 0
+local panicattackThreshold = 0.55
+local panicattackVolumeMul = 1
+local panicattackVisualExponent = 1.75
+local panicattackPulseFloor = 0.78
+local panicattackPulseIntensity = 0.2
+local panicattackShakeIntervalMin = 0.45
+local panicattackShakeIntervalMax = 1.4
+local panicattackShakeMul = 0.85
+local painBeatOverlayVolumeMul = 1.25
+local painThresholdMax = 120
+local painAgonyThreshold = 0.45
+local painExcruciatingThreshold = 0.87
+local painAgonyVolumeMul = 1.15
+local painExcruciatingVolumeMul = 0.85
+local painLayerFadeLerp = 0.06
+local painPitchMax = 150
+local painEffectIntensity = 0.8
+local unconsciousPainEffectIntensity = 1.55
+local unconsciousFadeStart = 0
+local painPulseIntensity = 0.25
+local PainStationLoading = false
+local PanicStationLoading = false
+local PainStationOverlayLoading = false
+local AssimilationStationLoading = false
+local BrainTraumaStationLoading = false
+local TinnitusLoading = false
+local NoiseStationLoading = false
+local NoiseStation2Loading = false
+local NoiseStation2DyingLoading = false
+local painAudioGeneration = 0
+local painLayers = {
+	agony = {
+		path = "rem_agony.ogg",
+		threshold = painAgonyThreshold,
+		volumeMul = painAgonyVolumeMul,
+		pitchMax = painPitchMax,
+		fadeLerp = painLayerFadeLerp,
+		currentVolume = 0,
+		targetVolume = 0
+	},
+	excruciating = {
+		path = "rem_excruciatingpain.ogg",
+		threshold = painExcruciatingThreshold,
+		volumeMul = painExcruciatingVolumeMul,
+		fadeLerp = painLayerFadeLerp,
+		currentVolume = 0,
+		targetVolume = 0
+	}
+}
+local seizureSoundPath = "sound/rem_seizure.ogg"
+local seizureIntroDuration = 3
+local seizureFlashDelayMin = 0.12
+local seizureFlashDelayMax = 0.55
+local seizureFlashDurationMin = 0.35
+local seizureFlashDurationMax = 1.1
+local seizureFlashSizeMin = 9000
+local seizureFlashSizeMax = 18000
+local seizureFinalFlashLead = 2
+local seizureFinalFlashDuration = 5
+local seizureFinalFlashSize = 90000
+local seizureSoundVolume = 1
+local seizureSoundOtrubVolume = 0.3
+local seizureSoundOtrubPlaybackRate = 0.82
+local seizureIntroTab = {
+	["$pp_colour_addr"] = 0,
+	["$pp_colour_addg"] = 0,
+	["$pp_colour_addb"] = 0,
+	["$pp_colour_brightness"] = 0,
+	["$pp_colour_contrast"] = 1,
+	["$pp_colour_colour"] = 1,
+	["$pp_colour_mulr"] = 0,
+	["$pp_colour_mulg"] = 0,
+	["$pp_colour_mulb"] = 0
+}
+local seizureChromatic = Material("effects/shaders/merc_chromaticaberration")
+local SeizureStationLoading = false
+local seizureAudioGeneration = 0
+local seizureClientActive = false
+local seizureClientStart = 0
+local seizureClientEnd = 0
+local nextSeizureFlash = 0
+local nextSeizureCamShake = 0
+local seizureFinalFlashFired = false
+local seizureMidazolamFadeEnd = 0
+local seizureMidazolamFadeDuration = 15
+
+function REM_MidazolamSeizureFade(time)
+	seizureMidazolamFadeDuration = time or 15
+	seizureMidazolamFadeEnd = CurTime() + seizureMidazolamFadeDuration
+end
+
+local function stopSeizureEffects()
+	seizureClientActive = false
+	seizureClientStart = 0
+	seizureClientEnd = 0
+	nextSeizureFlash = 0
+	nextSeizureCamShake = 0
+	seizureFinalFlashFired = false
+	SeizureStationLoading = false
+	seizureAudioGeneration = seizureAudioGeneration + 1
+
+	if IsValid(SeizureStation) then
+		SeizureStation:Stop()
+		SeizureStation = nil
+	end
+end
+
+local function ensureSeizureStation()
+	if IsValid(SeizureStation) or SeizureStationLoading then return end
+
+	local generation = seizureAudioGeneration
+	SeizureStationLoading = true
+	sound.PlayFile(seizureSoundPath, "noblock noplay", function(station)
+		SeizureStationLoading = false
+		if generation != seizureAudioGeneration then
+			if IsValid(station) then
+				station:Stop()
+			end
+			return
+		end
+		if IsValid(station) then
+			station:SetVolume(0)
+			station:Play()
+			station:EnableLooping(true)
+			SeizureStation = station
+		end
+	end)
+end
+
+local function addSeizureFlash(isFinal)
+	if not hg.AddFlash then return end
+
+	local view = render.GetViewSetup(true)
+	local pos = view.origin + view.angles:Forward() * math.Rand(isFinal and 140 or 120, isFinal and 220 or 210) + view.angles:Right() * math.Rand(isFinal and -45 or -110, isFinal and 45 or 110) + view.angles:Up() * math.Rand(isFinal and -45 or -80, isFinal and 45 or 80)
+	local time = isFinal and seizureFinalFlashDuration or math.Rand(seizureFlashDurationMin, seizureFlashDurationMax)
+	local size = isFinal and seizureFinalFlashSize or math.Rand(seizureFlashSizeMin, seizureFlashSizeMax)
+
+	hg.AddFlash(view.origin, 1, pos, time, size)
+end
+
+local function updateSeizureEffects(org)
+	local seizureStart = org.seizureActive and org.seizureStart or org.karmaSeizureStart
+	local seizureEnd = org.seizureActive and org.seizureEnd or org.karmaSeizureEnd
+	if seizureStart and seizureStart > 0 and seizureEnd and seizureEnd > CurTime() then
+		if not seizureClientActive or seizureClientStart != seizureStart or seizureClientEnd != seizureEnd then
+			seizureClientActive = true
+			seizureClientStart = seizureStart
+			seizureClientEnd = seizureEnd
+			nextSeizureFlash = math.max(seizureClientStart + seizureIntroDuration, CurTime() + seizureIntroDuration)
+			nextSeizureCamShake = CurTime()
+			seizureFinalFlashFired = false
+		end
+
+		ensureSeizureStation()
+		if IsValid(SeizureStation) then
+			local midazolamFade = seizureMidazolamFadeEnd > CurTime() and math.Clamp((seizureMidazolamFadeEnd - CurTime()) / seizureMidazolamFadeDuration, 0, 1) or 1
+			SeizureStation:SetVolume((org.otrub and seizureSoundOtrubVolume or seizureSoundVolume) * midazolamFade)
+			SeizureStation:SetPlaybackRate(org.otrub and seizureSoundOtrubPlaybackRate or 1)
+		end
+
+		local seizureElapsed = math.max(CurTime() - seizureClientStart, 0)
+		local seizurePulse = math.ease.InOutSine((math.sin(CurTime() * 3) + 1) * 0.5)
+		render.UpdateScreenEffectTexture()
+		render.UpdateFullScreenDepthTexture()
+		grainMat:SetFloat("$c0_x", CurTime())
+		grainMat:SetFloat("$c0_y", 0.5)
+		grainMat:SetFloat("$c0_z", seizurePulse * 3.5)
+		grainMat:SetFloat("$c1_x", seizurePulse)
+		grainMat:SetFloat("$c1_y", 10)
+		grainMat:SetFloat("$c1_z", seizurePulse)
+		grainMat:SetFloat("$c2_x", 0)
+		grainMat:SetFloat("$c2_y", 0)
+		grainMat:SetFloat("$c2_z", 0)
+		grainMat:SetFloat("$c3_x", 0)
+		render.SetMaterial(grainMat)
+		render.DrawScreenQuad()
+
+		if seizureElapsed < seizureIntroDuration then
+			local intensity = math.min(seizureElapsed, seizureIntroDuration)
+			seizureIntroTab["$pp_colour_contrast"] = intensity / 2
+			seizureIntroTab["$pp_colour_addr"] = intensity / 10
+			seizureIntroTab["$pp_colour_brightness"] = intensity / 10
+			DrawColorModify(seizureIntroTab)
+			DrawBloom(0.65, intensity * 4, 9, 9, 1, 1, intensity / 16, 0.2, 0.2)
+
+			render.UpdateScreenEffectTexture()
+			seizureChromatic:SetFloat("$c0_x", 3.5 - intensity)
+			seizureChromatic:SetInt("$c0_y", 1)
+			render.SetMaterial(seizureChromatic)
+			render.DrawScreenQuad()
+		end
+
+		if seizureElapsed >= seizureIntroDuration and CurTime() >= nextSeizureFlash then
+			addSeizureFlash(false)
+			nextSeizureFlash = CurTime() + math.Rand(seizureFlashDelayMin, seizureFlashDelayMax)
+		end
+
+		if CurTime() >= nextSeizureCamShake then
+			ViewPunch(Angle(math.Rand(-1.25, 1.25), math.Rand(-1.4, 1.4), math.Rand(-0.45, 0.45)))
+			ViewPunch2(Angle(math.Rand(-0.55, 0.55), math.Rand(-0.8, 0.8), math.Rand(-0.7, 0.7)))
+			nextSeizureCamShake = CurTime() + math.Rand(0.025, 0.06)
+		end
+
+		if not seizureFinalFlashFired and CurTime() >= seizureClientEnd - seizureFinalFlashLead then
+			addSeizureFlash(true)
+			seizureFinalFlashFired = true
+		end
+	else
+		stopSeizureEffects()
+	end
+end
+
+local function stopPainLayer(layer)
+	layer.targetVolume = 0
+	layer.currentVolume = 0
+	if layer.station then
+		layer.station:Stop()
+		layer.station = nil
+	end
+end
+
+local function stopPainLayers()
+	painAudioGeneration = painAudioGeneration + 1
+	for _, layer in pairs(painLayers) do
+		stopPainLayer(layer)
+	end
+end
+
+local function ensurePainLayer(layer)
+	if layer.station then return end
+	layer.station = CreateSound(lply, layer.path)
+	if !layer.station then return end
+	layer.station:PlayEx(0, 100)
+end
+
+local function updatePainLayer(layer, normalizedPain, baseVolume)
+	local shouldPlay = normalizedPain >= layer.threshold and baseVolume > 0.001
+	layer.targetVolume = shouldPlay and math.Clamp(math.Remap(normalizedPain, layer.threshold, 1, 0, layer.volumeMul), 0, layer.volumeMul) * math.min(baseVolume, 1) or 0
+	layer.currentVolume = LerpFT(layer.fadeLerp, layer.currentVolume or 0, layer.targetVolume)
+	if shouldPlay then
+		ensurePainLayer(layer)
+	end
+	if !layer.station then return end
+	layer.station:ChangeVolume(layer.currentVolume, 0)
+	if layer.pitchMax then
+		layer.station:ChangePitch(math.Clamp(math.Remap(normalizedPain, layer.threshold, 1, 100, layer.pitchMax), 100, layer.pitchMax), 0)
+	end
+	if !shouldPlay and layer.currentVolume <= 0.01 then
+		layer.station:Stop()
+		layer.station = nil
+	end
+end
 
 local function stopthings()
 	PainLerp = 0
+	painThresholdIntensityLerp = 1
+	PanicAttackLerp = 0
 	O2Lerp = 0
+	lobotomy_mats.effectState.hypoxia = 0
 	shockLerp = 0
 	assimilatedLerp = 0
 	tempLerp = 36.6
 	consciousnessLerp = 1
+	brainFrontalLerp = 0
+	brainParietalLerp = 0
+	brainTemporalLerp = 0
+	brainOccipitalLerp = 0
+	brainHemorrhageLerp = 0
+	CardioLerp = 0
+	unconsciousFadeStart = 0
+
+	local unconsciousAudio = lobotomy_mats.effectState.unconsciousAudio
+	unconsciousAudio.generation = unconsciousAudio.generation + 1
+	unconsciousAudio.state = "idle"
+	unconsciousAudio.active = false
+	unconsciousAudio.allowed = nil
+	hg.unconsciousRedFxAllowed = nil
+	unconsciousAudio.introLoading = false
+	unconsciousAudio.dyingLoading = false
+	if IsValid(unconsciousAudio.introStation) then unconsciousAudio.introStation:Stop() end
+	if IsValid(unconsciousAudio.dyingStation) then unconsciousAudio.dyingStation:Stop() end
+	unconsciousAudio.introStation = nil
+	unconsciousAudio.dyingStation = nil
 
 	lply.tinnitus = 0
+	nextPanicAttackShake = 0
+	lobotomy_mats.effectState.nextMicroShake = 0
+	PainStationLoading = false
+	PanicStationLoading = false
+	PainStationOverlayLoading = false
+	AssimilationStationLoading = false
+	BrainTraumaStationLoading = false
+	TinnitusLoading = false
+	NoiseStationLoading = false
+	NoiseStation2Loading = false
+	NoiseStation2DyingLoading = false
+	stopPainLayers()
+	stopSeizureEffects()
 	
+	if IsValid(PainStation) then
+		PainStation:Stop()
+		PainStation = nil
+	end
+
 	if IsValid(NoiseStation) then
 		NoiseStation:Stop()
 		NoiseStation = nil
@@ -231,6 +632,21 @@ local function stopthings()
 	if IsValid(NoiseStation2) then
 		NoiseStation2:Stop()
 		NoiseStation2 = nil
+	end
+
+	if IsValid(NoiseStation2Dying) then
+		NoiseStation2Dying:Stop()
+		NoiseStation2Dying = nil
+	end
+
+	if IsValid(PainStationOverlay) then
+		PainStationOverlay:Stop()
+		PainStationOverlay = nil
+	end
+
+	if IsValid(PanicStation) then
+		PanicStation:Stop()
+		PanicStation = nil
 	end
 
 	if IsValid(BrainTraumaStation) then
@@ -281,12 +697,24 @@ local choosera = 1
 local tempolerp = 0
 local lerpblood = 0
 local addtime = CurTime()
+local nextPanicAttackShake = 0
 local hurtoverlay = Material("zcity/neurotrauma/damageOverlay.png", "smooth")
 hook.Add("Post Post Processing", "ItHurts", function()
 	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
+	local painVolume = 0
+	local normalizedPain = 0
+	local panicVolume = 0
 	
 	if IsValid(PainStation) then
 		PainStation:SetVolume(0)
+	end
+
+	if IsValid(PainStationOverlay) then
+		PainStationOverlay:SetVolume(0)
+	end
+
+	if IsValid(PanicStation) then
+		PanicStation:SetVolume(0)
 	end
 	
 	if !lply:Alive() and !IsValid(spect) then stopthings() return end
@@ -295,6 +723,8 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	if not organism then stopthings() return end
 	if not organism.brain then stopthings() return end
 	local org = organism
+
+	updateSeizureEffects(org)
 	
 	if org.blindness or amtflashed >= 0.8 then
 		local blindness = ((org.blindness and math.Round(org.blindness) == 0) or amtflashed >= 0.8) and 0 or (org.blindness)
@@ -330,8 +760,17 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		//ViewPunch2(Angle(-amt * 1, amt2 * 1,0))
 	end
 
-	if !IsValid(PainStation) or PainStation:GetState() != GMOD_CHANNEL_PLAYING then
+	if (!IsValid(PainStation) or PainStation:GetState() != GMOD_CHANNEL_PLAYING) and not PainStationLoading then
+		local generation = painAudioGeneration
+		PainStationLoading = true
 		sound.PlayFile("sound/zbattle/pain_beat.ogg", "noblock noplay", function(station)
+			PainStationLoading = false
+			if generation != painAudioGeneration then
+				if IsValid(station) then
+					station:Stop()
+				end
+				return
+			end
 			if IsValid(station) then
 				station:SetVolume(0)
 				station:Play()
@@ -342,16 +781,115 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		end)
 	end
 
+	if (!IsValid(PainStationOverlay) or PainStationOverlay:GetState() != GMOD_CHANNEL_PLAYING) and not PainStationOverlayLoading then
+		local generation = painAudioGeneration
+		PainStationOverlayLoading = true
+		sound.PlayFile(painBeatOverlayPath, "noblock noplay", function(station)
+			PainStationOverlayLoading = false
+			if generation != painAudioGeneration then
+				if IsValid(station) then
+					station:Stop()
+				end
+				return
+			end
+			if IsValid(station) then
+				station:SetVolume(0)
+				station:Play()
+				station:SetTime(IsValid(PainStation) and PainStation:GetTime() or 0)
+				PainStationOverlay = station
+				station:EnableLooping(true)
+			end
+		end)
+	end
+
 	local LerpFT = LerpFT or Lerp
 
 	if !org or !org.o2 or !isnumber(org.o2[1]) or !org.analgesia then stopthings() return end
+
+	brainFrontalLerp = LerpFT(0.025, brainFrontalLerp, org.brainFrontal or 0)
+	brainParietalLerp = LerpFT(0.025, brainParietalLerp, org.brainParietal or 0)
+	brainTemporalLerp = LerpFT(0.025, brainTemporalLerp, org.brainTemporal or 0)
+	brainOccipitalLerp = LerpFT(0.025, brainOccipitalLerp, org.brainOccipital or 0)
+	brainHemorrhageLerp = LerpFT(0.02, brainHemorrhageLerp, org.brainHemorrhage or 0)
+	CardioLerp = LerpFT(0.025, CardioLerp, math.max(org.hypotension or 0, (1 - (org.myocardialOxygen or 1)) * 0.9, (org.arrhythmia or 0) * 0.35, org.fibrillation and 0.85 or 0))
 
 	local o2 = org.o2[1] or 0
 	o2 = o2 + (org.CO or 0)
 	local brain = org.brain or 0
 	O2Lerp = LerpFT(0.01, O2Lerp, (30 - o2) * (org.otrub and 2 or 10) + (brain * 100) * (org.otrub and 1 or 5))
+	local oxygenDeficit = math.Clamp((30 - o2) / 30, 0, 1)
+	local effectState = lobotomy_mats.effectState
+	local hypoxia = effectState.hypoxia or 0
+	effectState.hypoxia = hypoxia + (oxygenDeficit - hypoxia) * 0.025
+	local unconsciousAudio = effectState.unconsciousAudio
+
+	if org.otrub then
+		if unconsciousAudio.allowed == nil then
+			unconsciousAudio.allowed = (org.o2 and org.o2[1] or 30) >= 18
+			hg.unconsciousRedFxAllowed = unconsciousAudio.allowed
+		end
+
+		if unconsciousAudio.allowed then
+			unconsciousAudio.active = true
+
+			if unconsciousAudio.state == "idle" then
+				unconsciousAudio.state = "intro"
+				unconsciousAudio.generation = unconsciousAudio.generation + 1
+				local generation = unconsciousAudio.generation
+				unconsciousAudio.introLoading = true
+				sound.PlayFile("sound/rem_enditall.mp3", "noblock noplay", function(station)
+					if generation != unconsciousAudio.generation then
+						if IsValid(station) then station:Stop() end
+						return
+					end
+					unconsciousAudio.introLoading = false
+					if !IsValid(station) then
+						unconsciousAudio.state = "dying"
+						return
+					end
+					unconsciousAudio.introStation = station
+					unconsciousAudio.introEnd = CurTime() + math.max(station:GetLength(), 0.1)
+					station:SetVolume(1)
+					station:Play()
+				end)
+			elseif unconsciousAudio.state == "intro" and not unconsciousAudio.introLoading and (not IsValid(unconsciousAudio.introStation) or CurTime() >= (unconsciousAudio.introEnd or 0)) then
+				if IsValid(unconsciousAudio.introStation) then unconsciousAudio.introStation:Stop() end
+				unconsciousAudio.introStation = nil
+				unconsciousAudio.state = "dying"
+			elseif unconsciousAudio.state == "dying" and not IsValid(unconsciousAudio.dyingStation) and not unconsciousAudio.dyingLoading then
+				local generation = unconsciousAudio.generation
+				unconsciousAudio.dyingLoading = true
+				sound.PlayFile("sound/rem_dying2.mp3", "noblock noplay", function(station)
+					if generation != unconsciousAudio.generation then
+						if IsValid(station) then station:Stop() end
+						return
+					end
+					unconsciousAudio.dyingLoading = false
+					if !IsValid(station) then return end
+					unconsciousAudio.dyingStation = station
+					station:SetVolume(dying2Volume)
+					station:EnableLooping(true)
+					station:Play()
+				end)
+			end
+		end
+	elseif unconsciousAudio.active or unconsciousAudio.allowed != nil then
+		unconsciousAudio.active = false
+		unconsciousAudio.allowed = nil
+		hg.unconsciousRedFxAllowed = nil
+		unconsciousAudio.generation = unconsciousAudio.generation + 1
+		unconsciousAudio.state = "idle"
+		unconsciousAudio.introLoading = false
+		unconsciousAudio.dyingLoading = false
+		if IsValid(unconsciousAudio.introStation) then unconsciousAudio.introStation:Stop() end
+		if IsValid(unconsciousAudio.dyingStation) then unconsciousAudio.dyingStation:Stop() end
+		unconsciousAudio.introStation = nil
+		unconsciousAudio.dyingStation = nil
+	end
 
 	tempLerp = LerpFT(0.01, tempLerp, org.temperature)
+	local panicattackVisual = math.Clamp(math.Remap(org.panicattack or 0, panicattackFadeStart, panicattackThreshold, 0, 1), 0, 1)
+	PanicAttackLerp = LerpFT(0.03, PanicAttackLerp, panicattackVisual ^ panicattackVisualExponent)
 
 	if tempLerp > 38 then
 		local heat = tempLerp - 38
@@ -375,6 +913,18 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	PainLerp = LerpFT(0.05, PainLerp, math.max(pain * (org.otrub and 0.2 or 1), 0))
 	assimilatedLerp = LerpFT(0.01, assimilatedLerp, (org.assimilated or 0))
 
+	-- Low-amplitude irregular shake communicates physical instability without
+	-- competing with the stronger panic and seizure reactions below.
+	local microShake = math.Clamp(PainLerp / painThresholdMax, 0, 1)
+	if not org.otrub and microShake > 0.2 and CurTime() >= effectState.nextMicroShake then
+		local shake = math.Remap(microShake, 0.2, 1, 0.025, effectState.microShakeMul)
+		ViewPunch(Angle(math.Rand(-0.45, 0.45), math.Rand(-0.55, 0.55), math.Rand(-0.08, 0.08)) * shake)
+		ViewPunch2(Angle(math.Rand(-0.15, 0.15), math.Rand(-0.25, 0.25), math.Rand(-0.12, 0.12)) * shake)
+		effectState.nextMicroShake = CurTime() + math.Rand(effectState.microShakeIntervalMin, effectState.microShakeIntervalMax)
+	elseif microShake <= 0.2 then
+		effectState.nextMicroShake = 0
+	end
+
 	if assimilatedLerp > 0.001 then
 		render.UpdateScreenEffectTexture()
 
@@ -386,8 +936,10 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		assimilationMat:SetFloat("$c1_y", val)
 		assimilationMat:SetFloat("$c1_x", val2 - 0.5)
 
-		if !IsValid(AssimilationStation) or AssimilationStation:GetState() != GMOD_CHANNEL_PLAYING then
+		if (!IsValid(AssimilationStation) or AssimilationStation:GetState() != GMOD_CHANNEL_PLAYING) and not AssimilationStationLoading then
+			AssimilationStationLoading = true
 			sound.PlayFile("sound/zbattle/furry/conversion/assimilation_noise3.ogg", "noblock noplay", function(station, err)
+				AssimilationStationLoading = false
 				if IsValid(station) then
 					station:SetVolume(0)
 					station:Play()
@@ -413,20 +965,60 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		local consciousness = 1 - consciousnessLerp
 		render.UpdateScreenEffectTexture()
 		render.UpdateFullScreenDepthTexture()
-		// для вроде отруба
-		grainMat:SetFloat("$c0_x", CurTime()) // time
-		grainMat:SetFloat("$c0_y", 0.5) // gate
-		grainMat:SetFloat("$c0_z", consciousness * 3) // Pixelize
-		grainMat:SetFloat("$c1_x", consciousness) // lerp
-		grainMat:SetFloat("$c1_y", 10) // vignette intensity
-		grainMat:SetFloat("$c1_z", consciousness) // BlurIntensity
-		grainMat:SetFloat("$c2_x", 0) // r
-		grainMat:SetFloat("$c2_y", 0) // g
-		grainMat:SetFloat("$c2_z", 0) // b
-		grainMat:SetFloat("$c3_x", 0) // ImageIntensity
+		
+		grainMat:SetFloat("$c0_x", CurTime()) -- time
+		grainMat:SetFloat("$c0_y", 0.5) -- gate
+		grainMat:SetFloat("$c0_z", consciousness * 3) -- Pixelize
+		grainMat:SetFloat("$c1_x", consciousness) -- lerp
+		grainMat:SetFloat("$c1_y", 10) -- vignette intensity
+		grainMat:SetFloat("$c1_z", consciousness) -- BlurIntensity
+		grainMat:SetFloat("$c2_x", 0) -- r
+		grainMat:SetFloat("$c2_y", 0) -- g
+		grainMat:SetFloat("$c2_z", 0) -- b
+		grainMat:SetFloat("$c3_x", 0) -- ImageIntensity
 	
 		render.SetMaterial(grainMat)
 		render.DrawScreenQuad()
+	end
+
+	if PanicAttackLerp > 0.001 then
+		local panicBase = PanicAttackLerp
+		local panicPulse = panicBase * (panicattackPulseFloor + math.ease.InOutSine(math.abs(math.cos(CurTime() * 2))) * panicattackPulseIntensity)
+
+		render.UpdateScreenEffectTexture()
+
+		heatMat:SetFloat("$c0_x", -CurTime() * 0.1)
+		heatMat:SetFloat("$c0_y", panicBase * 0.014 + panicPulse * 0.055)
+		heatMat:SetFloat("$c2_x", panicBase * 0.28 + panicPulse * 1.7)
+
+		render.SetMaterial(heatMat)
+		render.DrawScreenQuad()
+
+		render.UpdateScreenEffectTexture()
+		render.UpdateFullScreenDepthTexture()
+
+		grainMat:SetFloat("$c0_x", CurTime())
+		grainMat:SetFloat("$c0_y", -1)
+		grainMat:SetFloat("$c0_z", 1 + panicBase * 1.4)
+		grainMat:SetFloat("$c1_x", panicBase * 3.2 + panicPulse * 5.8)
+		grainMat:SetFloat("$c1_y", panicBase * 0.08 + panicPulse * 0.22)
+		grainMat:SetFloat("$c1_z", panicBase * 0.08 + panicPulse * 0.24)
+		grainMat:SetFloat("$c2_x", panicBase * 0.04 + panicPulse * 0.12)
+		grainMat:SetFloat("$c2_y", 0.075 * panicBase)
+		grainMat:SetFloat("$c2_z", 0)
+		grainMat:SetFloat("$c3_x", 0)
+
+		render.SetMaterial(grainMat)
+		render.DrawScreenQuad()
+
+		if not org.otrub and panicBase > 0.15 and CurTime() >= nextPanicAttackShake then
+			local shakeMul = (0.25 + panicBase * 0.9) * panicattackShakeMul
+			ViewPunch(Angle(math.Rand(-0.8, 0.6), math.Rand(-1, 1), math.Rand(-0.2, 0.2)) * shakeMul)
+			ViewPunch2(Angle(math.Rand(-0.25, 0.35), math.Rand(-0.55, 0.55), math.Rand(-0.4, 0.4)) * shakeMul)
+			nextPanicAttackShake = CurTime() + math.Rand(panicattackShakeIntervalMin, panicattackShakeIntervalMax)
+		end
+	else
+		nextPanicAttackShake = 0
 	end
 
 	local tempo = math.Clamp((5 - (tempLerp - 29)) * 0.5 - 5 * (org.heartbeat < 1 and 1 or 0), 0, 5)
@@ -442,28 +1034,9 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	end
 
 	if (PainLerp > 0.001 or shockLerp > 5) or org.otrub then
-		local strobe = math.ease.InOutSine(math.abs(math.cos(CurTime() * 2))) * PainLerp / 2
+		local strobe = math.ease.InOutSine(math.abs(math.cos(CurTime() * 2))) * PainLerp * painPulseIntensity
 		pain = PainLerp + strobe
 		shock = shockLerp
-		render.UpdateScreenEffectTexture()
-
-		vignetteMat:SetFloat("$c2_x", CurTime() + 10000) //Time
-		vignetteMat:SetFloat("$c0_z", org.otrub and 5 or (pain / 40 + math.max(shock - 5, 0) / 3)) //ColorIntensity
-		vignetteMat:SetFloat("$c1_y", org.otrub and 10 or (pain / 40 + math.max(shock - 5, 0) / 3)) //Vignette
-
-		render.SetMaterial(vignetteMat)
-		render.DrawScreenQuad()
-
-		render.UpdateScreenEffectTexture()
-
-		painMat:SetFloat("$c2_x", CurTime() + 10000) //Time
-		painMat:SetFloat("$c0_y", 0.8) //Gate
-		painMat:SetFloat("$c0_z", 1) //ColorIntensity
-		painMat:SetFloat("$c1_x", math.Clamp(pain / 90, 0, 0.75)) //Lerp
-		painMat:SetFloat("$c1_y", math.Clamp(pain / 90, 0, 0.75)) //Vignette
-
-		render.SetMaterial(painMat)
-		render.DrawScreenQuad()
 
 		if org.otrub then
 			DrawMotionBlur(0.1, 1., 0.01)
@@ -471,8 +1044,17 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		end
 		
 		//if pain > 10 then
+			painVolume = math.Clamp(math.Remap(pain, 0, painThresholdMax, 0, 2), 0, 2)
+			normalizedPain = math.Clamp(pain / painThresholdMax, 0, 1)
+			painPitch = math.Clamp(math.Remap(normalizedPain, 0, 1, 100, painPitchMax), 100, painPitchMax)
 			if IsValid(PainStation) then
-				PainStation:SetVolume(math.Clamp(math.Remap(pain, 0, 120, 0, 2), 0, 2))
+				PainStation:SetVolume(painVolume)
+				PainStation:SetPlaybackRate(painPitch / 100)
+			end
+
+			if IsValid(PainStationOverlay) then
+				PainStationOverlay:SetVolume(painVolume * painBeatOverlayVolumeMul)
+				PainStationOverlay:SetPlaybackRate(painPitch / 100)
 			end
 		//else
 		//	if IsValid(PainStation) then
@@ -487,21 +1069,54 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		//end
 	end
 
-	if brain > 0.01 then
+	updatePainLayer(painLayers.agony, normalizedPain, painVolume)
+	updatePainLayer(painLayers.excruciating, normalizedPain, painVolume)
+
+	if PanicAttackLerp > 0.001 and not org.otrub then
+		if (!IsValid(PanicStation) or PanicStation:GetState() != GMOD_CHANNEL_PLAYING) and not PanicStationLoading then
+			PanicStationLoading = true
+			sound.PlayFile(panicattackOverlayPath, "noblock noplay", function(station)
+				PanicStationLoading = false
+				if IsValid(station) then
+					station:SetVolume(0)
+					station:Play()
+					PanicStation = station
+					station:EnableLooping(true)
+				end
+			end)
+		end
+
+		panicVolume = math.Clamp(PanicAttackLerp * panicattackVolumeMul, 0, 1)
+		if IsValid(PanicStation) then
+			PanicStation:SetVolume(panicVolume)
+		end
+	elseif IsValid(PanicStation) then
+		PanicStation:Stop()
+		PanicStation = nil
+	end
+
+	local brainTrauma = math.max(brain, (org.brainHemorrhage or 0) * 0.85)
+	if brainTrauma > 0.01 then
 		local chooser = 1
 		for i, choose in ipairs(stations) do
-			if choose < brain then
+			if choose < brainTrauma then
 				chooser = i
 			end
 		end
 	
-		if !IsValid(BrainTraumaStation) or choosera != chooser or BrainTraumaStation:GetState() != GMOD_CHANNEL_PLAYING then
+		if choosera != chooser then
+			BrainTraumaStationLoading = false
+		end
+
+		if (!IsValid(BrainTraumaStation) or choosera != chooser or BrainTraumaStation:GetState() != GMOD_CHANNEL_PLAYING) and not BrainTraumaStationLoading then
 			if IsValid(BrainTraumaStation) then
 				BrainTraumaStation:Stop()
 				BrainTraumaStation = nil
 			end
 
-			sound.PlayFile("sound/zcitysnd/real_sonar/brainhemorrhagestage"..chooser..".mp3", "noblock noplay", function(station, err)
+			BrainTraumaStationLoading = true
+			sound.PlayFile("sound/rem_cerebralanoxia.wav", "noblock noplay", function(station, err)
+				BrainTraumaStationLoading = false
 				if IsValid(station) then
 					station:SetVolume(0)
 					station:Play()
@@ -513,7 +1128,7 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		end
 
 		if IsValid(BrainTraumaStation) then
-			BrainTraumaStation:SetVolume(math.Clamp(!org.otrub and brain * 2 or 0, 0, 1))
+			BrainTraumaStation:SetVolume(math.Clamp(!org.otrub and brainTrauma * 2 or 0, 0, 1))
 		end
 	else
 		if IsValid(BrainTraumaStation) then
@@ -523,9 +1138,13 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	end
 
 	//if brain > 0.1 and not org.otrub and show_some_images_time > 0 and false then
-	if lply.tinnitus and lply.tinnitus > CurTime() and lply:Alive() then
-		if !IsValid(Tinnitus) or Tinnitus:GetState() != GMOD_CHANNEL_PLAYING  then
+	local temporalTinnitus = math.Clamp(((org.brainTemporal or 0) - 0.1) / 0.9, 0, 1)
+	local tinnitusTime = lply.tinnitus and math.max(lply.tinnitus - CurTime(), 0) or 0
+	if (tinnitusTime > 0 or temporalTinnitus > 0.01) and lply:Alive() then
+		if (!IsValid(Tinnitus) or Tinnitus:GetState() != GMOD_CHANNEL_PLAYING) and not TinnitusLoading then
+			TinnitusLoading = true
 			sound.PlayFile("sound/zcitysnd/real_sonar/tinnitus"..math.random(3)..".mp3", "noblock noplay", function(station, err)
+				TinnitusLoading = false
 				if IsValid(station) then
 					station:SetVolume(0)
 					station:Play()
@@ -536,7 +1155,7 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		end
 
 		if IsValid(Tinnitus) then
-			Tinnitus:SetVolume(math.min(math.max(lply.tinnitus - CurTime(), 0) / 10, 1))
+			Tinnitus:SetVolume(math.Clamp(math.max(tinnitusTime / 10, temporalTinnitus * 0.65), 0, 1))
 		end
 	else
 		if IsValid(Tinnitus) then
@@ -575,6 +1194,48 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		lobotomy_index = 0
 	end
 	
+	-- Hypoxia has three distinct stages: colour loss first, then visual noise,
+	-- and finally a pulsing tunnel vision when the oxygen deficit is critical.
+	if effectState.hypoxia > 0.05 then
+		local desaturation = math.Clamp(math.Remap(effectState.hypoxia, 0.05, 0.55, 0, 1), 0, 1)
+		local hypoxiaColor = effectState.hypoxiaColor
+		hypoxiaColor["$pp_colour_brightness"] = -desaturation * 0.025
+		hypoxiaColor["$pp_colour_contrast"] = 1 - desaturation * 0.1
+		hypoxiaColor["$pp_colour_colour"] = 1 - desaturation * 0.62
+		hypoxiaColor["$pp_colour_mulr"] = -desaturation * 0.025
+		hypoxiaColor["$pp_colour_mulg"] = desaturation * 0.01
+		hypoxiaColor["$pp_colour_mulb"] = desaturation * 0.07
+		DrawColorModify(hypoxiaColor)
+
+		local static = math.Clamp(math.Remap(effectState.hypoxia, 0.32, 0.78, 0, 1), 0, 1)
+		if static > 0 then
+			render.UpdateScreenEffectTexture()
+			render.UpdateFullScreenDepthTexture()
+			grainMat:SetFloat("$c0_x", CurTime() * 1.5)
+			grainMat:SetFloat("$c0_y", 0.25)
+			grainMat:SetFloat("$c0_z", static * 1.3)
+			grainMat:SetFloat("$c1_x", static * 0.75)
+			grainMat:SetFloat("$c1_y", static * 2.2)
+			grainMat:SetFloat("$c1_z", static * 0.3)
+			grainMat:SetFloat("$c2_x", 0)
+			grainMat:SetFloat("$c2_y", static * 0.015)
+			grainMat:SetFloat("$c2_z", static * 0.045)
+			grainMat:SetFloat("$c3_x", 0)
+			render.SetMaterial(grainMat)
+			render.DrawScreenQuad()
+		end
+
+		local tunnel = math.Clamp(math.Remap(effectState.hypoxia, 0.65, 1, 0, 1), 0, 1)
+		if tunnel > 0 then
+			local pulse = tunnel * (0.78 + math.abs(math.sin(CurTime() * 2.5)) * 0.22)
+			render.UpdateScreenEffectTexture()
+			vignetteMat:SetFloat("$c2_x", CurTime() + 10000)
+			vignetteMat:SetFloat("$c0_z", pulse * 1.9)
+			vignetteMat:SetFloat("$c1_y", pulse * 2.8)
+			render.SetMaterial(vignetteMat)
+			render.DrawScreenQuad()
+		end
+	end
 
 	if O2Lerp > 1 then
 		render.UpdateScreenEffectTexture()
@@ -591,8 +1252,10 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		render.DrawScreenQuad()
 		
 		if o2 > 50 and !org.otrub then
-			if !IsValid(NoiseStation2) or NoiseStation2:GetState() != GMOD_CHANNEL_PLAYING then
-				sound.PlayFile("sound/zbattle/conscioustypebeat.ogg", "noblock noplay", function(station)
+			if (!IsValid(NoiseStation2) or NoiseStation2:GetState() != GMOD_CHANNEL_PLAYING) and not NoiseStation2Loading then
+				NoiseStation2Loading = true
+				sound.PlayFile("sound/rem_dying1.mp3", "noblock noplay", function(station)
+					NoiseStation2Loading = false
 					if IsValid(station) then
 						station:SetVolume(0)
 						station:Play()
@@ -602,19 +1265,42 @@ hook.Add("Post Post Processing", "ItHurts", function()
 					end
 				end)
 			end
+
+			if (!IsValid(NoiseStation2Dying) or NoiseStation2Dying:GetState() != GMOD_CHANNEL_PLAYING) and not NoiseStation2DyingLoading then
+				NoiseStation2DyingLoading = true
+				sound.PlayFile("sound/rem_dying2.mp3", "noblock noplay", function(station)
+					NoiseStation2DyingLoading = false
+					if IsValid(station) then
+						station:SetVolume(0)
+						station:Play()
+						NoiseStation2Dying = station
+						station:EnableLooping(true)
+					end
+				end)
+			end
 			
 			if IsValid(NoiseStation2) then
-				NoiseStation2:SetVolume(math.Clamp((o2 - 50) / 100 + (brain > 0.3 and (brain - 0.3) * 5 or 0), 0, 0.25))
+				NoiseStation2:SetVolume(math.Clamp((o2 - 50) / 100 + (brain > 0.3 and (brain - 0.3) * 5 or 0), 0, consciousnessTypeBeatVolume))
+			end
+
+			if IsValid(NoiseStation2Dying) then
+				NoiseStation2Dying:SetVolume(math.Clamp((o2 - 50) / 100 + (brain > 0.3 and (brain - 0.3) * 5 or 0), 0, dying2Volume))
 			end
 		else
 			if IsValid(NoiseStation2) then
 				NoiseStation2:SetVolume(0)
 			end
+
+			if IsValid(NoiseStation2Dying) then
+				NoiseStation2Dying:SetVolume(0)
+			end
 		end
 		
-		if o2 > 20 and org.otrub then
-			if !IsValid(NoiseStation) or NoiseStation:GetState() != GMOD_CHANNEL_PLAYING then
-				sound.PlayFile("sound/zbattle/unconscious_type_beat.ogg", "noblock noplay", function(station)
+		if o2 > 20 and org.otrub and not unconsciousAudio.active then
+			if (!IsValid(NoiseStation) or NoiseStation:GetState() != GMOD_CHANNEL_PLAYING) and not NoiseStationLoading then
+				NoiseStationLoading = true
+				sound.PlayFile("sound/rem_dying1.mp3", "noblock noplay", function(station)
+					NoiseStationLoading = false
 					if IsValid(station) then
 						station:SetVolume(0)
 						station:Play()
@@ -639,6 +1325,193 @@ hook.Add("Post Post Processing", "ItHurts", function()
 			NoiseStation = nil
 		end
 	end
+end)
+
+hook.Add("Post Post Pre Post Processing", "BrainLobeEffects", function()
+	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
+	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
+
+	local org = lply:Alive() and lply.organism or (IsValid(spect) and spect.organism)
+	if not org or org.otrub then return end
+
+	local frontal = math.Clamp(brainFrontalLerp, 0, 1)
+	local parietal = math.Clamp(brainParietalLerp, 0, 1)
+	local temporal = math.Clamp(brainTemporalLerp, 0, 1)
+	local occipital = math.Clamp(brainOccipitalLerp, 0, 1)
+	local hemorrhage = math.Clamp(brainHemorrhageLerp, 0, 1)
+
+	if frontal > 0.01 then
+		brainFrontalColor["$pp_colour_brightness"] = -frontal * 0.035
+		brainFrontalColor["$pp_colour_contrast"] = 1 - frontal * 0.18
+		brainFrontalColor["$pp_colour_colour"] = 1 - frontal * 0.7
+		brainFrontalColor["$pp_colour_mulr"] = frontal * 0.05
+		brainFrontalColor["$pp_colour_mulb"] = frontal * 0.08
+		DrawColorModify(brainFrontalColor)
+
+		render.UpdateScreenEffectTexture()
+		grainMat:SetFloat("$c0_x", CurTime() * 0.7)
+		grainMat:SetFloat("$c0_y", 0.35)
+		grainMat:SetFloat("$c0_z", frontal * 2.6)
+		grainMat:SetFloat("$c1_x", frontal * 1.25)
+		grainMat:SetFloat("$c1_y", frontal * 3.5)
+		grainMat:SetFloat("$c1_z", frontal * 0.65)
+		grainMat:SetFloat("$c2_x", frontal * 0.08)
+		grainMat:SetFloat("$c2_y", 0)
+		grainMat:SetFloat("$c2_z", frontal * 0.12)
+		grainMat:SetFloat("$c3_x", 0)
+		render.SetMaterial(grainMat)
+		render.DrawScreenQuad()
+	end
+
+	if parietal > 0.01 then
+		DrawMotionBlur(0.025 + parietal * 0.08, 0.35 + parietal * 0.55, 0.015 + parietal * 0.09)
+		DrawSharpen(parietal * 0.8, parietal * 1.4)
+	end
+
+	if temporal > 0.01 then
+		render.UpdateScreenEffectTexture()
+		seizureChromatic:SetFloat("$c0_x", 3.4 - temporal * 2.6)
+		seizureChromatic:SetInt("$c0_y", 1)
+		render.SetMaterial(seizureChromatic)
+		render.DrawScreenQuad()
+	end
+
+	if occipital > 0.01 then
+		surface.SetDrawColor(255, 255, 255, math.Clamp(occipital * 235, 0, 235))
+		surface.SetMaterial(lobotomy_mats[5])
+		surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
+		if occipital > 0.6 then
+			surface.SetDrawColor(0, 0, 0, math.Remap(occipital, 0.6, 1, 0, 210))
+			surface.DrawRect(0, 0, ScrW(), ScrH())
+		end
+		surface.SetDrawColor(255, 255, 255, 255)
+	end
+
+	if hemorrhage > 0.01 then
+		local pulse = hemorrhage * (0.7 + math.abs(math.sin(CurTime() * 2.2)) * 0.3)
+		render.UpdateScreenEffectTexture()
+		vignetteMat:SetFloat("$c2_x", CurTime() + 10000)
+		vignetteMat:SetFloat("$c0_z", pulse * 2.2)
+		vignetteMat:SetFloat("$c1_y", pulse * 3.2)
+		render.SetMaterial(vignetteMat)
+		render.DrawScreenQuad()
+
+		render.UpdateScreenEffectTexture()
+		painMat:SetFloat("$c2_x", CurTime() + 10000)
+		painMat:SetFloat("$c0_y", 0.8)
+		painMat:SetFloat("$c0_z", pulse)
+		painMat:SetFloat("$c1_x", pulse * 0.45)
+		painMat:SetFloat("$c1_y", pulse * 0.7)
+		render.SetMaterial(painMat)
+		render.DrawScreenQuad()
+	end
+end)
+
+hook.Add("Post Pain Processing", "CardiologyEffects", function()
+	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
+	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
+
+	local org = lply:Alive() and lply.organism or (IsValid(spect) and spect.organism)
+	if not org or org.otrub then return end
+
+	local cardio = math.Clamp(CardioLerp or 0, 0, 1)
+	if cardio <= 0.01 then return end
+
+	local beat = 0.75 + math.abs(math.sin(CurTime() * math.Clamp((org.heartbeat or 70) / 45, 0.8, 4))) * 0.25
+	local intensity = cardio * beat
+
+	render.UpdateScreenEffectTexture()
+	vignetteMat:SetFloat("$c2_x", CurTime() + 10000)
+	vignetteMat:SetFloat("$c0_z", intensity * 1.2)
+	vignetteMat:SetFloat("$c1_y", intensity * 2.1)
+	render.SetMaterial(vignetteMat)
+	render.DrawScreenQuad()
+
+	render.UpdateScreenEffectTexture()
+	painMat:SetFloat("$c2_x", CurTime() + 10000)
+	painMat:SetFloat("$c0_y", 0.88)
+	painMat:SetFloat("$c0_z", intensity * 0.35)
+	painMat:SetFloat("$c1_x", intensity * 0.25)
+	painMat:SetFloat("$c1_y", intensity * 0.35)
+	render.SetMaterial(painMat)
+	render.DrawScreenQuad()
+end)
+
+hook.Add("Post Pain Processing", "PainEffects", function()
+	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
+	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
+
+	local org = lply:Alive() and lply.organism or (IsValid(spect) and spect.organism)
+	if not org or not org.brain then return end
+	if not ((PainLerp > 0.001 or shockLerp > 5) or org.otrub) then return end
+
+	local strobe = math.ease.InOutSine(math.abs(math.cos(CurTime() * 2))) * PainLerp * painPulseIntensity
+	local pain = PainLerp + strobe
+	local shock = shockLerp
+	local thresholdReached = PainLerp >= painThresholdMax
+	painThresholdIntensityLerp = LerpFT(0.03, painThresholdIntensityLerp, thresholdReached and 5 or 1)
+	local intensityMul = painThresholdIntensityLerp
+	local coverage = thresholdReached and 1 or math.Clamp(pain / 70, 0, 0.95)
+	local effectIntensity = pain / 32 * painEffectIntensity * intensityMul + math.max(shock - 5, 0) / 2.4 * painEffectIntensity
+	local unconsciousFade = 0
+	if org.otrub then
+		if unconsciousFadeStart <= 0 then unconsciousFadeStart = CurTime() end
+		unconsciousFade = math.Clamp((CurTime() - unconsciousFadeStart - 2) / 2.5, 0, 1)
+	else
+		unconsciousFadeStart = 0
+	end
+
+	render.UpdateScreenEffectTexture()
+
+	vignetteMat:SetFloat("$c2_x", CurTime() + 10000)
+	vignetteMat:SetFloat("$c0_z", org.otrub and (5 - unconsciousFade * 3.35) * unconsciousPainEffectIntensity or effectIntensity)
+	vignetteMat:SetFloat("$c1_y", org.otrub and (10 - unconsciousFade * 6.75) * unconsciousPainEffectIntensity or effectIntensity)
+
+	render.SetMaterial(vignetteMat)
+	render.DrawScreenQuad()
+
+	if org.otrub then
+		render.UpdateScreenEffectTexture()
+		render.UpdateFullScreenDepthTexture()
+		local lobotomy = math.Clamp(org.brain or 0, 0, 1)
+		local lobotomyReduction
+		if lobotomy <= 0.1 then
+			lobotomyReduction = math.Remap(lobotomy, 0, 0.1, 0, 0.03)
+		elseif lobotomy <= 0.3 then
+			lobotomyReduction = math.Remap(lobotomy, 0.1, 0.3, 0.03, 0.2)
+		elseif lobotomy <= 0.5 then
+			lobotomyReduction = math.Remap(lobotomy, 0.3, 0.5, 0.2, 0.39)
+		else
+			lobotomyReduction = math.Remap(lobotomy, 0.5, 1, 0.39, 0.6)
+		end
+		local lobotomyMul = 1 - lobotomyReduction
+		local o2Value = org.o2 and org.o2[1] or 30
+		local oxygenMul = math.Clamp(math.Remap(o2Value, 5, 22, 0.08, 1), 0.08, 1)
+		local redIntensity = unconsciousFade * lobotomyMul * oxygenMul
+		unconsciousMat:SetFloat("$c0_x", CurTime())
+		unconsciousMat:SetFloat("$c0_y", 0.35)
+		unconsciousMat:SetFloat("$c0_z", 1.2)
+		unconsciousMat:SetFloat("$c1_x", redIntensity * 0.85)
+		unconsciousMat:SetFloat("$c1_y", redIntensity * 1.8)
+		unconsciousMat:SetFloat("$c1_z", redIntensity * 0.24)
+		unconsciousMat:SetFloat("$c2_x", redIntensity * (3.5 + math.abs(math.sin(CurTime() * 1.5)) * 1.5))
+		unconsciousMat:SetFloat("$c2_y", 0)
+		unconsciousMat:SetFloat("$c2_z", 0)
+		unconsciousMat:SetFloat("$c3_x", 0)
+		render.SetMaterial(unconsciousMat)
+		render.DrawScreenQuad()
+	end
+
+	render.UpdateScreenEffectTexture()
+
+	painMat:SetFloat("$c2_x", CurTime() + 10000)
+	painMat:SetFloat("$c0_y", 0.8)
+	painMat:SetFloat("$c0_z", org.otrub and unconsciousPainEffectIntensity * (1 - unconsciousFade * 0.45) or painEffectIntensity * intensityMul)
+	painMat:SetFloat("$c1_x", coverage)
+	painMat:SetFloat("$c1_y", coverage)
+
+	render.SetMaterial(painMat)
+	render.DrawScreenQuad()
 end)
 
 hook.Add("Player_Death", "ItDoesntNow", function(ply)

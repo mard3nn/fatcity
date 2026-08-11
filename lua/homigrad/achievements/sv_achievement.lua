@@ -171,21 +171,21 @@ end)
 
 //if !hg.init_ach then
     -- braindeath
-    hg.achievements.CreateAchievementType("Мозг",1,0,"Умереть от гипоксии", nil, false)
+    hg.achievements.CreateAchievementType("brain",1,0,"Die from hypoxia.","I will definitely survive...", nil, false)
     -- death from drugs
-    hg.achievements.CreateAchievementType("наркотики",1,0,"Умереть от фентанила или от морфина", nil, false)
+    hg.achievements.CreateAchievementType("drugs",1,0,"Die from opioids overdose.","Overstimulated", nil, false)
     -- TERMINATOR
-    hg.achievements.CreateAchievementType("вернется выжившим",3,0,"Получить выстрел в голову и выжить", nil, true)
+    hg.achievements.CreateAchievementType("illbeback",3,0,"Get shot in the head and get up alive.","I'll be back", nil, true)
     -- kill everyone
-    hg.achievements.CreateAchievementType("убей всех",1,0,"Убить всех будучи трейтором", nil, false)
+    hg.achievements.CreateAchievementType("killemall",1,0,"Kill everyone being a traitor and win the round\nplayers on the server should be more than 9.","Kill Em All", nil, false)
     -- russian roulette
-    hg.achievements.CreateAchievementType("рисковый парень",10,0,"Выжить в русской рулетке до 10 выстрелов", nil, true)
+    hg.achievements.CreateAchievementType("deadlygambling",10,0,"Survive 10 games of Russian roulette in one life.","Deadly Gambling", nil, true)
     -- lobotomized kill
-    hg.achievements.CreateAchievementType("Игра с лоботомией",1,0,"Убей трейтора с лоботомией", nil, false)
+    hg.achievements.CreateAchievementType("lobotomygaming",1,0,"Kill the traitor while having brain damage","Hydrogen bomb vs Lobotomized patient", nil, false)
     -- hot potato
-    hg.achievements.CreateAchievementType("Горячая картошка",1,0,"Убей трейтора его же гранатой", nil, false)
+    hg.achievements.CreateAchievementType("hotpotato",1,0,"Kill the traitor using his own grenade","Hot Potato", nil, false)
     -- please calm down
-    hg.achievements.CreateAchievementType("Король", 1, 0, "Что случилось здесь", "Сер упадите", nil, false)
+    hg.achievements.CreateAchievementType("bking", 1, 0, "Something terrible happened on that plane...", "Sir please calm down", nil, false)
 
     //hg.init_ach = true
 //end

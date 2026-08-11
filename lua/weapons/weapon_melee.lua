@@ -697,9 +697,16 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", 8, "AttackTime")
 end
 
+-- Knife ~0.4 → ~0.9s, bat ~1.5 → ~1.15s, sledge ~3.5 → ~1.55s
+function SWEP:GetDeployAnimTime()
+	if self.DeployAnimTime then return self.DeployAnimTime end
+	local w = tonumber(self.weight) or 0.4
+	return math.Clamp(0.8 + w * 0.22, 0.8, 1.7)
+end
+
 function SWEP:OwnerChanged()
     if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then
-        self:PlayAnim("deploy",0.5,false,nil,false)
+        self:PlayAnim("deploy", self:GetDeployAnimTime(), false, nil, false)
         self:SetHold(self.HoldType)
         timer.Simple(0,function() self.picked = true end)
     else
@@ -717,7 +724,7 @@ SWEP.Initialzed = false
 function SWEP:Deploy()
     if SERVER and self.Initialzed and not self:GetOwner().noSound then self:GetOwner():EmitSound(self.DeploySnd,65) end
     self.Initialzed = true
-    self:PlayAnim("deploy", 1, false, nil, false)
+    self:PlayAnim("deploy", self:GetDeployAnimTime(), false, nil, false)
     self:SetHold(self.HoldType)
 	
 	return true

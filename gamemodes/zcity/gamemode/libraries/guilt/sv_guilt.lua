@@ -311,6 +311,8 @@ end)
 
 hook.Add("Org Clear","removekarmashaking",function(org)
     org.start_shaking = nil
+    org.karmaSeizureStart = nil
+    org.karmaSeizureEnd = nil
 end)
 
 hook.Add("Should Fake Up", "karma", function(ply)
@@ -325,6 +327,26 @@ local seizuremsgs = {
     "hhel-bbbphphpppph",
     "zzzzblzzzmzzzzz",
 }
+
+local function start_karma_seizure(ply, org, time)
+    time = math.Clamp(time or 45, 5, 120)
+    org.start_shaking = CurTime() + time
+    org.karmaSeizureStart = CurTime()
+    org.karmaSeizureEnd = org.start_shaking
+    ply.fullsend = true
+    hg.StunPlayer(ply, 2)
+
+    ply:Notify(seizuremsgs[math.random(#seizuremsgs)], 16, "seizure", 1, function()
+        if !IsValid(ply) then return end
+        ply:ChatPrint("You are experiencing an epileptic seizure.")
+    end)
+end
+
+concommand.Add("hg_test_guilt_seizure", function(ply, _, args)
+    if !IsValid(ply) or !ply:IsAdmin() or !ply:Alive() or !ply.organism then return end
+    start_karma_seizure(ply, ply.organism, tonumber(args[1]) or 45)
+end)
+
 hook.Add("Org Think", "Its_Karma_Bro",function(owner, org, timeValue)
     if not owner or not owner:IsPlayer() or org.otrub or not org.isPly then return end
     if not owner:IsPlayer() or not owner:Alive() then return end
@@ -332,17 +354,15 @@ hook.Add("Org Think", "Its_Karma_Bro",function(owner, org, timeValue)
     local ply = owner
     
     if (ply.Karma or 100) < 50 then
-        if ((math.random(math.Clamp((ply.Karma or 100),20,zb.MaxKarma) * 300) == 1 or org.start_shaking)) then
-            hg.StunPlayer(ply)
-            local time = 15
-            
-            ply:Notify(seizuremsgs[math.random(#seizuremsgs)], 16, "seizure", 1, function()
-                if !IsValid(ply) then return end
-                
-                ply:ChatPrint("You are experiencing an epileptic seizure.")
-            end)
+        local time = 45
+        local shaking = (org.start_shaking or 0) > CurTime()
+        if not shaking and math.random(math.Clamp((ply.Karma or 100),20,zb.MaxKarma) * 300) == 1 then
+            start_karma_seizure(ply, org, time)
+            shaking = true
+        end
 
-            org.start_shaking = org.start_shaking or (CurTime() + time)
+        if shaking then
+            hg.StunPlayer(ply, 2)
             local ent = hg.GetCurrentCharacter(owner)
             local mul = ((org.start_shaking) - CurTime()) / time
             
@@ -350,9 +370,13 @@ hook.Add("Org Think", "Its_Karma_Bro",function(owner, org, timeValue)
                 ent:GetPhysicsObjectNum(math.random(ent:GetPhysicsObjectCount()) - 1):ApplyForceCenter(VectorRand(-750 * mul,750 * mul))
             else
                 org.start_shaking = nil
+                org.karmaSeizureStart = nil
+                org.karmaSeizureEnd = nil
             end
         else
             org.start_shaking = nil
+            org.karmaSeizureStart = nil
+            org.karmaSeizureEnd = nil
         end
 	end
 

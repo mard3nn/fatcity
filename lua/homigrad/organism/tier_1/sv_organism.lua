@@ -2,6 +2,37 @@
 hg.organism.module = hg.organism.module or {}
 local module = hg.organism.module
 hg.organism.lastindex = hg.organism.lastindex or 1000000
+local panicattack_threshold = 0.45
+local panicattack_add_decay_time = 90
+local panicattack_rise_time = 10
+local panicattack_decay_time = 200
+local panicattack_gain_chance = 3
+local panicattack_gain_mul = 0.4
+local panicattack_disorientation = 0.45
+local panicattack_adrenaline_add_target = 4
+local panicattack_adrenaline_add_rise_time = 14
+local panicattack_heart_roll_delay = 15
+local panicattack_heart_roll_chance = 1
+local panicattack_damage_scale = 0.006
+local panicattack_witness_radius = 850
+local panicattack_death_radius = 900
+local seizure_duration = 90
+local seizure_brain_damage_start = 80
+local seizure_brain_damage_final = 0.99
+local seizure_pose_force = 850
+local seizure_pose_damp = 42
+local seizure_leg_buckle = 46
+local seizure_shake_freq = 5.8
+local seizure_shake_amp = 1.35
+local seizure_brain_trauma_gain_mul = 2
+local seizure_brain_heal_gain_mul = 1.1
+local seizure_temperature_gain_mul = 0.013
+local seizure_temperature_low_start = 35
+local seizure_temperature_high_start = 39
+local seizure_brain_roll_delay = 20
+local seizure_brain_roll_chance = 15
+local seizure_brain_roll_gain_min = 0.04
+local seizure_brain_roll_gain_max = 0.11
 hook.Add("Org Clear", "Main", function(org)
 	org.alive = true
 	org.otrub = false
@@ -15,6 +46,14 @@ hook.Add("Org Clear", "Main", function(org)
 	module.metabolism[1](org)
 	module.random_events[1](org)
 	org.brain = 0
+	org.brainFrontal = 0
+	org.brainParietal = 0
+	org.brainTemporal = 0
+	org.brainOccipital = 0
+	org.brainHemorrhage = 0
+	org.brainBleedRate = 0
+	org.eyeL = 0
+	org.eyeR = 0
 	org.consciousness = 1
 	org.disorientation = 0
 	org.jaw = 0
@@ -74,6 +113,21 @@ hook.Add("Org Clear", "Main", function(org)
 	org.assimilated = 0
 	org.berserk = 0
 	org.noradrenaline = 0
+	org.panicattackadd = 0
+	org.panicattack = 0
+	org.panicattackActive = false
+	org.nextPanicHeartRoll = 0
+	org.seizure = 0
+	org.seizureActive = false
+	org.seizureStart = 0
+	org.seizureEnd = 0
+	org.nextSeizureSpasm = 0
+	org.nextSeizureRoll = 0
+	org.lastSeizureBrain = 0
+	org.lastSeizureLobeDamage = 0
+	org.lastSeizureTemperature = org.temperature
+	org.lastWoundsSig = nil
+	org.lastArterialWoundsSig = nil
 
 	org.blindness = nil
 
@@ -99,7 +153,7 @@ end)
 
 hook.Add("Should Fake Up", "organism", function(ply)
 	local org = ply.organism
-	if org.otrub or org.fake or org.spine1 >= hg.organism.fake_spine1 or org.spine2 >= hg.organism.fake_spine2 or org.spine3 >= hg.organism.fake_spine3 or (org.lleg == 1 and org.rleg == 1) and org.berserk <= 0.3 or (org.blood < 2900) or org.consciousness <= 0.4 then
+	if org.seizureActive or org.otrub or org.fake or org.nearpainlimit or org.shock > 40 or org.spine1 >= hg.organism.fake_spine1 or org.spine2 >= hg.organism.fake_spine2 or org.spine3 >= hg.organism.fake_spine3 or (org.lleg == 1 and org.rleg == 1) and org.berserk <= 0.3 or (org.blood < 2900) or org.consciousness <= 0.4 then
 		return false
 	end
 end)
@@ -111,6 +165,19 @@ util.AddNetworkString("organism_sendply")
 local CurTime = CurTime
 local nullTbl = {}
 local hg_developer = ConVarExists("hg_developer") and GetConVar("hg_developer") or CreateConVar("hg_developer", 0, FCVAR_SERVER_CAN_EXECUTE, "Toggle developer mode (enables damage traces)", 0, 1)
+local function wounds_signature(wounds)
+	if not wounds or #wounds == 0 then return "0" end
+
+	local sig = tostring(#wounds)
+	for i = 1, #wounds do
+		local wound = wounds[i]
+		if wound then
+			sig = sig .. ":" .. tostring(wound[4]) .. ":" .. tostring(math.Round((wound[1] or 0) * 100)) .. ":" .. tostring(wound[7])
+		end
+	end
+
+	return sig
+end
 local function send_organism(org, ply)
 	if not IsValid(org.owner) then return end
 	local sendtable = {}
@@ -130,6 +197,12 @@ local function send_organism(org, ply)
 	sendtable.pelvis = org.pelvis
 	sendtable.disorientation = org.disorientation
 	sendtable.brain = org.brain
+	sendtable.brainFrontal = org.brainFrontal
+	sendtable.brainParietal = org.brainParietal
+	sendtable.brainTemporal = org.brainTemporal
+	sendtable.brainOccipital = org.brainOccipital
+	sendtable.brainHemorrhage = org.brainHemorrhage
+	sendtable.brainBleedRate = org.brainBleedRate
 	sendtable.o2 = org.o2
 	sendtable.CO = org.CO
 	sendtable.blood = org.blood
@@ -140,6 +213,16 @@ local function send_organism(org, ply)
 	sendtable.shock = org.shock
 	sendtable.pulse = org.pulse
 	sendtable.heartbeat = org.heartbeat
+	sendtable.bloodPressure = org.bloodPressure
+	sendtable.systolic = org.systolic
+	sendtable.diastolic = org.diastolic
+	sendtable.cardiacOutput = org.cardiacOutput
+	sendtable.arrhythmia = org.arrhythmia
+	sendtable.fibrillation = org.fibrillation
+	sendtable.myocardialOxygen = org.myocardialOxygen
+	sendtable.heartStrain = org.heartStrain
+	sendtable.hypertension = org.hypertension
+	sendtable.hypotension = org.hypotension
 	sendtable.timeValue = org.timeValue
 	sendtable.holdingbreath = org.holdingbreath
 	sendtable.arteria = org.arteria
@@ -159,10 +242,20 @@ local function send_organism(org, ply)
 	sendtable.larmamputated = org.larmamputated
 	sendtable.headamputated = org.headamputated
 	sendtable.lungsfunction = org.lungsfunction
+	sendtable.eyeL = org.eyeL
+	sendtable.eyeR = org.eyeR
 	sendtable.consciousness = org.consciousness
 	sendtable.assimilated = org.assimilated
 	sendtable.berserk = org.berserk
 	sendtable.noradrenaline = org.noradrenaline
+	sendtable.panicattackadd = org.panicattackadd
+	sendtable.panicattack = org.panicattack
+	sendtable.seizure = org.seizure
+	sendtable.seizureActive = org.seizureActive
+	sendtable.seizureStart = org.seizureStart
+	sendtable.seizureEnd = org.seizureEnd
+	sendtable.karmaSeizureStart = org.karmaSeizureStart or 0
+	sendtable.karmaSeizureEnd = org.karmaSeizureEnd or 0
 	sendtable.LodgedEntities = org.LodgedEntities
 	sendtable.CantCheckPulse = org.CantCheckPulse
 	sendtable.blindness = org.blindness
@@ -200,11 +293,23 @@ local function send_bareinfo(org)
 	sendtable.pulse = org.pulse
 	sendtable.blood = org.blood
 	sendtable.heartbeat = org.heartbeat
+	sendtable.bloodPressure = org.bloodPressure
+	sendtable.systolic = org.systolic
+	sendtable.diastolic = org.diastolic
+	sendtable.cardiacOutput = org.cardiacOutput
+	sendtable.arrhythmia = org.arrhythmia
+	sendtable.fibrillation = org.fibrillation
+	sendtable.myocardialOxygen = org.myocardialOxygen
+	sendtable.heartStrain = org.heartStrain
+	sendtable.hypertension = org.hypertension
+	sendtable.hypotension = org.hypotension
 	sendtable.analgesia = org.analgesia
 	sendtable.o2 = org.o2
 	sendtable.timeValue = org.timeValue
 	sendtable.superfighter = org.superfighter
 	sendtable.lungsfunction = org.lungsfunction
+	sendtable.eyeL = org.eyeL
+	sendtable.eyeR = org.eyeR
 	sendtable.lleg = org.lleg
 	sendtable.rleg = org.rleg
 	sendtable.rarm = org.rarm
@@ -223,6 +328,20 @@ local function send_bareinfo(org)
 	sendtable.berserkActive2 = org.berserkActive2
 	sendtable.CantCheckPulse = org.CantCheckPulse
 	sendtable.noradrenalineActive = org.noradrenalineActive
+	sendtable.panicattackadd = org.panicattackadd
+	sendtable.panicattack = org.panicattack
+	sendtable.seizure = org.seizure
+	sendtable.seizureActive = org.seizureActive
+	sendtable.seizureStart = org.seizureStart
+	sendtable.seizureEnd = org.seizureEnd
+	sendtable.karmaSeizureStart = org.karmaSeizureStart or 0
+	sendtable.karmaSeizureEnd = org.karmaSeizureEnd or 0
+	sendtable.brainFrontal = org.brainFrontal
+	sendtable.brainParietal = org.brainParietal
+	sendtable.brainTemporal = org.brainTemporal
+	sendtable.brainOccipital = org.brainOccipital
+	sendtable.brainHemorrhage = org.brainHemorrhage
+	sendtable.brainBleedRate = org.brainBleedRate
 
 	local rf = RecipientFilter()
 	--rf:AddAllPlayers()
@@ -265,6 +384,106 @@ end
 
 function META2:IsStimulated()
 	return false
+end
+
+function hg.organism.AddPanicAttack(org, amount, silent)
+	if not org then return 0 end
+	if not isnumber(amount) or amount <= 0 then return org.panicattackadd or 0 end
+	if math.random(panicattack_gain_chance) != 1 then return org.panicattackadd or 0 end
+
+	org.panicattackadd = math.Clamp((org.panicattackadd or 0) + amount * panicattack_gain_mul, 0, 1)
+
+	return org.panicattackadd
+end
+
+function hg.organism.AddSeizure(org, amount)
+	if not org then return 0 end
+	if not isnumber(amount) or amount <= 0 then return org.seizure or 0 end
+
+	org.seizure = math.Clamp((org.seizure or 0) + amount, 0, 1)
+
+	return org.seizure
+end
+
+local function getSeizureLobeDamage(org)
+	return math.Clamp((org.brainFrontal or 0) + (org.brainParietal or 0) + (org.brainTemporal or 0) + (org.brainOccipital or 0), 0, 1)
+end
+
+local function apply_seizure_pose(rag, org, time)
+	if hg.applySeizurePostureToRagdoll then hg.applySeizurePostureToRagdoll(rag, org, 1) end
+end
+
+local function stop_seizure(owner, org)
+	local wasActive = org.seizureActive
+	org.seizure = 0
+	org.seizureActive = false
+	org.seizureStart = 0
+	org.seizureEnd = 0
+	org.nextSeizureSpasm = 0
+
+	if wasActive and IsValid(owner) and owner:IsPlayer() and owner:Alive() then
+		owner.fullsend = true
+		send_organism(org, owner)
+	end
+end
+
+local function start_seizure(owner, org)
+	if org.seizureActive or not IsValid(owner) or not owner:IsPlayer() or not owner:Alive() then return end
+
+	local time = CurTime()
+	org.seizure = 1
+	org.seizureActive = true
+	org.seizureStart = time
+	org.seizureEnd = time + seizure_duration
+	org.nextSeizureSpasm = time
+	owner.fullsend = true
+	send_organism(org, owner)
+end
+
+local function resolve_panic_attacker(victim, attacker)
+	if IsValid(attacker) then
+		if attacker:IsPlayer() then
+			return attacker
+		end
+
+		local owner = attacker.GetOwner and attacker:GetOwner()
+		if IsValid(owner) and owner:IsPlayer() then
+			return owner
+		end
+	end
+
+	if IsValid(victim) and victim.GetPhysicsAttacker then
+		local physicsAttacker = victim:GetPhysicsAttacker()
+		if IsValid(physicsAttacker) and physicsAttacker:IsPlayer() then
+			return physicsAttacker
+		end
+	end
+end
+
+local function panic_witness_event(victim, attacker, amount, radius)
+	if not IsValid(victim) then return end
+	if not isnumber(amount) or amount <= 0 then return end
+
+	local victimEnt = hg.GetCurrentCharacter(victim) or victim
+	local victimPos = victimEnt.WorldSpaceCenter and victimEnt:WorldSpaceCenter() or victimEnt:GetPos()
+
+	for _, watcher in ipairs(ents.FindInSphere(victimPos, radius)) do
+		if not watcher:IsPlayer() or watcher == victim then continue end
+		if not watcher:Alive() or not watcher.organism or watcher.organism.otrub then continue end
+		if IsValid(attacker) and watcher == attacker then continue end
+
+		local watcherEnt = hg.GetCurrentCharacter(watcher) or watcher
+		local tr = util.TraceLine({
+			start = watcher:EyePos(),
+			endpos = victimPos,
+			filter = {watcher, watcherEnt, victim, victimEnt, attacker},
+			mask = MASK_SHOT
+		})
+
+		if tr.Hit then continue end
+
+		hg.organism.AddPanicAttack(watcher.organism, amount, true)
+	end
 end
 
 local numerical = {
@@ -311,21 +530,34 @@ hook.Add("HomigradDamage", "Berserk", function(ply, dmgInfo, hitgroup, ent)
 	end)
 end)
 
+hook.Add("HomigradDamage", "PanicAttackDamage", function(ply, dmgInfo)
+	if not IsValid(ply) or not ply:IsPlayer() or not ply:Alive() then return end
+	if not ply.organism then return end
+
+	local amount = math.Clamp(dmgInfo:GetDamage() * panicattack_damage_scale + (dmgInfo:IsDamageType(DMG_BLAST) and 0.08 or 0), 0.03, 0.35)
+	local attacker = resolve_panic_attacker(ply, dmgInfo:GetAttacker())
+
+	hg.organism.AddPanicAttack(ply.organism, amount)
+	if dmgInfo:GetDamage() <= 0 and not dmgInfo:IsDamageType(DMG_BLAST) then return end
+	panic_witness_event(ply, attacker, math.Clamp(amount * 0.75, 0.04, 0.2), panicattack_witness_radius)
+end)
+
 hook.Add("Org Think", "Main", function(owner, org, timeValue)
 	if not IsValid(owner) then
 		hg.organism.list[owner] = nil
 		return
 	end
 
-	if owner:IsPlayer() and not owner:Alive() then return end
-
 	local isPly = owner:IsPlayer()
+	local alive = owner:Alive()
+	if isPly and not alive then return end
+	local curTime = CurTime()
 
 	org.isPly = isPly
 
 	if isPly or org.fakePlayer then
 		if not org.fakePlayer then
-			org.alive = owner:Alive()
+			org.alive = alive
 		end
 	else
 		org.alive = false
@@ -349,6 +581,18 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 	if isPly or org.fakePlayer then
 		module.lungs[2](owner, org, timeValue)
+	end
+
+	local eyeL = org.eyeL or 0
+	local eyeR = org.eyeR or 0
+	if eyeL < 1 and eyeR < 1 then
+		org.blindness = nil
+	elseif eyeL >= 1 and eyeR < 1 then
+		org.blindness = 2
+	elseif eyeR >= 1 and eyeL < 1 then
+		org.blindness = 1
+	elseif eyeL >= 1 and eyeR >= 1 then
+		org.blindness = 0
 	end
 
 	if isPly then
@@ -378,7 +622,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 			org.furryinfected = false
 		end
 	else
-		if (org.lightstun - CurTime()) <= 0 then
+		if (org.lightstun - curTime) <= 0 then
 			org.assimilated = math.Approach(org.assimilated, 0, (timeValue / 60 * org.pulse / 70) * 6)
 		end
 	end
@@ -390,11 +634,18 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 	org.berserk = math.Approach(org.berserk, 0, timeValue / 60)
 	org.noradrenaline = math.Approach(org.noradrenaline, 0, timeValue / 45)
+	local oldPanicAttack = org.panicattack or 0
+	org.panicattackadd = math.Approach(org.panicattackadd or 0, 0, timeValue / panicattack_add_decay_time)
+	org.panicattack = math.Approach(oldPanicAttack, org.panicattackadd or 0, timeValue / ((org.panicattackadd or 0) > oldPanicAttack and panicattack_rise_time or panicattack_decay_time))
+	local oldSeizureBrain = org.lastSeizureBrain or (org.brain or 0)
+	local lobeDamage = getSeizureLobeDamage(org)
+	local oldSeizureLobeDamage = org.lastSeizureLobeDamage or lobeDamage
+	local oldSeizureTemperature = org.lastSeizureTemperature or (org.temperature or 36.7)
 
 	if org.berserk > 0 and !org.berserkActive then
 		org.berserkActive = true
 
-		owner.lastBerserkLaughSoundCD = CurTime() + 5
+		owner.lastBerserkLaughSoundCD = curTime + 5
 
 		timer.Simple(3.95, function()
 			org.berserkActive2 = true
@@ -409,6 +660,94 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 		org.noradrenalineActive = true
 	elseif org.noradrenaline <= 0 then
 		org.noradrenalineActive = false
+	end
+
+	if oldPanicAttack < panicattack_threshold and org.panicattack >= panicattack_threshold and isPly and owner:Alive() then
+		owner:Notify("I can't calm down.", 2, "panicattack_start", 2, nil, Color(255, 140, 140))
+	end
+
+	if org.panicattack >= panicattack_threshold then
+		org.panicattackActive = true
+		org.disorientation = math.max(org.disorientation, 0.6 + panicattack_disorientation * org.panicattack)
+		org.adrenalineAdd = math.Approach(org.adrenalineAdd or 0, math.Remap(org.panicattack, panicattack_threshold, 1, panicattack_adrenaline_add_target * 0.5, panicattack_adrenaline_add_target), timeValue / panicattack_adrenaline_add_rise_time)
+
+		if isPly and curTime >= (org.nextPanicHeartRoll or 0) then
+			org.nextPanicHeartRoll = curTime + panicattack_heart_roll_delay
+			if math.random(100) <= panicattack_heart_roll_chance then
+				org.heartstop = true
+				owner:Notify("My heart just stopped.", 2, "panicattack_heartstop", 2, nil, Color(255, 120, 120))
+			end
+		end
+	else
+		org.panicattackActive = false
+		org.nextPanicHeartRoll = curTime + panicattack_heart_roll_delay
+	end
+
+	local brainDelta = (org.brain or 0) - oldSeizureBrain
+	local lobeDelta = lobeDamage - oldSeizureLobeDamage
+	if brainDelta > 0 then
+		hg.organism.AddSeizure(org, math.Clamp(brainDelta * seizure_brain_trauma_gain_mul, 0, 1))
+	elseif brainDelta < 0 and oldSeizureBrain > 0 then
+		hg.organism.AddSeizure(org, math.Clamp(-brainDelta * seizure_brain_heal_gain_mul, 0, 1))
+	end
+	if lobeDelta > 0 then
+		hg.organism.AddSeizure(org, math.Clamp(lobeDelta * seizure_brain_trauma_gain_mul, 0, 1))
+	end
+
+	local temperature = org.temperature or 36.7
+	local previousTemperature = oldSeizureTemperature
+	local heatStress = math.max(temperature - seizure_temperature_high_start, previousTemperature - seizure_temperature_high_start, 0)
+	local coldStress = math.max(seizure_temperature_low_start - temperature, seizure_temperature_low_start - previousTemperature, 0)
+	local temperatureStress = math.max(heatStress, coldStress)
+	if temperatureStress > 0 then
+		hg.organism.AddSeizure(org, timeValue * temperatureStress * seizure_temperature_gain_mul)
+	end
+
+	local seizureBrainDamage = math.max(org.brain or 0, lobeDamage)
+	if seizureBrainDamage > 0.05 then
+		org.nextSeizureRoll = org.nextSeizureRoll or (curTime + seizure_brain_roll_delay)
+		if curTime >= org.nextSeizureRoll then
+			org.nextSeizureRoll = curTime + seizure_brain_roll_delay
+			if math.random(seizure_brain_roll_chance) == 1 then
+				hg.organism.AddSeizure(org, math.Rand(seizure_brain_roll_gain_min, seizure_brain_roll_gain_max) * math.Clamp(math.Remap(seizureBrainDamage, 0.05, 1, 0.75, 1.5), 0.75, 1.5))
+			end
+		end
+	else
+		org.nextSeizureRoll = curTime + seizure_brain_roll_delay
+	end
+
+	org.lastSeizureBrain = org.brain or 0
+	org.lastSeizureLobeDamage = lobeDamage
+	org.lastSeizureTemperature = temperature
+
+	if org.seizure >= 1 and !org.seizureActive and isPly and owner:Alive() then
+		start_seizure(owner, org)
+	elseif org.seizureActive and org.seizure <= 0 then
+		stop_seizure(owner, org)
+	end
+
+	if org.seizureActive then
+		local time = CurTime()
+		local seizureStart = org.seizureStart or time
+		local seizureEnd = org.seizureEnd or time
+
+		org.needfake = true
+		owner.fakecd = math.max(owner.fakecd or 0, seizureEnd)
+
+		if time >= seizureEnd then
+			org.brain = math.max(org.brain or 0, seizure_brain_damage_final)
+			stop_seizure(owner, org)
+		else
+			if time >= seizureStart + seizure_brain_damage_start then
+				local frac = math.Clamp((time - (seizureStart + seizure_brain_damage_start)) / math.max(seizure_duration - seizure_brain_damage_start, 0.001), 0, 1)
+				org.brain = math.max(org.brain or 0, seizure_brain_damage_final * frac)
+			end
+
+			local rag = owner.FakeRagdoll
+			if IsValid(rag) then
+				apply_seizure_pose(rag, org, time)
+			end
+		end
 	end
 
 	if (org.llegamputated or org.rlegamputated) and org.berserk <= 0.3 then
@@ -461,27 +800,10 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 	org.canmove = (org.spine2 < hg.organism.fake_spine2 and org.spine3 < hg.organism.fake_spine3) and not org.otrub
 	org.canmovehead = (org.spine3 < hg.organism.fake_spine3) and not org.otrub
 	
-	if not (org.canmove and org.canmovehead and (org.stun - CurTime()) < 0) then org.needfake = true end
+	if not (org.canmove and org.canmovehead and (org.stun - curTime) < 0) then org.needfake = true end
 	if (org.blood < 2700) then org.needfake = true end
 
 	local just_went_uncon = not org.otrub and org.needotrub
-
-	if org.posturing then //-- the decerebrate one
-		local ent = hg.GetCurrentCharacter(org.owner)
-
-		local rleg = ent:GetPhysicsObjectNum(ent:TranslateBoneToPhysBone(ent:LookupBone("ValveBiped.Bip01_R_Foot")))
-		local lleg = ent:GetPhysicsObjectNum(ent:TranslateBoneToPhysBone(ent:LookupBone("ValveBiped.Bip01_L_Foot")))
-		local rarm = ent:GetPhysicsObjectNum(ent:TranslateBoneToPhysBone(ent:LookupBone("ValveBiped.Bip01_R_Hand")))
-		local larm = ent:GetPhysicsObjectNum(ent:TranslateBoneToPhysBone(ent:LookupBone("ValveBiped.Bip01_L_Hand")))
-
-		local down = -ent:GetBoneMatrix(ent:LookupBone("ValveBiped.Bip01_Spine")):GetAngles():Forward()
-		if IsValid(rleg) and IsValid(rarm) and IsValid(larm) and IsValid(lleg)then
-			rleg:ApplyForceCenter(down * 500)
-			lleg:ApplyForceCenter(down * 500)
-			rarm:ApplyForceCenter(down * 500)
-			larm:ApplyForceCenter(down * 500)
-		end
-	end
 
 	if org.brain < 0.4 then
 		local naturalHeal = org.thiamine > 0 and timeValue / 480 or timeValue / 1800
@@ -493,10 +815,14 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 		if org.liver < 1 then org.liver = math.Approach(org.liver, 0, naturalHeal) end
 		if org.heart < 1 then org.heart = math.Approach(org.heart, 0, naturalHeal) end
+		org.heartStrain = math.Approach(org.heartStrain or 0, 0, naturalHeal * 0.5)
+		org.arrhythmia = math.Approach(org.arrhythmia or 0, 0, naturalHeal)
 		if org.stomach < 1 then org.stomach = math.Approach(org.stomach, 0, naturalHeal) end
 		if org.intestines < 1 then org.intestines = math.Approach(org.intestines, 0, naturalHeal) end
 		if org.lungsR[1] < 1 then org.lungsR[1] = math.Approach(org.lungsR[1], 0, naturalHeal) end
 		if org.lungsL[1] < 1 then org.lungsL[1] = math.Approach(org.lungsL[1], 0, naturalHeal) end
+		if (org.eyeL or 0) < 1 then org.eyeL = math.Approach(org.eyeL or 0, 0, naturalHeal) end
+		if (org.eyeR or 0) < 1 then org.eyeR = math.Approach(org.eyeR or 0, 0, naturalHeal) end
 	end
 
 	if org.otrub and isPly and org.owner:Alive() then
@@ -565,18 +891,27 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 		org.heartstop = true
 	end
 
-	time = CurTime()
+	time = curTime
 
 	if IsValid(owner) then
-		org.sendPlyTime = org.sendPlyTime or CurTime()
+		org.sendPlyTime = org.sendPlyTime or curTime
 		if (org.sendPlyTime > time) and !just_went_uncon then return end
-		org.sendPlyTime = CurTime() + 1 + (not isPly and 2 or 0)
+		org.sendPlyTime = curTime + 1 + (not isPly and 2 or 0)
 		send_bareinfo(org)
 
-		org.owner:SetNetVar("wounds", org.wounds)
-		org.owner:SetNetVar("arterialwounds", org.arterialwounds)
+		local woundsSig = wounds_signature(org.wounds)
+		if org.lastWoundsSig != woundsSig or org.owner.fullsend then
+			org.lastWoundsSig = woundsSig
+			org.owner:SetNetVar("wounds", org.wounds)
+		end
 
-		if isPly and owner:Alive() then
+		local arterialWoundsSig = wounds_signature(org.arterialwounds)
+		if org.lastArterialWoundsSig != arterialWoundsSig or org.owner.fullsend then
+			org.lastArterialWoundsSig = arterialWoundsSig
+			org.owner:SetNetVar("arterialwounds", org.arterialwounds)
+		end
+
+		if isPly and alive then
 			send_organism(org, owner)
 		end
 	end
@@ -618,9 +953,14 @@ hook.Add("Org Think", "regenerationberserk", function(owner, org, timeValue)
 	org.stomach = math.max(org.stomach - regen, 0)
 	org.lungsR[1] = math.max(org.lungsR[1] - regen, 0)
 	org.lungsL[1] = math.max(org.lungsL[1] - regen, 0)
-	org.lungsR[2] = math.max(org.lungsR[2] - regen, 0)
-	org.lungsL[2] = math.max(org.lungsL[2] - regen, 0)
-	org.brain = math.max(org.brain - regen, 0)
+	org.lungsR[2] = math.max((org.lungsR[2] or 0) - regen, 0)
+	org.lungsL[2] = math.max((org.lungsL[2] or 0) - regen, 0)
+	org.eyeL = math.max((org.eyeL or 0) - regen, 0)
+	org.eyeR = math.max((org.eyeR or 0) - regen, 0)
+	local oldBrain = org.brain or 0
+	org.brain = math.max(oldBrain - regen, 0)
+	hg.organism.AddSeizure(org, math.Clamp((oldBrain - org.brain) * seizure_brain_heal_gain_mul, 0, 1))
+	org.lastSeizureBrain = org.brain
 
 	org.hungry = 0
 
@@ -633,6 +973,9 @@ hook.Add("Org Think", "regenerationberserk", function(owner, org, timeValue)
 
 	org.lungsfunction = true
 	org.heartstop = false
+	org.fibrillation = false
+	org.arrhythmia = 0
+	org.heartStrain = math.max((org.heartStrain or 0) - regen, 0)
 
 	owner:SetRunSpeed(math.min(500, 400 + (25 * org.berserk)))
 end)
@@ -645,8 +988,10 @@ hook.Add("Org Think", "regenerationnoradrenaline", function(owner, org, timeValu
 
 	org.lungsR[1] = math.max(org.lungsR[1] - regen, 0)
 	org.lungsL[1] = math.max(org.lungsL[1] - regen, 0)
-	org.lungsR[2] = math.max(org.lungsR[2] - regen, 0)
-	org.lungsL[2] = math.max(org.lungsL[2] - regen, 0)
+	org.lungsR[2] = math.max((org.lungsR[2] or 0) - regen, 0)
+	org.lungsL[2] = math.max((org.lungsL[2] or 0) - regen, 0)
+	org.eyeL = math.max((org.eyeL or 0) - regen, 0)
+	org.eyeR = math.max((org.eyeR or 0) - regen, 0)
 
 	org.hungry = 0
 
@@ -660,7 +1005,10 @@ hook.Add("Org Think", "regenerationnoradrenaline", function(owner, org, timeValu
 	org.analgesia = math.Approach(org.analgesia, 1, regen * 10)
 
 	if org.noradrenaline > 2 then
-		org.brain = math.Approach(org.brain, 0.3, timeValue / 60)
+		local oldBrain = org.brain or 0
+		org.brain = math.Approach(oldBrain, 0.3, timeValue / 60)
+		hg.organism.AddSeizure(org, math.Clamp((oldBrain - org.brain) * seizure_brain_heal_gain_mul, 0, 1))
+		org.lastSeizureBrain = org.brain
 	end
 
 	org.pulse = math.Approach(org.pulse, 70, regen * 10)
@@ -669,42 +1017,27 @@ hook.Add("Org Think", "regenerationnoradrenaline", function(owner, org, timeValu
 
 	org.lungsfunction = true
 	org.heartstop = false
+	org.fibrillation = false
 end)
 
 concommand.Add("hg_organism_setvalue", function(ply, cmd, args)
-	if not ply:IsSuperAdmin() then return end
+	if not ply:IsAdmin() then return end
 
-	local key = args[1]
-	local val = tonumber(args[2])
-	local target = args[3]
-
-	local function apply(p)
-		local org = p.organism
-		if not org then return end
-
-		if key == "pain" then
-			-- Боль в этой системе — производная от avgpain. 
-			-- Выставляем базу, чтобы значение не сбросилось в Think.
-			org.pain = val
-			org.avgpain = val
-			org.painadd = 0
-		elseif istable(org[key]) then
-			org[key][1] = val
-		elseif isbool(org[key]) then
-			org[key] = val ~= 0
+	if not args[3] then
+		if isbool(ply.organism[args[1]]) then
+			ply.organism[args[1]] = tonumber(args[2]) != 0
 		else
-			org[key] = val
+			ply.organism[args[1]] = tonumber(args[2])
 		end
-
-		p.fullsend = true
-		hg.send_organism(org, p)
 	end
 
-	if not target then
-		apply(ply)
-	else
-		for i,pl in pairs(player.GetListByName(target)) do
-			apply(pl)
+	if args[3] then
+		for i,pl in pairs(player.GetListByName(args[3])) do
+			if isbool(pl.organism[args[1]]) then
+				pl.organism[args[1]] = tonumber(args[2]) != 0
+			else
+				pl.organism[args[1]] = tonumber(args[2])
+			end
 		end
 	end
 end)
@@ -716,7 +1049,7 @@ concommand.Add("hg_organism_setvalue2", function(ply, cmd, args)
 end)
 
 concommand.Add("hg_organism_clear", function(ply, cmd, args)
-	if not ply:IsSuperAdmin() then return end
+	if not ply:IsAdmin() then return end
 
 	if not args[1] then
 		hg.organism.Clear(ply.organism)
@@ -732,13 +1065,27 @@ end)
 hook.Add("SetupMove", "hg-speed", function(ply, mv) end) --mv:SetMaxClientSpeed(100) --mv:SetMaxSpeed(100)
 
 hook.Add("StartCommand","hg_lol",function(ply,cmd)
-	if ply.organism.otrub and ply:Alive() then
+	if not ply:Alive() or not ply.organism then return end
+	if ply.organism.seizureActive then
+		cmd:ClearMovement()
+		if not IsValid(ply.FakeRagdoll) then cmd:ClearButtons() end
+	elseif ply.organism.otrub then
 		cmd:ClearMovement()
 	end
 end)
 
 hook.Add("PlayerDeath","next-respawn-full",function(ply)
 	ply.fullsend = true
+end)
+
+hook.Add("PlayerDeath", "PanicAttackWitnessDeath", function(victim, inflictor, attacker)
+	local realAttacker = resolve_panic_attacker(victim, attacker)
+	panic_witness_event(victim, realAttacker, 0.14, panicattack_death_radius)
+end)
+
+hook.Add("OnNPCKilled", "PanicAttackWitnessNPCDeath", function(victim, attacker, inflictor)
+	local realAttacker = resolve_panic_attacker(victim, attacker)
+	panic_witness_event(victim, realAttacker, 0.1, panicattack_death_radius)
 end)
 
 hook.Add("HG_OnWakeOtrub", "afterOtrub", function( owner )
@@ -774,22 +1121,25 @@ hook.Add("HG_OnOtrub", "fearful", function( plya )// ЧЕ
 end)
 
 local unlucky_dislocations = {
-	"Почему я не могу вправить этот чёртов вывих...",
-	"Пожалуйста... почему это так сложно.",
-	"Да встань уже на место...",
-	"Это раздражает",
-	"Стоит попробовать снова",
+	"Why can't I fix this goddamn dislocation...",
+	"Please... why is it so hard.",
+	"Just go back in place already...",
+	"This is irritating",
+	"I should try again",
 }
 
 local finally_fixed = {
-	"Наконец-то.",
-	"Это было сложнее, чем я думал",
-	"Остался один вывих.",
+	"Finally.",
+	"That was harder than I thought",
+	"One dislocation away.",
 }
 
 local function fixlimb(org, key, fixer)
 	if math.random(100) > (97 + (fixer != org.owner and (fixer.organism and fixer.organism.pain or 0) or 0) - (org.analgesia * 50 + org.painkiller * 15) - (fixer != org.owner and 30 or 0) - (fixer.tries or 0) * 10 - (fixer.Profession == "doctor" and 100 or 0) - (org.owner == fixer and (IsValid(org.owner.FakeRagdoll) or (org.owner.Crouching and org.owner:Crouching())) and 10 or 0)) then
 		org[key.."dislocation"] = false
+		if hg.fakeBoneFlop and hg.fakeBoneFlop.ClearStoredLimb(org, key) then
+			hg.fakeBoneFlop.ScheduleRebuild(org.owner)
+		end
 		org.painadd = org.painadd + 5 * math.random(1, 3)
 		org.fearadd = org.fearadd + 0.1
 
@@ -812,7 +1162,8 @@ local function fixlimb(org, key, fixer)
 			local dmgInfo = DamageInfo()
 			dmgInfo:SetDamage(50)
 			dmgInfo:SetDamageType(DMG_CLUB)
-			hg.organism.input_list[key.."down"](org.owner.organism, 1, 6, dmgInfo, 0, vector_up)
+			local func = hg.organism.input_list[key.."down"]
+			if func then func(org.owner.organism, 1, 6, dmgInfo, 0, vector_up) end
 		end
 
 		if fixer == org.owner and fixer.tries > 3 and math.random(3) == 1 then

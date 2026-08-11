@@ -2076,45 +2076,63 @@ end
 
 local veczero = Vector(0, 0, 0)
 SWEP.anglefinger = Angle()
+
+-- Cache WM bone indices that map to TPIK hand bones (per model path).
+local tpikWMBoneCache = {}
+local function getTPIKWMBones(mdl)
+	local LH, RH = hg.TPIKBonesLHDict, hg.TPIKBonesRHDict
+	if not LH or not RH then return {} end
+
+	local model = mdl:GetModel()
+	local cached = tpikWMBoneCache[model]
+	if cached then return cached end
+
+	local list = {}
+	for i = 0, mdl:GetBoneCount() - 1 do
+		local name = mdl:GetBoneName(i)
+		local plyName = RH[name] or LH[name]
+		if plyName then
+			list[#list + 1] = {
+				wmIdx = i,
+				name = name,
+				plyName = plyName,
+				isLH = LH[name] ~= nil,
+				isRH = RH[name] ~= nil,
+				isFinger12 = name == "ValveBiped.Bip01_R_Finger12",
+			}
+		end
+	end
+
+	tpikWMBoneCache[model] = list
+	return list
+end
+
 function SWEP:SetHandPos(noset)
 	self.addvec = self.addvec or veczero
 	self.rhandik = self.setrhik
 	self.lhandik = self.setlhik
-	
+
 	local ply = self:GetOwner()
 
-    if not IsValid(ply) or not IsValid(self.worldModel) then return end
-    if not ply.shouldTransmit or ply.NotSeen then return end
+	if not IsValid(ply) or not IsValid(self.worldModel) then return end
+	if not ply.shouldTransmit or ply.NotSeen then return end
 
 	local ent = IsValid(ply.FakeRagdoll) and ply.FakeRagdoll or ply
 	local inuse = self:InUse()
 
-	//if (ent ~= ply and not (inuse)) and (self.lerped_positioning and self.lerped_positioning < 0.2) then return end
-	
-	if (ent ~= ply and not (inuse)) then
-		--self.lhandik = self:IsPistolHoldType() and !self:KeyDown(IN_FORWARD) and !self:KeyDown(IN_BACK)//self.weight > 1 and (self.lerped_angle and self.lerped_angle > 0.5)
+	if (ent ~= ply and not inuse) then
 		self.lhandik = false
 	end
-	
-	if (ent ~= ply and ent ~= ply.OldRagdoll and !hg.RagdollCombatInUse(ply)) then
-		self.lhandik = self.lhandik and !((hg.KeyDown(ply, IN_FORWARD + IN_BACK) or ent:GetManipulateBoneAngles(ent:LookupBone("ValveBiped.Bip01_L_Finger11"))[2] < 0) and !self.reload and !ply:InVehicle())
+
+	if (ent ~= ply and ent ~= ply.OldRagdoll and not hg.RagdollCombatInUse(ply)) then
+		self.lhandik = self.lhandik and not ((hg.KeyDown(ply, IN_FORWARD + IN_BACK) or ent:GetManipulateBoneAngles(ent:LookupBone("ValveBiped.Bip01_L_Finger11"))[2] < 0) and not self.reload and not ply:InVehicle())
 	end
 
-	--ply:SetIK(false)
-	if not IsValid(ply) or not ply:IsPlayer() then return end
-	//ent:SetupBones()
-
+	if not ply:IsPlayer() then return end
 	if not self.handPos or not self.handAng then return end
 
 	local should = self:ShouldUseFakeModel()
-
-	/*if IsValid(self:GetWeaponEntity()) then
-		self:AnimHands()
-	end*/
-
-	//self.lhandik = self.setlhik != false and !(ply.organism and ply.organism.larm == 1 or ply.organism.larmdislocation)
 	local rh, lh = ply:LookupBone("ValveBiped.Bip01_R_Hand"), ply:LookupBone("ValveBiped.Bip01_L_Hand")
-	
 	local rhmat = ent:GetBoneMatrix(rh)
 	local lhmat = ent:GetBoneMatrix(lh)
 
@@ -2124,150 +2142,126 @@ function SWEP:SetHandPos(noset)
 	if not rhmat or not lhmat then return end
 
 	local atk = hg.KeyDown(ply, IN_ATTACK)
-	self.anglefinger[2] = LerpFT(atk and 1 or 0.1, self.anglefinger[2], self:CanUse() and !(self:KeyDown(IN_USE) and !IsValid(ply.FakeRagdoll)) and atk and 30 or 0)
+	self.anglefinger[2] = LerpFT(atk and 1 or 0.1, self.anglefinger[2], self:CanUse() and not (self:KeyDown(IN_USE) and not IsValid(ply.FakeRagdoll)) and atk and 30 or 0)
 	self.anglefinger[1] = self.anglefinger[2] * 0.3
-	if !should then
+
+	local vec2, ang2
+
+	if not should then
 		local vec1, ang1 = -(-self.handPos), -(-self.handAng)
 
 		vec1:Add(ang1:Up() * -1)
 		local lhang = -(-ang1)
-		lhang:RotateAroundAxis(ang1:Forward(),-90)
-	
-		local vec2, ang2 = LocalToWorld(self.LHPos, self.LHAng, vec1, lhang)
-		
-		local vec1, ang1 = LocalToWorld(self.RHPosOffset, self.RHAngOffset, vec1, ang1)
-		local vec2, ang2 = LocalToWorld(self.LHPosOffset, self.LHAngOffset, vec2, ang2)
-	
+		lhang:RotateAroundAxis(ang1:Forward(), -90)
+
+		vec2, ang2 = LocalToWorld(self.LHPos, self.LHAng, vec1, lhang)
+		vec1, ang1 = LocalToWorld(self.RHPosOffset, self.RHAngOffset, vec1, ang1)
+		vec2, ang2 = LocalToWorld(self.LHPosOffset, self.LHAngOffset, vec2, ang2)
+
 		rhmat:SetTranslation(vec1 - addvec2)
 		rhmat:SetAngles(ang1)
-	
-		if SERVER or CLIENT and self:IsLocal() then
-			addvec = LerpFT(0.1, addvec, VectorRand(-0.03,0.03) * (ply.organism and ply.organism.holdingbreath and 0 or 1) * ((ent.organism and (ent.organism.adrenaline or 0) + (36.6 - (ent.organism.temperature or 36.6)) or 0) + 3) / 5)
+
+		if SERVER or (CLIENT and self:IsLocal()) then
+			addvec = LerpFT(0.1, addvec, VectorRand(-0.03, 0.03) * (ply.organism and ply.organism.holdingbreath and 0 or 1) * ((ent.organism and (ent.organism.adrenaline or 0) + (36.6 - (ent.organism.temperature or 36.6)) or 0) + 3) / 5)
 			addvec2 = LerpFT(0.05 * ((ent.organism and (ent.organism.adrenaline or 0) + (36.6 - (ent.organism.temperature or 36.6)) or 0) + 1) * 15, addvec2, addvec)
 		end
 
 		if not ply.holdingWeapon or ply.holdingWeapon ~= self then
 			hg.bone_apply_matrix(ent, rh, rhmat)
-			--ent:SetBoneMatrix(rh, rhmat)
-			
 			hg.set_holdrh(ent, self.hold_type or (self:IsPistolHoldType() and "pistol_hold2" or "ak_hold"))
 		end
-		
-		if (( hg.CanUseLeftHand(ply) and self.lhandik )) and self.attachments and vec2 and addvec2 and ang2 then
+
+		if hg.CanUseLeftHand(ply) and self.lhandik and self.attachments and vec2 and ang2 then
 			lhmat:SetTranslation(vec2 + addvec2)
 			lhmat:SetAngles(ang2)
-			
-			//if ply.organism and ply.organism.larm == 1 or ply.organism.larmdislocation then
-			//	lhmat:SetTranslation(vec2 + addvec2 - vector_up * 10 * (math.sin(CurTime()) + 1))
-			//end
-
-			//if self.WorldModelFake then
-				--lhmat = self:GetWM():GetBoneMatrix(self:GetWM():LookupBone("ValveBiped.Bip01_L_Hand"))
-			--end
-
 			hg.bone_apply_matrix(ent, lh, lhmat)
-			
-			--ent:SetBoneMatrix(lh, lhmat)
-			
+
 			local hold = self.hold_type or (self:IsPistolHoldType() and "pistol_hold2" or "ak_hold")
 			hold = self.attachments.grip and #self.attachments.grip ~= 0 and hg.attachments.grip[self.attachments.grip[1]].hold or hold
-			
 			hg.set_hold(ent, hold)
 		end
 	else
-		local wpn = self
 		local mdl = self:GetWM()
+		if not IsValid(mdl) then return rhmat, lhmat end
 
-		local TPIKBonesLHDict = hg.TPIKBonesLHDict
-		local TPIKBonesRHDict = hg.TPIKBonesRHDict
-		local TPIKBonesRHDictTranslate = hg.TPIKBonesRHDictTranslate
-		local canuseright = hg.CanUseRightHand(ply) and wpn.rhandik
-		local canuseleft = hg.CanUseLeftHand(ply) and wpn.lhandik
-
-		local addvec_fem = (ThatPlyIsFemale(ply) and ply:GetAimVector():Angle():Right() * 0.2 or ply:GetAimVector():Angle():Right() * 0)
+		local canuseright = hg.CanUseRightHand(ply) and self.rhandik
+		local canuseleft = hg.CanUseLeftHand(ply) and self.lhandik
+		local addvec_fem = ThatPlyIsFemale(ply) and ply:GetAimVector():Angle():Right() * 0.2 or vector_origin
 		if self.stupidgun then
-			addvec_fem:Add(ply:GetAimVector():Angle():Right() * 0.3)
+			addvec_fem = addvec_fem + ply:GetAimVector():Angle():Right() * 0.3
 		end
 
-		local angs = ply:EyeAngles()
-		for bone1 = 0, mdl:GetBoneCount() - 1 do
-			local name = mdl:GetBoneName(bone1)
-			
-			if !(TPIKBonesLHDict[name] or TPIKBonesRHDict[name]) then continue end
-			if (TPIKBonesLHDict[name] and (!canuseleft or !self.lhandik)) then continue end
-			if (TPIKBonesRHDict[name] and (!canuseright or !self.rhandik)) then continue end
-			--[[if ent.organism and ent.organism.rarmamputated then
-				name = TPIKBonesRHDictTranslate[name]
-
-				if !name then continue end
-			end--]]
-
-			//if name != "ValveBiped.Bip01_L_Hand" then continue end
-			--print(name)
-			local wm_boneindex = bone1
-			if !wm_boneindex then continue end
-			local wm_bonematrix = mdl:GetBoneMatrix(wm_boneindex)
-			if !wm_bonematrix then continue end
-			
-			local ply_boneindex = ent:LookupBone(TPIKBonesRHDict[name] or TPIKBonesLHDict[name] or name)
-			if !ply_boneindex then continue end
-			local ply_bonematrix = ent:GetBoneMatrix(ply_boneindex)
-			if !ply_bonematrix then continue end
-			
-			wm_bonematrix:SetTranslation(wm_bonematrix:GetTranslation() + (TPIKBonesLHDict[name] and addvec_fem or vector_origin))
-			if name == "ValveBiped.Bip01_R_Finger12" then wm_bonematrix:SetAngles(wm_bonematrix:GetAngles() + self.anglefinger) end
-
-			--[[if ent.organism and ent.organism.rarmamputated then
-				local mirrormat = mdl:GetBoneMatrix(mdl:LookupBone("ValveBiped.Bip01_R_Hand"))
-				
-				local pos = wm_bonematrix:GetTranslation()
-				local mirrorpos = mirrormat:GetTranslation() - angs:Right() * 1
-				
-				pos = pos + angs:Right() * -(pos - mirrorpos):Dot(angs:Right())
-				wm_bonematrix:SetTranslation(pos)
-			end--]]
-
-			ent:SetBoneMatrix(ply_boneindex, wm_bonematrix)
-			if ply:LookupBone(ply:GetBoneName(ply_boneindex)) then ply:SetBoneMatrix(ply_boneindex, wm_bonematrix) end
+		-- Cache player bone lookups for this character model within the frame loop
+		local plyBoneCache = self._tpikPlyBoneCache
+		local plyModel = ent:GetModel()
+		if not plyBoneCache or plyBoneCache.model ~= plyModel then
+			plyBoneCache = {model = plyModel, bones = {}}
+			self._tpikPlyBoneCache = plyBoneCache
 		end
-		//rhmat = self:GetWM():GetBoneMatrix(self:GetWM():LookupBone("ValveBiped.Bip01_R_Hand"))
+
+		for _, bone in ipairs(getTPIKWMBones(mdl)) do
+			if bone.isLH and (not canuseleft or not self.lhandik) then continue end
+			if bone.isRH and (not canuseright or not self.rhandik) then continue end
+
+			local wm_bonematrix = mdl:GetBoneMatrix(bone.wmIdx)
+			if not wm_bonematrix then continue end
+
+			local ply_boneindex = plyBoneCache.bones[bone.plyName]
+			if ply_boneindex == nil then
+				ply_boneindex = ent:LookupBone(bone.plyName) or false
+				plyBoneCache.bones[bone.plyName] = ply_boneindex
+			end
+			if not ply_boneindex then continue end
+			if not ent:GetBoneMatrix(ply_boneindex) then continue end
+
+			if bone.isLH and addvec_fem ~= vector_origin then
+				wm_bonematrix:SetTranslation(wm_bonematrix:GetTranslation() + addvec_fem)
+			end
+			if bone.isFinger12 then
+				wm_bonematrix:SetAngles(wm_bonematrix:GetAngles() + self.anglefinger)
+			end
+
+			-- pcall: some biped bones stay unwriteable in RenderView / ragdoll paths
+			pcall(ent.SetBoneMatrix, ent, ply_boneindex, wm_bonematrix)
+
+			if ent ~= ply and IsValid(ply.OldRagdoll) then
+				local plyIdx = ply:LookupBone(bone.plyName)
+				if plyIdx and ply:GetBoneMatrix(plyIdx) then
+					pcall(ply.SetBoneMatrix, ply, plyIdx, wm_bonematrix)
+				end
+			end
+		end
 	end
 
 	if self:HasAttachment("grip") and hg.CanUseLeftHand(ply) and self.lhandik then
 		local huy = (not self.reload or self.reload - 1 < CurTime()) and not ply.suiciding
-
 		local model = self:GetAttachmentModel("grip")
-		
 		local inf = self:GetAttachmentInfo("grip")
-		if not inf.ShouldtUseLHand then
-			if inf and inf.LHandPos and IsValid(model) then
-				local infpos, infang = inf.LHandPos, inf.LHandAng
-				vec2, ang2 = LocalToWorld(infpos, infang, model:GetPos(), model:GetAngles())
+
+		if inf and not inf.ShouldtUseLHand then
+			if inf.LHandPos and IsValid(model) then
+				vec2, ang2 = LocalToWorld(inf.LHandPos, inf.LHandAng, model:GetPos(), model:GetAngles())
 			end
 
 			self.lerphand = LerpFT(0.1, self.lerphand or 0, huy and 0 or 1)
 
 			local newmat = ent:GetBoneMatrix(lh)
 			local oldpos, oldang = newmat:GetTranslation(), newmat:GetAngles()
-			lhmat:SetTranslation(LerpVector(self.lerphand, (vec2 or vector_origin) + (addvec2 or vector_origin), (oldpos or vector_origin)))
-			lhmat:SetAngles(LerpAngle(self.lerphand, (ang2 or angle_zero), (oldang or angle_zero)))
+			lhmat:SetTranslation(LerpVector(self.lerphand, (vec2 or vector_origin) + (addvec2 or vector_origin), oldpos))
+			lhmat:SetAngles(LerpAngle(self.lerphand, ang2 or angle_zero, oldang))
 
 			hg.bone_apply_matrix(ent, lh, lhmat)
 
-			if self.lerphand < 0.1  then
+			if self.lerphand < 0.1 then
 				local hold = self.hold_type or (self:IsPistolHoldType() and "pistol_hold2" or "ak_hold")
 				hold = self.attachments.grip and #self.attachments.grip ~= 0 and hg.attachments.grip[self.attachments.grip[1]].hold or hold
-
 				hg.set_hold(ent, hold)
 			end
 		end
 	end
 
-	if !should then self:AnimationRender() end
+	if not should then self:AnimationRender() end
 	self:AnimHoldPost(self:GetWeaponEntity())
-
-	//self.rhmat = rhmat
-	//self.lhmat = lhmat
 
 	return rhmat, lhmat
 end
