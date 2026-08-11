@@ -450,7 +450,10 @@ local function rebuildPlayerList(combo)
 end
 
 local function openMenu()
-	if not LocalPlayer():IsAdmin() then return end
+	if not hg.organism.CanUseMenu or not hg.organism.CanUseMenu(LocalPlayer()) then
+		chat.AddText(Color(220, 80, 90), "[organism] Access denied.")
+		return
+	end
 
 	if IsValid(MENU) then
 		MENU:Remove()

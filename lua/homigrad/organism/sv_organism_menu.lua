@@ -39,7 +39,7 @@ local SNAPSHOT_FIELDS = {
 }
 
 local function canUse(ply)
-	return IsValid(ply) and ply:IsPlayer() and ply:IsAdmin()
+	return hg.organism.CanUseMenu and hg.organism.CanUseMenu(ply)
 end
 
 local function resolveTarget(ent)
