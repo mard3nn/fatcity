@@ -393,6 +393,7 @@ local lerpedpart = 0
 local lerpedbrain = 0
 
 hook.Add("Post Post Pre Post Processing", "ShowScreens", function()
+	if hg.anoxiaSuppressesFX then return end
 	local org = lply.organism
 	
 	if !lply:Alive() then return end
@@ -446,6 +447,8 @@ hook.Add("Post Post Pre Post Processing", "organism-effects", function()
 		
 		old = new_organism.otrub
 	end
+
+	if hg.anoxiaSuppressesFX then return end
 
 	--LerpVariables(FrameTime(),organism,new_organism)
 
@@ -625,15 +628,15 @@ hook.Add("Post Post Pre Post Processing", "organism-effects", function()
 
 	if otrub and hg.unconsciousRedFxAllowed then
 		local phase = math.floor(CurTime() / 3) % 5
-		local status = "CONSCIOUSNESS LOST"
+		local status = "Ты в безсознании"
 		if phase == 1 then
-			status = "YOUR BODY IS FIGHTING TO SURVIVE"
+			status = "Твое тело бьется за выживание"
 		elseif phase == 2 then
-			status = "STAY WITH US"
+			status = "Оставайся с нами"
 		elseif phase == 3 then
-			status = critical and "CRITICAL CONDITION" or "YOU NEED MEDICAL HELP"
+			status = critical and "Ты нуждаешься в помощи" or "Тебе нужна медецинская помощь"
 		elseif phase == 4 then
-			status = incapacitated and "WAITING FOR ASSISTANCE" or "RECOVERY IN PROGRESS"
+			status = incapacitated and "Тебя могут спасти" or "Ты можешь выжить"
 		end
 
 		local pulse = 0.7 + math.abs(math.sin(CurTime() * 1.5)) * 0.3

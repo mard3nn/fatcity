@@ -416,6 +416,17 @@ module[2] = function(owner, org, timeValue)
 		org.alive = false
 	end
 
+	-- Anoxia blackout: after ~25s at o2 <= 0.5, kill (matches client countdown).
+	if org.isPly and org.alive and (org.o2[1] or 0) <= 0.5 then
+		if not org.anoxiaDeathEnd then
+			org.anoxiaDeathEnd = CurTime() + 25
+		elseif CurTime() >= org.anoxiaDeathEnd then
+			org.alive = false
+		end
+	else
+		org.anoxiaDeathEnd = nil
+	end
+
 	if org.isPly then
 		if org.brain > 0.1 and org.brain < 0.3 then
 			org.owner:Notify(math.random(2) == 1 and "My head hurts..." or "Where am I?", true, "brain", 5)

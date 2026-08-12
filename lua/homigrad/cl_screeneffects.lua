@@ -277,8 +277,6 @@ local brainFrontalColor = {
 	["$pp_colour_mulb"] = 0
 }
 
-local show_image_time = 0
-local show_some_images_time = 0
 local lobotomy_mats = {
 	[1] = Material("overlays/photopsiaoverlay1.png"),
 	[2] = Material("overlays/photopsiaoverlay2.png"),
@@ -290,10 +288,22 @@ local lobotomy_mats = {
 	[8] = Material("overlays/tallflash3.png"),
 	effectState = {
 		hypoxia = 0,
+		anoxia = 0,
+		blackoutFade = 0,
+		blackoutFadeStart = 0,
 		nextMicroShake = 0,
 		microShakeIntervalMin = 0.18,
 		microShakeIntervalMax = 0.65,
 		microShakeMul = 0.28,
+		choosera = 1,
+		tempolerp = 0,
+		lerpblood = 0,
+		addtime = CurTime(),
+		nextPanicAttackShake = 0,
+		unconsciousFadeStart = 0,
+		show_image_time = 0,
+		show_some_images_time = 0,
+		lobotomy_index = 0,
 		hypoxiaColor = {
 			["$pp_colour_addr"] = 0,
 			["$pp_colour_addg"] = 0,
@@ -311,6 +321,11 @@ local lobotomy_mats = {
 			allowed = nil,
 			introLoading = false,
 			dyingLoading = false
+		},
+		anoxiaAudio = {
+			generation = 0,
+			loading = false,
+			playing = false
 		}
 	}
 }
@@ -338,7 +353,6 @@ local painLayerFadeLerp = 0.06
 local painPitchMax = 150
 local painEffectIntensity = 0.8
 local unconsciousPainEffectIntensity = 1.55
-local unconsciousFadeStart = 0
 local painPulseIntensity = 0.25
 local PainStationLoading = false
 local PanicStationLoading = false
@@ -579,6 +593,11 @@ local function stopthings()
 	PanicAttackLerp = 0
 	O2Lerp = 0
 	lobotomy_mats.effectState.hypoxia = 0
+	lobotomy_mats.effectState.anoxia = 0
+	lobotomy_mats.effectState.blackoutFade = 0
+	lobotomy_mats.effectState.blackoutFadeStart = 0
+	hg.anoxiaSuppressesFX = false
+	hg.anoxiaBlackoutStart = nil
 	shockLerp = 0
 	assimilatedLerp = 0
 	tempLerp = 36.6
@@ -589,7 +608,7 @@ local function stopthings()
 	brainOccipitalLerp = 0
 	brainHemorrhageLerp = 0
 	CardioLerp = 0
-	unconsciousFadeStart = 0
+	lobotomy_mats.effectState.unconsciousFadeStart = 0
 
 	local unconsciousAudio = lobotomy_mats.effectState.unconsciousAudio
 	unconsciousAudio.generation = unconsciousAudio.generation + 1
@@ -604,8 +623,15 @@ local function stopthings()
 	unconsciousAudio.introStation = nil
 	unconsciousAudio.dyingStation = nil
 
+	local anoxiaAudio = lobotomy_mats.effectState.anoxiaAudio
+	anoxiaAudio.generation = anoxiaAudio.generation + 1
+	anoxiaAudio.loading = false
+	anoxiaAudio.playing = false
+	if IsValid(anoxiaAudio.station) then anoxiaAudio.station:Stop() end
+	anoxiaAudio.station = nil
+
 	lply.tinnitus = 0
-	nextPanicAttackShake = 0
+	lobotomy_mats.effectState.nextPanicAttackShake = 0
 	lobotomy_mats.effectState.nextMicroShake = 0
 	PainStationLoading = false
 	PanicStationLoading = false
@@ -693,12 +719,8 @@ local stations = {
 	0.27,
 }
 
-local choosera = 1
-local tempolerp = 0
-local lerpblood = 0
-local addtime = CurTime()
-local nextPanicAttackShake = 0
 local hurtoverlay = Material("zcity/neurotrauma/damageOverlay.png", "smooth")
+
 hook.Add("Post Post Processing", "ItHurts", function()
 	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
 	local painVolume = 0
@@ -724,6 +746,89 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	if not organism.brain then stopthings() return end
 	local org = organism
 
+	local effectState = lobotomy_mats.effectState
+	local rawO2 = org.o2 and org.o2[1] or 0
+	local anoxiaTarget = math.Clamp(math.Remap(rawO2, 0, 3.5, 1, 0), 0, 1)
+	local anoxia = effectState.anoxia or 0
+	effectState.anoxia = anoxia + (anoxiaTarget - anoxia) * 0.04
+
+	-- Hide other FX once oxygen drops to 0.50 or below; grey-black appears instantly.
+	local anoxiaAudio = effectState.anoxiaAudio
+	if not anoxiaAudio then
+		anoxiaAudio = {generation = 0, loading = false, playing = false}
+		effectState.anoxiaAudio = anoxiaAudio
+	end
+	if rawO2 <= 0.5 then
+		if (effectState.blackoutFadeStart or 0) <= 0 then
+			effectState.blackoutFadeStart = CurTime()
+			hg.anoxiaBlackoutStart = CurTime()
+		end
+		effectState.blackoutFade = 1
+		hg.anoxiaSuppressesFX = true
+
+		-- Stop unconscious tracks so rem_enditall does not stack.
+		local unconsciousAudio = effectState.unconsciousAudio
+		if IsValid(unconsciousAudio.introStation) then unconsciousAudio.introStation:Stop() end
+		if IsValid(unconsciousAudio.dyingStation) then unconsciousAudio.dyingStation:Stop() end
+		unconsciousAudio.introStation = nil
+		unconsciousAudio.dyingStation = nil
+		unconsciousAudio.introLoading = false
+		unconsciousAudio.dyingLoading = false
+		unconsciousAudio.state = "idle"
+		unconsciousAudio.active = false
+
+		if not anoxiaAudio.playing and not anoxiaAudio.loading then
+			anoxiaAudio.playing = true
+			anoxiaAudio.generation = anoxiaAudio.generation + 1
+			local generation = anoxiaAudio.generation
+			anoxiaAudio.loading = true
+			sound.PlayFile("sound/rem_enditall.mp3", "noblock noplay", function(station)
+				if generation != anoxiaAudio.generation then
+					if IsValid(station) then station:Stop() end
+					return
+				end
+				anoxiaAudio.loading = false
+				if not IsValid(station) then
+					anoxiaAudio.playing = false
+					return
+				end
+				if not hg.anoxiaSuppressesFX then
+					station:Stop()
+					anoxiaAudio.playing = false
+					return
+				end
+				anoxiaAudio.station = station
+				station:SetVolume(1)
+				station:Play()
+			end)
+		end
+	else
+		effectState.blackoutFadeStart = 0
+		effectState.blackoutFade = 0
+		hg.anoxiaSuppressesFX = false
+		hg.anoxiaBlackoutStart = nil
+
+		if anoxiaAudio.playing or anoxiaAudio.loading or IsValid(anoxiaAudio.station) then
+			anoxiaAudio.generation = anoxiaAudio.generation + 1
+			anoxiaAudio.playing = false
+			anoxiaAudio.loading = false
+			if IsValid(anoxiaAudio.station) then anoxiaAudio.station:Stop() end
+			anoxiaAudio.station = nil
+		end
+	end
+
+	if hg.anoxiaSuppressesFX then
+		stopSeizureEffects()
+		-- Keep only anoxia blackout visuals: mute competing layers and skip the rest of this hook's FX.
+		if IsValid(BrainTraumaStation) then BrainTraumaStation:SetVolume(0) end
+		if IsValid(NoiseStation) then NoiseStation:SetVolume(0) end
+		if IsValid(NoiseStation2) then NoiseStation2:SetVolume(0) end
+		if IsValid(NoiseStation2Dying) then NoiseStation2Dying:SetVolume(0) end
+		if IsValid(AssimilationStation) then AssimilationStation:SetVolume(0) end
+		if IsValid(Tinnitus) then Tinnitus:SetVolume(0) end
+		return
+	end
+
 	updateSeizureEffects(org)
 	
 	if org.blindness or amtflashed >= 0.8 then
@@ -740,12 +845,12 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	end
 
 	if (org.consciousness < 0.7) then
-		lerpblood = LerpFT(0.01, lerpblood or 0, math.Clamp((0.7 - org.consciousness) * 5, 0, 1) * 255)
+		effectState.lerpblood = LerpFT(0.01, effectState.lerpblood or 0, math.Clamp((0.7 - org.consciousness) * 5, 0, 1) * 255)
 		local lowblood = (3600 - (org.blood or 5000)) / 600
 
-		addtime = addtime + FrameTime() / 6
-		local amt = (math.cos(addtime) + math.sin(addtime * 3) + math.sin(addtime * 2)) / 90
-		local amt2 = (math.sin(addtime) + math.cos(addtime * 5) + math.sin(addtime * 6)) / 90
+		effectState.addtime = effectState.addtime + FrameTime() / 6
+		local amt = (math.cos(effectState.addtime) + math.sin(effectState.addtime * 3) + math.sin(effectState.addtime * 2)) / 90
+		local amt2 = (math.sin(effectState.addtime) + math.cos(effectState.addtime * 5) + math.sin(effectState.addtime * 6)) / 90
 		local mat = Matrix({
 			{1 - amt, amt, 0, -amt2 / 2},
 			{amt2, 1 - amt2, 0, -amt / 2},
@@ -754,7 +859,7 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		})
 		hurtoverlay:SetMatrix("$basetexturetransform", mat)
 		surface.SetMaterial(hurtoverlay)
-		surface.SetDrawColor(0, 0, 0, lerpblood)
+		surface.SetDrawColor(0, 0, 0, effectState.lerpblood)
 		surface.DrawTexturedRect(-ScrW() * 2.0, -ScrH() * 2.0, ScrW() * 5, ScrH() * 5)
 		//ViewPunch(Angle(-amt * 1, amt2 * 1,0))
 		//ViewPunch2(Angle(-amt * 1, amt2 * 1,0))
@@ -1011,23 +1116,23 @@ hook.Add("Post Post Processing", "ItHurts", function()
 		render.SetMaterial(grainMat)
 		render.DrawScreenQuad()
 
-		if not org.otrub and panicBase > 0.15 and CurTime() >= nextPanicAttackShake then
+		if not org.otrub and panicBase > 0.15 and CurTime() >= effectState.nextPanicAttackShake then
 			local shakeMul = (0.25 + panicBase * 0.9) * panicattackShakeMul
 			ViewPunch(Angle(math.Rand(-0.8, 0.6), math.Rand(-1, 1), math.Rand(-0.2, 0.2)) * shakeMul)
 			ViewPunch2(Angle(math.Rand(-0.25, 0.35), math.Rand(-0.55, 0.55), math.Rand(-0.4, 0.4)) * shakeMul)
-			nextPanicAttackShake = CurTime() + math.Rand(panicattackShakeIntervalMin, panicattackShakeIntervalMax)
+			effectState.nextPanicAttackShake = CurTime() + math.Rand(panicattackShakeIntervalMin, panicattackShakeIntervalMax)
 		end
 	else
-		nextPanicAttackShake = 0
+		effectState.nextPanicAttackShake = 0
 	end
 
 	local tempo = math.Clamp((5 - (tempLerp - 29)) * 0.5 - 5 * (org.heartbeat < 1 and 1 or 0), 0, 5)
-	tempolerp = LerpFT(0.01, tempolerp, tempo)
+	effectState.tempolerp = LerpFT(0.01, effectState.tempolerp, tempo)
 	
-	if (tempolerp > 0) then
+	if (effectState.tempolerp > 0) then
 		render.UpdateScreenEffectTexture()
 
-		coldMat:SetFloat("$c0_y", tempolerp)
+		coldMat:SetFloat("$c0_y", effectState.tempolerp)
 		
 		render.SetMaterial(coldMat)
 		render.DrawScreenQuad()
@@ -1104,11 +1209,11 @@ hook.Add("Post Post Processing", "ItHurts", function()
 			end
 		end
 	
-		if choosera != chooser then
+		if effectState.choosera != chooser then
 			BrainTraumaStationLoading = false
 		end
 
-		if (!IsValid(BrainTraumaStation) or choosera != chooser or BrainTraumaStation:GetState() != GMOD_CHANNEL_PLAYING) and not BrainTraumaStationLoading then
+		if (!IsValid(BrainTraumaStation) or effectState.choosera != chooser or BrainTraumaStation:GetState() != GMOD_CHANNEL_PLAYING) and not BrainTraumaStationLoading then
 			if IsValid(BrainTraumaStation) then
 				BrainTraumaStation:Stop()
 				BrainTraumaStation = nil
@@ -1124,7 +1229,7 @@ hook.Add("Post Post Processing", "ItHurts", function()
 					station:EnableLooping(true)
 				end
 			end)
-			choosera = chooser
+			effectState.choosera = chooser
 		end
 
 		if IsValid(BrainTraumaStation) then
@@ -1165,33 +1270,33 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	end
 	
 	if brain > 0.1 and not org.otrub then
-		if show_some_images_time > 0 then
+		if effectState.show_some_images_time > 0 then
 			brain_motionblur = true
 			DrawMotionBlur(0.1, 1., 0.1)
-			show_some_images_time = show_some_images_time - 1
-			if show_image_time <= 0 and math.random(10 * (1 - brain)) < 2 then
-				show_image_time = 250 * (0.1 * 3) * math.Rand(0.1, 1) * (math.random(2) == 1 and 0.1 or 1)
-				lobotomy_index = math.random(#lobotomy_mats)
+			effectState.show_some_images_time = effectState.show_some_images_time - 1
+			if effectState.show_image_time <= 0 and math.random(10 * (1 - brain)) < 2 then
+				effectState.show_image_time = 250 * (0.1 * 3) * math.Rand(0.1, 1) * (math.random(2) == 1 and 0.1 or 1)
+				effectState.lobotomy_index = math.random(#lobotomy_mats)
 			end
 
-			if show_image_time > 0 then
-				show_image_time = show_image_time - 1
+			if effectState.show_image_time > 0 then
+				effectState.show_image_time = effectState.show_image_time - 1
 
-				if lobotomy_index then
+				if effectState.lobotomy_index then
 					surface.SetDrawColor(255,255,255,255)
-					surface.SetMaterial(lobotomy_mats[lobotomy_index])
+					surface.SetMaterial(lobotomy_mats[effectState.lobotomy_index])
 					local rand = 5
 					surface.DrawTexturedRect(-math.random(rand), -math.random(rand), ScrW() + math.random(rand), ScrH() + math.random(rand))
 				end
 			end
 		else
 			brain_motionblur = false
-			show_some_images_time = math.random(1200) < (brain * 15) and 250 or 0
+			effectState.show_some_images_time = math.random(1200) < (brain * 15) and 250 or 0
 		end
 	else
 		brain_motionblur = false
-		show_image_time = 0
-		lobotomy_index = 0
+		effectState.show_image_time = 0
+		effectState.lobotomy_index = 0
 	end
 	
 	-- Hypoxia has three distinct stages: colour loss first, then visual noise,
@@ -1328,6 +1433,7 @@ hook.Add("Post Post Processing", "ItHurts", function()
 end)
 
 hook.Add("Post Post Pre Post Processing", "BrainLobeEffects", function()
+	if hg.anoxiaSuppressesFX then return end
 	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
 	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
 
@@ -1408,6 +1514,7 @@ hook.Add("Post Post Pre Post Processing", "BrainLobeEffects", function()
 end)
 
 hook.Add("Post Pain Processing", "CardiologyEffects", function()
+	if hg.anoxiaSuppressesFX then return end
 	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
 	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
 
@@ -1438,6 +1545,7 @@ hook.Add("Post Pain Processing", "CardiologyEffects", function()
 end)
 
 hook.Add("Post Pain Processing", "PainEffects", function()
+	if hg.anoxiaSuppressesFX then return end
 	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
 	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
 
@@ -1455,10 +1563,11 @@ hook.Add("Post Pain Processing", "PainEffects", function()
 	local effectIntensity = pain / 32 * painEffectIntensity * intensityMul + math.max(shock - 5, 0) / 2.4 * painEffectIntensity
 	local unconsciousFade = 0
 	if org.otrub then
-		if unconsciousFadeStart <= 0 then unconsciousFadeStart = CurTime() end
-		unconsciousFade = math.Clamp((CurTime() - unconsciousFadeStart - 2) / 2.5, 0, 1)
+		local fadeState = lobotomy_mats.effectState
+		if fadeState.unconsciousFadeStart <= 0 then fadeState.unconsciousFadeStart = CurTime() end
+		unconsciousFade = math.Clamp((CurTime() - fadeState.unconsciousFadeStart - 2) / 2.5, 0, 1)
 	else
-		unconsciousFadeStart = 0
+		lobotomy_mats.effectState.unconsciousFadeStart = 0
 	end
 
 	render.UpdateScreenEffectTexture()
@@ -1512,6 +1621,96 @@ hook.Add("Post Pain Processing", "PainEffects", function()
 
 	render.SetMaterial(painMat)
 	render.DrawScreenQuad()
+end)
+
+surface.CreateFont("RemDeathStateFont", {
+	font = "Lora",
+	size = ScreenScale(22),
+	weight = 1100,
+	outline = true
+})
+
+hook.Add("Post Pain Processing", "AnoxiaBlackout", function()
+	local spect = IsValid(lply:GetNWEntity("spect")) and lply:GetNWEntity("spect")
+	if !lply:Alive() and (!IsValid(spect) or viewmode != 1) then return end
+
+	local org = lply:Alive() and lply.organism or (IsValid(spect) and spect.organism)
+	if not org or not org.brain then return end
+
+	local effectState = lobotomy_mats.effectState
+	local blackout = effectState.blackoutFade or 0
+	if blackout <= 0.01 then return end
+
+	-- Grey covers the whole screen underneath; black vignette/grain sit on top.
+	surface.SetDrawColor(40, 40, 40, math.floor(blackout * 255))
+	surface.DrawRect(0, 0, ScrW(), ScrH())
+
+	render.UpdateScreenEffectTexture()
+	vignetteMat:SetFloat("$c2_x", CurTime() + 10000)
+	vignetteMat:SetFloat("$c0_z", blackout * 5)
+	vignetteMat:SetFloat("$c1_y", blackout * 10)
+	render.SetMaterial(vignetteMat)
+	render.DrawScreenQuad()
+
+	render.UpdateScreenEffectTexture()
+	render.UpdateFullScreenDepthTexture()
+	grainMat:SetFloat("$c0_x", CurTime())
+	grainMat:SetFloat("$c0_y", 0.5)
+	grainMat:SetFloat("$c0_z", blackout * 2.2)
+	grainMat:SetFloat("$c1_x", blackout)
+	grainMat:SetFloat("$c1_y", 10)
+	grainMat:SetFloat("$c1_z", blackout)
+	grainMat:SetFloat("$c2_x", 0)
+	grainMat:SetFloat("$c2_y", 0)
+	grainMat:SetFloat("$c2_z", 0)
+	grainMat:SetFloat("$c3_x", 0)
+	render.SetMaterial(grainMat)
+	render.DrawScreenQuad()
+
+	-- Draw death text on top of the blackout (earlier hooks get covered).
+	if lply:Alive() and hg.anoxiaSuppressesFX then
+		local deathEnd = (org.anoxiaDeathEnd and org.anoxiaDeathEnd > 0) and org.anoxiaDeathEnd
+		if not deathEnd and hg.anoxiaBlackoutStart then
+			deathEnd = hg.anoxiaBlackoutStart + 25
+		end
+		if deathEnd then
+			local remaining = math.max(deathEnd - CurTime(), 0)
+			local seconds = math.ceil(remaining)
+			local pulse = 0.7 + math.abs(math.sin(CurTime() * 1.5)) * 0.3
+
+			draw.SimpleText(
+				"You will die in " .. seconds,
+				"RemDeathStateFont",
+				ScrW() / 2,
+				ScrH() / 2,
+				Color(255, 255, 255, math.floor(255 * pulse)),
+				TEXT_ALIGN_CENTER,
+				TEXT_ALIGN_CENTER
+			)
+
+			local statuses = effectState.anoxiaDeathStatus
+			if not statuses then
+				statuses = {
+					"You are dying",
+					"No oxygen left",
+					"Your body is shutting down",
+					"You need oxygen",
+					"Stay with us"
+				}
+				effectState.anoxiaDeathStatus = statuses
+			end
+			local status = statuses[math.floor(CurTime() / 3) % #statuses + 1]
+			draw.SimpleText(
+				status,
+				"HomigradFontMedium",
+				ScrW() / 2,
+				ScrH() * 0.78,
+				Color(255, 75, 75, math.floor(185 * pulse)),
+				TEXT_ALIGN_CENTER,
+				TEXT_ALIGN_CENTER
+			)
+		end
+	end
 end)
 
 hook.Add("Player_Death", "ItDoesntNow", function(ply)

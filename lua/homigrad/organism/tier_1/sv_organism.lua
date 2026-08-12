@@ -126,6 +126,7 @@ hook.Add("Org Clear", "Main", function(org)
 	org.lastSeizureBrain = 0
 	org.lastSeizureLobeDamage = 0
 	org.lastSeizureTemperature = org.temperature
+	org.anoxiaDeathEnd = nil
 	org.lastWoundsSig = nil
 	org.lastArterialWoundsSig = nil
 
@@ -261,6 +262,7 @@ local function send_organism(org, ply)
 	sendtable.blindness = org.blindness
 	sendtable.critical = org.critical
 	sendtable.incapacitated = org.incapacitated
+	sendtable.anoxiaDeathEnd = org.anoxiaDeathEnd or 0
 	sendtable.berserkActive2 = org.berserkActive2
 	sendtable.noradrenalineActive = org.noradrenalineActive
 

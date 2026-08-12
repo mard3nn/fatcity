@@ -466,10 +466,11 @@ local function openMenu()
 	MENU = frame
 	frame:SetSize(math.min(ScrW() - 40, 980), math.min(ScrH() - 40, 680))
 	frame:Center()
-	frame:SetTitle("Organism")
-	frame:SetDraggable(true)
+	frame:SetTitle("")
+	frame:SetDraggable(false)
 	frame:SetSizable(true)
 	frame:SetDeleteOnClose(true)
+	frame:ShowCloseButton(true)
 	frame:MakePopup()
 	frame:SetColorBG(COL_BG)
 	frame:SetColorBR(COL_BR)
@@ -488,6 +489,33 @@ local function openMenu()
 		surface.DrawTexturedRect(0, 0, w, h)
 	end
 
+	local dragBar = vgui.Create("DPanel", frame)
+	dragBar:Dock(TOP)
+	dragBar:SetTall(28)
+	dragBar:DockMargin(1, 1, 28, 0)
+	dragBar:SetCursor("sizeall")
+	dragBar.Paint = function(_, w, h)
+		draw.RoundedBox(0, 0, 0, w, h, Color(20, 28, 45, 180))
+		draw.SimpleText("Organism", "HGOrgMenuSub", 10, h / 2, COL_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText("drag", "HGOrgMenuSmall", w - 8, h / 2, COL_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	end
+	dragBar.OnMousePressed = function(self, code)
+		if code ~= MOUSE_LEFT then return end
+		self.Dragging = {gui.MouseX() - frame.x, gui.MouseY() - frame.y}
+		self:MouseCapture(true)
+	end
+	dragBar.OnMouseReleased = function(self, code)
+		if code ~= MOUSE_LEFT then return end
+		self.Dragging = nil
+		self:MouseCapture(false)
+	end
+	dragBar.OnCursorMoved = function(self)
+		if not self.Dragging then return end
+		local x = math.Clamp(gui.MouseX() - self.Dragging[1], 0, ScrW() - frame:GetWide())
+		local y = math.Clamp(gui.MouseY() - self.Dragging[2], 0, ScrH() - frame:GetTall())
+		frame:SetPos(x, y)
+	end
+
 	frame.OnClose = function()
 		timer.Remove(pendingSetTimer)
 		flushPendingSets()
@@ -497,7 +525,7 @@ local function openMenu()
 	local top = vgui.Create("DPanel", frame)
 	top:Dock(TOP)
 	top:SetTall(36)
-	top:DockMargin(8, 28, 8, 4)
+	top:DockMargin(8, 4, 8, 4)
 	top.Paint = nil
 
 	local combo = vgui.Create("DComboBox", top)

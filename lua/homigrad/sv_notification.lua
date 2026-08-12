@@ -162,7 +162,7 @@ function PLAYER:ResetNotification(key)
     ResetNotification(self,key)
 end
 
-local function SendDiscordMessage()
+--[[local function SendDiscordMessage()
     for _, ply in ipairs(player.GetAll()) do
         if IsValid(ply) then
             ply:SendLua([[
@@ -175,9 +175,9 @@ local function SendDiscordMessage()
                 chat.AddText(red, "{GOMICITY RU 1}", white, " Ссылка: ", yellow, "https://discord.gg/3ccXTadFrA")
                 chat.AddText(red, "{GOMICITY RU 1} ", white, "Донат на сервере вы можете приобрести в ESC меню")
                 chat.AddText(red, "=====================================================================")
-            ]])
-        end
+            ]]
+        --[[end
     end
 end
 
-    timer.Create("DiscordMessageTimer", 300, 0, SendDiscordMessage)
+    timer.Create("DiscordMessageTimer", 300, 0, SendDiscordMessage)]]
