@@ -8,14 +8,14 @@ local Selects = {
     {Title = "Выйти", Func = function(luaMenu) RunConsoleCommand("disconnect") end},
     {Title = "Главное меню", Func = function(luaMenu) gui.ActivateGameUI() luaMenu:Close() end},
     {Title = "Дискорд", Func = function(luaMenu) luaMenu:Close() gui.OpenURL(DISCORD_URL)  end},
-    {Title = "Трейтор роль",
+    {Title = "Роль трейтора",
     GamemodeOnly = true,
     Func = function(luaMenu)
         luaMenu:Close()
         hg.SelectPlayerRole()
     end,
     },
-    {Title = "Ачивки", Func = function(luaMenu,pp) 
+    {Title = "Догстижения", Func = function(luaMenu,pp) 
         hg.DrawAchievmentsMenu(pp)
     end},
     {Title = "Правила", Func = function(luaMenu,pp) 
@@ -24,8 +24,8 @@ local Selects = {
     {Title = "Настройки", Func = function(luaMenu,pp) 
         hg.DrawSettings(pp) 
     end},
-    {Title = "Апиренс", Func = function(luaMenu,pp) hg.CreateApperanceMenu(pp) end},
-    {Title = "Ретурн", Func = function(luaMenu) luaMenu:Close() end},
+    {Title = "Внешность", Func = function(luaMenu,pp) hg.CreateApperanceMenu(pp) end},
+    {Title = "Вернуться", Func = function(luaMenu) luaMenu:Close() end},
 }
 
 local splasheh = {
