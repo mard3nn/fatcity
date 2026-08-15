@@ -15,7 +15,7 @@ local Selects = {
         hg.SelectPlayerRole()
     end,
     },
-    {Title = "Догстижения", Func = function(luaMenu,pp) 
+    {Title = "Достижения", Func = function(luaMenu,pp) 
         hg.DrawAchievmentsMenu(pp)
     end},
     {Title = "Правила", Func = function(luaMenu,pp) 
