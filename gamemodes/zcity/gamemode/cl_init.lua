@@ -11,7 +11,6 @@ function CurrentRound()
 end
 
 zb.ROUND_STATE = 0
---0 = players can join, 1 = round is active, 2 = endround
 local vecZero = Vector(0.2, 0.2, 0.2)
 local vecFull = Vector(1, 1, 1)
 spect,prevspect,viewmode = nil,nil,1
@@ -22,7 +21,6 @@ net.Receive("ZB_SpectatePlayer", function(len)
 	viewmode = net.ReadInt(4)
 
 	timer.Simple(0.1,function()
-		-- LocalPlayer():BoneScaleChange()
 		LocalPlayer():SetHull(-hullscale,hullscale)
 		LocalPlayer():SetHullDuck(-hullscale,hullscale)
 
@@ -56,7 +54,6 @@ function hg.DrawBlur(panel, amount, passes, alpha)
 	amount = amount or 5
 	hg_potatopc = hg_potatopc or hg.ConVars.potatopc
 
-	// old blur
 	if(hg_potatopc:GetBool())then
 		surface.SetDrawColor(0, 0, 0, alpha or (amount * 20))
 		surface.DrawRect(0, 0, panel:GetWide(), panel:GetTall())
@@ -389,7 +386,7 @@ hook.Add("InitPostEntity", "furryhuy", function()
 					hg.playerInfo[ply:SteamID()] = {}
 					hg.playerInfo[ply:SteamID()][1] = muted
 					hg.playerInfo[ply:SteamID()][2] = 1
-				end//compatibility with old json
+				end
 
 				if hg.playerInfo[ply:SteamID()] then
 					ply:SetMuted(hg.playerInfo[ply:SteamID()][1])
@@ -401,15 +398,15 @@ hook.Add("InitPostEntity", "furryhuy", function()
 end)
 
 local colGray = Color(122,122,122,255)
-local colBlue = Color(130,10,10)
-local colBlueUp = Color(160,30,30)
+local colBlue = Color(10,30,130)
+local colBlueUp = Color(30,60,160)
 local col = Color(255,255,255,255)
 
-local colSpect1 = Color(75,75,75,255)
-local colSpect2 = Color(85,85,85,255)
+local colSpect1 = Color(20,30,60,255)
+local colSpect2 = Color(30,45,85,255)
 
-local colorBG = Color(55,55,55,255)
-local colorBGBlacky = Color(40,40,40,255)
+local colorBG = Color(15,25,55,255)
+local colorBGBlacky = Color(10,15,40,255)
 
 hg.muteall = false
 hg.mutespect = false
@@ -444,7 +441,7 @@ local function OpenPlayerSoundSettings(selfa, ply)
 
 	function volumeSlider:Paint(w,h)
 		draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0 ) )
-		draw.RoundedBox( 0, 0, 0, w*self:GetSlideX(), h, Color( 255, 0, 0 ) )
+		draw.RoundedBox( 0, 0, 0, w*self:GetSlideX(), h, Color( 30, 90, 255 ) )
 		draw.DrawText( ( math.Round( 100*self:GetSlideX(), 0 ) ).."%", "DermaDefault", w/2, h/4, color_white, TEXT_ALIGN_CENTER )
 	end
 	function volumeSlider.Knob.Paint(self) end
@@ -480,22 +477,6 @@ local gradient_u = Material("vgui/gradient-u")
 local gradient_l = Material("vgui/gradient-l")
 local gradient_r = Material("vgui/gradient-r")
 
-local function MACKGORSON()
-	surface.SetDrawColor(107, 107, 107,20)
-
-   	for i = 1, (ybars + 1) do
-   	    surface.DrawRect((sw / ybars) * i - (CurTime() * 30 % (sw / ybars)), 0, ScreenScale(1), sh)
-   	end
-   	for i = 1, (xbars + 1) do
-   	    surface.DrawRect(0, (sh / xbars) * (i - 1) + (CurTime() * 30 % (sh / xbars)), sw, ScreenScale(1))
-   	end
-
-   	local border_size = 5
-   	surface.SetDrawColor(0, 0, 0)
-   	surface.SetMaterial(gradient_l)
-   	surface.DrawTexturedRect(0, 0, border_size, sh)
-end
-
 local function GetFakePing(ply)
     if not IsValid(ply) then return "???" end
     local real = ply:Ping()
@@ -515,14 +496,14 @@ end
 
 local SB_TITLE_WHITE = Color(255, 255, 255, 255)
 local SB_TITLE_COLORS = {
-    [1] = Color(255, 255, 255, 255), // G
-    [2] = Color(255, 255, 255, 255), // O
-    [3] = Color(255, 255, 255, 255), // M
-    [4] = Color(60, 130, 255, 255),  // I
-    [5] = Color(60, 130, 255, 255),  // C
-    [6] = Color(230, 45, 45, 255),   // I
-    [7] = Color(230, 45, 45, 255),   // T
-    [8] = Color(230, 45, 45, 255)    // Y
+    [1] = Color(255, 255, 255, 255),
+    [2] = Color(255, 255, 255, 255),
+    [3] = Color(255, 255, 255, 255),
+    [4] = Color(60, 130, 255, 255),
+    [5] = Color(60, 130, 255, 255),
+    [6] = Color(230, 45, 45, 255),
+    [7] = Color(230, 45, 45, 255),
+    [8] = Color(230, 45, 45, 255)
 }
 local SB_TITLE_SWEEP_SPEED = 12.0
 local SB_TITLE_SWEEP_SOFT = 1.4
@@ -558,12 +539,12 @@ function GM:ScoreboardShow()
     scoreBoardMenu.Paint = function(self, w, h)
         self.bgAlpha = Lerp(FrameTime() * 8, self.bgAlpha, 1)
         hg.DrawBlur(self, 8)
-        surface.SetDrawColor(34, 14, 14, 230 * self.bgAlpha)
+        surface.SetDrawColor(14, 20, 34, 230 * self.bgAlpha)
         surface.DrawRect(0, 0, w, h)
 
         local grid = ScreenScale(25)
         local off = (RealTime() * 12) % grid
-        surface.SetDrawColor(200, 30, 30, 18 * self.bgAlpha)
+        surface.SetDrawColor(30, 80, 200, 18 * self.bgAlpha)
         for i = -1, math.ceil(w / grid) + 1 do
             surface.DrawRect(i * grid - off, 0, 1, h)
         end
@@ -584,7 +565,7 @@ function GM:ScoreboardShow()
         surface.SetTextColor(230, 230, 230, 255)
         local tw, th = surface.GetTextSize("Загл. всех")
         surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
-        surface.DrawText("Загл.всех")
+        surface.DrawText("Загл. всех")
     end
     muteallbut.DoClick = function()
         hg.muteall = not hg.muteall
@@ -606,7 +587,7 @@ function GM:ScoreboardShow()
         surface.DrawOutlinedRect(0, 0, w, h, 1)
         surface.SetFont("ZB_InterfaceSmall")
         surface.SetTextColor(230, 230, 230, 255)
-        local tw, th = surface.GetTextSize("Загл.мертв")
+        local tw, th = surface.GetTextSize("Загл. мертв")
         surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
         surface.DrawText("Загл. мертв")
     end
@@ -783,10 +764,10 @@ function GM:ScoreboardShow()
             DScrollPanel:SetSize(sizeX / 2 - 10, sizeY - ScreenScaleH(72))
         end
         DScrollPanel.Paint = function(self, w, h)
-            surface.SetDrawColor(34, 14, 14, 220)
+            surface.SetDrawColor(14, 20, 34, 220)
             surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(170, 170, 170, 70)
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+            surface.SetDrawColor(70, 110, 170, 70)
+            surface.DrawOutlinedRect(0, 0, w, h, 1)
         end
 
         local disappearance = lply:GetNetVar("disappearance", nil)
@@ -815,11 +796,11 @@ function GM:ScoreboardShow()
 
             but.Paint = function(self, w, h)
                 if not IsValid(ply) then return end
-                local bgTop = Color(55, 20, 20, 255)
-                local bgBot = Color(45, 15, 15, 255)
+                local bgTop = Color(20, 35, 75, 255)
+                local bgBot = Color(15, 25, 60, 255)
                 if isSpectator then
-                    bgTop = Color(60, 22, 22, 255)
-                    bgBot = Color(50, 18, 18, 255)
+                    bgTop = Color(22, 40, 85, 255)
+                    bgBot = Color(18, 30, 70, 255)
                 end
                 surface.SetDrawColor(bgTop)
                 surface.DrawRect(0, 0, w, h)
