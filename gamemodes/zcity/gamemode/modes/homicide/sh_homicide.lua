@@ -276,21 +276,21 @@ if(CLIENT)then
 end
 
 MODE.TraitorShop = {
-	["weapon_p22"] = { Price = 550, Name = "Walther P22", Desc = "Почти бесшумный пистолет с глушителем." },
-	["weapon_pl15"] = { Price = 450, Name = "PL-15", Desc = "Мощный полуавтоматический пистолет." },
-	["weapon_sogknife"] = { Price = 150, Name = "SOG SEAL 2000", Desc = "Быстрый боевой нож." },
-	["weapon_buck200knife"] = { Price = 200, Name = "Buck 120", Desc = "Тяжёлый охотничий нож." },
-	["weapon_hg_f1_tpik"] = { Price = 300, Name = "Ф-1", Desc = "Осколочная граната, можно на растяжку." },
-	["weapon_hg_grenade_tpik"] = { Price = 300, Name = "M67", Desc = "Осколочная граната." },
-	["weapon_hg_rgd_tpik"] = { Price = 250, Name = "РГД-5", Desc = "Осколочная граната." },
-	["weapon_traitor_ied"] = { Price = 400, Name = "СВУ", Desc = "Самодельное взрывное устройство." },
+	["weapon_p22"] = { Price = 350, Name = "Walther P22", Desc = "Почти бесшумный пистолет.", Attachments = { "supressor4" } }, //эти цены под спайсом делали или че
+	["weapon_radar"] = { Price = 250, Name = "Радар", Desc = "Находите своих жертв." },
+	["weapon_sogknife"] = { Price = 100, Name = "SOG SEAL 2000", Desc = "Быстрый боевой нож." },
+	["weapon_buck200knife"] = { Price = 100, Name = "Buck 120", Desc = "Тяжёлый охотничий нож." },
+	["weapon_hg_f1_tpik"] = { Price = 200, Name = "Ф-1", Desc = "Осколочная граната." },
+	["weapon_hg_grenade_tpik"] = { Price = 200, Name = "M67", Desc = "Осколочная граната." },
+	["weapon_hg_rgd_tpik"] = { Price = 200, Name = "РГД-5", Desc = "Осколочная граната." },
+	["weapon_traitor_ied"] = { Price = 250, Name = "СВУ", Desc = "Взрывное устройство." },
 	["weapon_traitor_poison1"] = { Price = 200, Name = "Тетродотоксин", Desc = "Сильный яд в шприце." },
-	["weapon_traitor_poison3"] = { Price = 260, Name = "Баллон с цианидом", Desc = "Газообразный яд." },
-	["weapon_traitor_poison4"] = { Price = 320, Name = "Кураре", Desc = "Смертельный яд во флаконе." },
+	["weapon_traitor_poison3"] = { Price = 225, Name = "Баллон с цианидом", Desc = "Газообразный яд." },
+	["weapon_traitor_poison4"] = { Price = 250, Name = "Кураре", Desc = "Смертельный яд во флаконе." },
 	["weapon_traitor_poison_consumable"] = { Price = 50, Name = "Капсула цианида", Desc = "Одноразовая капсула с ядом." },
-	["weapon_hg_shuriken"] = { Price = 100, Name = "Сюрикен", Desc = "Метательные звёзды." },
-	["weapon_traitor_suit"] = { Price = 150, Name = "Защитный костюм", Desc = "Защищает от химикатов." },
-	["weapon_hg_jam"] = { Price = 120, Name = "Подклинь", Desc = "Клинит двери." },
+	["weapon_hg_shuriken"] = { Price = 20, Name = "Сюрикен", Desc = "Метательные сюрикены." },
+	["weapon_traitor_suit"] = { Price = 100, Name = "Костюм", Desc = "Скройте свою личность." },
+	["weapon_hg_jam"] = { Price = 50, Name = "Клин", Desc = "Клинит двери." },
 }
 
 function MODE.GiveTraitorLoadout(ply, sub_role)
@@ -315,12 +315,18 @@ function MODE.GiveTraitorLoadout(ply, sub_role)
 		class = string.Trim(class)
 		if class != "" and not given[class] then
 			if MODE.TraitorShop[class] then
+				local shop_info = MODE.TraitorShop[class]
 				local wep = ply:Give(class)
 				if IsValid(wep) then
 					local ammo_type = wep:GetPrimaryAmmoType()
 					local clip = wep:GetMaxClip1()
 					if ammo_type != -1 and clip and clip > 0 then
 						ply:GiveAmmo(clip * 2, ammo_type, true)
+					end
+
+					--; Attachments that come bundled with the weapon (e.g. P22 + supressor4)
+					if SERVER and shop_info.Attachments and hg.AddAttachmentForce then
+						hg.AddAttachmentForce(ply, wep, shop_info.Attachments)
 					end
 				end
 				given[class] = true

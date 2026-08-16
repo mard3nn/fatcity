@@ -1,7 +1,7 @@
 local MODE = MODE
 
-MODE.name = "slovopacana"
-MODE.PrintName = "Слово пацана"
+MODE.name = "gangbang"
+MODE.PrintName = "Заруба"
 
 zb = zb or {}
 zb.Points = zb.Points or {}

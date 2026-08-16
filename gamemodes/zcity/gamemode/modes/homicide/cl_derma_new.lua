@@ -22,7 +22,7 @@ local pluvRed = Color(200, 70, 70, 255)
 
 surface.CreateFont("GOMI_RoleTitle", {
 	font = "Bahnschrift",
-	size = ScreenScale(36),
+	size = ScreenScale(22),
 	weight = 800,
 	antialias = true
 })
@@ -79,6 +79,23 @@ local function drawBlur(panel, amount)
 	end
 end
 
+-- Truncates text with an ellipsis so it never spills past the given width.
+local function fitText(text, font, maxW)
+	if not text then return "" end
+	surface.SetFont(font)
+	local w = surface.GetTextSize(text)
+	if w <= maxW then return text end
+
+	local dots = "..."
+	local dotsW = surface.GetTextSize(dots)
+	local cut = text
+	while cut != "" do
+		cut = string.sub(cut, 1, string.len(cut) - 1)
+		if surface.GetTextSize(cut) + dotsW <= maxW then break end
+	end
+	return cut .. dots
+end
+
 --\\Traitor Class + Shop (PluvCoin)
 local ClassOrder = {
 	"traitor_default",
@@ -89,7 +106,7 @@ local ClassOrder = {
 
 local ShopOrder = {
 	"weapon_p22",
-	"weapon_pl15",
+	"weapon_radar",
 	"weapon_sogknife",
 	"weapon_buck200knife",
 	"weapon_hg_f1_tpik",
@@ -160,9 +177,6 @@ function PANEL:SelectClass(class)
 	if self.SelectedClass == class then return end
 	self.SelectedClass = class
 	self:ClampSelectionToBudget()
-	if IsValid(self.DescPanel) then
-		self.DescPanel:InvalidateLayout(true)
-	end
 	surface.PlaySound("shitty/tap_depress.wav")
 end
 
@@ -208,7 +222,7 @@ end
 
 function PANEL:Think()
 	if(IsValid(self.BudgetLabel))then
-		self.BudgetLabel:SetText("Плювкоины: " .. self:GetBudget())
+		self.BudgetLabel:SetText("Pluvcoin`s: " .. self:GetBudget())
 		self.BudgetLabel:SizeToContents()
 	end
 	if(IsValid(self.SpentLabel))then
@@ -254,17 +268,20 @@ function PANEL:Construct()
 		if key == KEY_ESCAPE then
 			sel:SaveSelection()
 			sel:Remove()
+			if gui.IsGameUIVisible() then
+				gui.HideGameUI()
+			end
 		end
 	end
 
-	local margin = ScreenScale(24)
-	local headerH = ScreenScale(68)
-	local footerH = ScreenScale(64)
-	local gap = ScreenScale(16)
-	local bodyY = headerH + ScreenScale(8)
+	local margin = math.floor(ScreenScale(8))
+	local headerH = math.floor(ScreenScale(26))
+	local footerH = math.floor(ScreenScale(30))
+	local gap = math.floor(ScreenScale(8))
+	local bodyY = headerH
 	local bodyH = self:GetTall() - bodyY - footerH - margin
 	local totalBodyW = self:GetWide() - margin * 2
-	local leftW = math.floor(totalBodyW * 0.30)
+	local leftW = math.floor(totalBodyW * 0.26)
 	local rightW = totalBodyW - leftW - gap
 
 	self.Paint = function(sel, w, h)
@@ -299,12 +316,13 @@ function PANEL:Construct()
 		surface.DrawRect(margin + leftW + gap / 2 - 1, bodyY, 1, bodyH)
 	end
 
-	-- Header
 	local title = vgui.Create("DLabel", self)
-	title:SetPos(margin, ScreenScale(18))
+	title:SetPos(margin, math.floor((headerH - ScreenScale(22)) / 2))
 	title:SetFont("GOMI_RoleTitle")
 	title:SetText("ВЫБОР ПРЕДАТЕЛЯ")
 	title:SetTextColor(Color(0, 0, 0, 0))
+	title:SizeToContents()
+	title:SetSize(title:GetWide() + 4, title:GetTall() + 4)
 	title.anim = 0
 	title.Paint = function(sel, w, h)
 		sel.anim = Lerp(FrameTime() * 10, sel.anim, 1)
@@ -314,13 +332,14 @@ function PANEL:Construct()
 	end
 
 	local closeBtn = vgui.Create("DButton", self)
+	local closeSize = math.floor(headerH * 0.7)
 	closeBtn:SetText("")
-	closeBtn:SetSize(ScreenScale(32), ScreenScale(32))
-	closeBtn:SetPos(self:GetWide() - margin - ScreenScale(32), ScreenScale(16))
+	closeBtn:SetSize(closeSize, closeSize)
+	closeBtn:SetPos(self:GetWide() - margin - closeSize, math.floor((headerH - closeSize) / 2))
 	closeBtn:SetCursor("hand")
 	closeBtn.hover = 0
 	closeBtn.Paint = function(sel, w, h)
-		sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+		sel.hover = sel:IsHovered() and 1 or 0
 		if sel.hover > 0.01 then
 			draw.RoundedBox(4, 0, 0, w, h, Color(colAccent.r, colAccent.g, colAccent.b, 140 * sel.hover))
 		end
@@ -331,7 +350,6 @@ function PANEL:Construct()
 		self:Remove()
 	end
 
-	-- Left column: classes
 	local leftPanel = vgui.Create("DPanel", self)
 	leftPanel:SetPos(margin, bodyY)
 	leftPanel:SetSize(leftW, bodyH)
@@ -345,20 +363,23 @@ function PANEL:Construct()
 	end
 
 	local classSection = vgui.Create("DLabel", leftPanel)
-	classSection:SetPos(ScreenScale(14), ScreenScale(10))
+	classSection:SetPos(math.floor(ScreenScale(10)), math.floor(ScreenScale(8)))
 	classSection:SetFont("GOMI_RoleSection")
 	classSection:SetText("КЛАСС ПРЕДАТЕЛЯ")
 	classSection:SetTextColor(colAccentBright)
 	classSection:SizeToContents()
 
-	local classListH = ScreenScale(52) * 4 + ScreenScale(6) * 3
+	local sidePad = math.floor(ScreenScale(8))
+	local classAreaY = math.floor(ScreenScale(26))
+	local classListW = leftW - sidePad * 2
+	local classBtnH = math.floor(ScreenScale(22))
+	local classGap = math.floor(ScreenScale(4))
+
 	local classList = vgui.Create("DPanel", leftPanel)
-	classList:SetPos(ScreenScale(10), ScreenScale(32))
-	classList:SetSize(leftW - ScreenScale(20), classListH)
+	classList:SetPos(sidePad, classAreaY)
+	classList:SetSize(classListW, (#ClassOrder * (classBtnH + classGap)))
 	classList.Paint = function() end
 
-	local classBtnH = ScreenScale(52)
-	local classGap = ScreenScale(6)
 	local classIdx = 0
 	for _, class in ipairs(ClassOrder) do
 		local info = MODE.SubRoles[class]
@@ -368,12 +389,12 @@ function PANEL:Construct()
 		local btn = vgui.Create("DButton", classList)
 		btn:SetText("")
 		btn:SetPos(0, (classIdx - 1) * (classBtnH + classGap))
-		btn:SetSize(classList:GetWide(), classBtnH)
+		btn:SetSize(classListW, classBtnH)
 		btn:SetCursor("hand")
 		btn.class = class
 		btn.hover = 0
 		btn.Paint = function(sel, w, h)
-			sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+			sel.hover = sel:IsHovered() and 1 or 0
 			local selected = self.SelectedClass == sel.class
 
 			local bg = colNavyPanel
@@ -395,46 +416,63 @@ function PANEL:Construct()
 			end
 
 			local nameCol = selected and colTextBright or Color(Lerp(sel.hover, colTextDim.r, colTextBright.r), Lerp(sel.hover, colTextDim.g, colTextBright.g), Lerp(sel.hover, colTextDim.b, colTextBright.b))
-			draw.SimpleText(info.Name, "GOMI_RoleCardTitle", ScreenScale(12), h / 2 - ScreenScale(6), nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-			draw.SimpleText("+" .. info.PluvCoins, "GOMI_RolePrice", w - ScreenScale(10), h / 2, pluvGold, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			local priceText = "+" .. info.PluvCoins
+			surface.SetFont("GOMI_RolePrice")
+			local priceW = surface.GetTextSize(priceText)
+			local textPad = math.floor(ScreenScale(6))
+			draw.SimpleText(fitText(info.Name, "GOMI_RoleCardTitle", w - textPad * 3 - priceW), "GOMI_RoleCardTitle", textPad, h / 2, nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(priceText, "GOMI_RolePrice", w - textPad, h / 2, pluvGold, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 		btn.DoClick = function(sel)
 			self:SelectClass(sel.class)
 		end
 	end
 
+	local descY = classAreaY + classList:GetTall() + math.floor(ScreenScale(8))
+	local descH = bodyH - descY - sidePad
+
 	local descPanel = vgui.Create("DPanel", leftPanel)
-	descPanel:SetPos(ScreenScale(10), ScreenScale(32) + classListH + ScreenScale(10))
-	descPanel:SetSize(leftW - ScreenScale(20), bodyH - ScreenScale(32) - classListH - ScreenScale(20))
+	descPanel:SetPos(sidePad, descY)
+	descPanel:SetSize(classListW, descH)
 	descPanel.Paint = function(sel, w, h)
-		draw.RoundedBox(4, 0, 0, w, h, Color(10, 16, 34, 200))
-		surface.SetDrawColor(colAccent.r, colAccent.g, colAccent.b, 50)
-		surface.DrawOutlinedRect(0, 0, w, h, 1)
-
-		local info = MODE.SubRoles[self.SelectedClass]
-		if not info then return end
-
-		local pad = ScreenScale(10)
-		draw.SimpleText(info.Name, "GOMI_RoleCardTitle", pad, pad, colTextBright, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-		draw.SimpleText("+" .. (info.PluvCoins or 0) .. " PluvCoin", "GOMI_RolePrice", pad, pad + ScreenScale(18), pluvGold, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-
+		draw.RoundedBox(4, 0, 0, w, h, Color(10, 14, 28, 180))
 		surface.SetDrawColor(colAccent.r, colAccent.g, colAccent.b, 40)
-		surface.DrawRect(pad, pad + ScreenScale(36), w - pad * 2, 1)
+		surface.DrawOutlinedRect(0, 0, w, h, 1)
+	end
 
-		local desc = info.Description or ""
-		local lines = string.Explode("\n", desc)
-		local y = pad + ScreenScale(44)
-		for _, line in ipairs(lines) do
-			line = string.Trim(line)
-			if line == "" then continue end
-			draw.SimpleText(line, "GOMI_RoleCardDesc", pad, y, colTextDim, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-			y = y + ScreenScale(13)
-			if y > h - pad then break end
+	local descScroll = vgui.Create("DScrollPanel", descPanel)
+	descScroll:Dock(FILL)
+	descScroll:DockMargin(6, 6, 6, 6)
+
+	local descLabel = vgui.Create("DLabel", descScroll)
+	descLabel:Dock(TOP)
+	descLabel:SetFont("GOMI_RoleCardDesc")
+	descLabel:SetTextColor(colTextBright)
+	descLabel:SetWrap(true)
+	descLabel:SetAutoStretchVertical(true)
+
+	function self:UpdateRoleDescription()
+		local info = MODE.SubRoles[self.SelectedClass]
+		if info then
+			local text = (info.Description or "")
+			if info.Objective then
+				text = text .. "\n\nЦЕЛЬ: " .. info.Objective
+			end
+			descLabel:SetText(text)
+		else
+			descLabel:SetText("")
 		end
 	end
-	self.DescPanel = descPanel
 
-	-- Right column: shop grid
+	self:UpdateRoleDescription()
+
+	local origSelectClass = self.SelectClass
+	function self:SelectClass(class)
+		origSelectClass(self, class)
+		self:UpdateRoleDescription()
+	end
+
+	-- Right Panel
 	local rightPanel = vgui.Create("DPanel", self)
 	rightPanel:SetPos(margin + leftW + gap, bodyY)
 	rightPanel:SetSize(rightW, bodyH)
@@ -448,30 +486,32 @@ function PANEL:Construct()
 	end
 
 	local shopSection = vgui.Create("DLabel", rightPanel)
-	shopSection:SetPos(ScreenScale(14), ScreenScale(10))
+	shopSection:SetPos(sidePad, math.floor(ScreenScale(8)))
 	shopSection:SetFont("GOMI_RoleSection")
 	shopSection:SetText("СНАРЯЖЕНИЕ")
 	shopSection:SetTextColor(colAccentBright)
 	shopSection:SizeToContents()
 
 	local scroll = vgui.Create("DScrollPanel", rightPanel)
-	scroll:SetPos(ScreenScale(10), ScreenScale(32))
-	scroll:SetSize(rightW - ScreenScale(20), bodyH - ScreenScale(42))
+	scroll:SetPos(sidePad, classAreaY)
+	scroll:SetSize(rightW - sidePad * 2, math.floor(bodyH) - classAreaY - sidePad)
 	scroll:SetSkin(hg.GetMainSkin())
 	scroll.Paint = function(sel, w, h)
 		surface.SetDrawColor(8, 14, 30, 120)
 		surface.DrawRect(0, 0, w, h)
 	end
 
+	local cardSpace = math.max(2, math.floor(ScreenScale(6)))
 	local layout = vgui.Create("DIconLayout", scroll)
 	layout:Dock(FILL)
-	layout:SetSpaceX(ScreenScale(8))
-	layout:SetSpaceY(ScreenScale(8))
+	layout:SetSpaceX(cardSpace)
+	layout:SetSpaceY(cardSpace)
 
-	local cols = rightW > ScreenScale(520) and 3 or 2
-	local innerW = scroll:GetWide() - ScreenScale(4)
-	local cardW = math.floor((innerW - ScreenScale(8) * (cols - 1)) / cols)
-	local cardH = ScreenScale(108)
+	local cols = math.Clamp(math.floor(rightW / ScreenScale(150)), 2, 5)
+	local barW = (IsValid(scroll.VBar) and scroll.VBar:GetWide() or 15) + 2
+	local innerW = scroll:GetWide() - barW - math.floor(ScreenScale(2))
+	local cardW = math.floor((innerW - cardSpace * (cols - 1)) / cols)
+	local cardH = math.floor(ScreenScale(50))
 
 	for _, class in ipairs(ShopOrder) do
 		local info = MODE.TraitorShop[class]
@@ -486,7 +526,7 @@ function PANEL:Construct()
 		card.checkAnim = 0
 		card.buyPulse = 0
 		card.Paint = function(sel, w, h)
-			sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+			sel.hover = sel:IsHovered() and 1 or 0
 			local selected = self.Selected[sel.class] ~= nil
 			sel.checkAnim = Lerp(FrameTime() * 18, sel.checkAnim, selected and 1 or 0)
 			sel.buyPulse = math.max(0, sel.buyPulse - FrameTime() * 2.2)
@@ -515,28 +555,19 @@ function PANEL:Construct()
 				surface.DrawRect(0, h - 1, w, 1)
 			end
 
-			if sel.buyPulse > 0 then
-				surface.SetDrawColor(colAccentBright.r, colAccentBright.g, colAccentBright.b, 40 * sel.buyPulse)
-				surface.DrawRect(0, 0, w, h)
-				local p = 1 - sel.buyPulse
-				local size = Lerp(p, h * 0.25, w * 0.85)
-				surface.SetDrawColor(colAccentBright.r, colAccentBright.g, colAccentBright.b, 180 * sel.buyPulse)
-				surface.DrawOutlinedRect(w / 2 - size / 2, h / 2 - size / 2, size, size, 2)
-			end
-
-			local pad = ScreenScale(8)
+			local pad = math.floor(ScreenScale(6))
 			local nameCol = canBuy and colTextBright or colTextMuted
-			draw.SimpleText(info.Name, "GOMI_RoleCardTitle", pad, pad, nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText(fitText(info.Name, "GOMI_RoleCardTitle", w - pad * 2), "GOMI_RoleCardTitle", pad, pad, nameCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
-			local descY = pad + ScreenScale(16)
-			draw.SimpleText(info.Desc, "GOMI_RoleShopDesc", pad, descY, colTextDim, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			local descYPos = pad + math.floor(ScreenScale(14))
+			draw.SimpleText(fitText(info.Desc, "GOMI_RoleShopDesc", w - pad * 2), "GOMI_RoleShopDesc", pad, descYPos, colTextDim, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
 			local priceCol = canBuy and pluvGold or pluvRed
-			draw.SimpleText(tostring(info.Price), "GOMI_RolePrice", pad, h - pad - ScreenScale(2), priceCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
-			draw.SimpleText("PluvCoin", "GOMI_RoleCardDesc", pad + ScreenScale(36), h - pad, colTextMuted, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText(tostring(info.Price), "GOMI_RolePrice", pad, h - pad, priceCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText("PluvCoin", "GOMI_RoleCardDesc", pad + math.floor(ScreenScale(26)), h - pad, colTextMuted, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 
 			if selected then
-				draw.SimpleText("ВЗЯТО", "GOMI_RoleSection", w - pad, pad + ScreenScale(2), colAccentBright, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+				draw.SimpleText("ВЗЯТО", "GOMI_RoleSection", w - pad, h - pad, colAccentBright, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
 			end
 		end
 		card.DoClick = function(sel)
@@ -562,24 +593,26 @@ function PANEL:Construct()
 
 	self.BudgetLabel = vgui.Create("DLabel", footer)
 	self.BudgetLabel:SetFont("GOMI_RoleBtn")
-	self.BudgetLabel:SetPos(margin, ScreenScale(10))
+	self.BudgetLabel:SetPos(margin, math.floor(footerH * 0.10))
 	self.BudgetLabel:SetTextColor(pluvGold)
 	self.BudgetLabel:SizeToContents()
 
 	self.SpentLabel = vgui.Create("DLabel", footer)
 	self.SpentLabel:SetFont("GOMI_RoleCardDesc")
-	self.SpentLabel:SetPos(margin, ScreenScale(32))
+	self.SpentLabel:SetPos(margin, math.floor(footerH * 0.55))
 	self.SpentLabel:SetTextColor(colTextDim)
 	self.SpentLabel:SizeToContents()
 
+	local readyW = math.floor(ScreenScale(120))
+	local readyH = math.floor(footerH * 0.7)
 	local readyBtn = vgui.Create("DButton", footer)
 	readyBtn:SetText("")
-	readyBtn:SetSize(ScreenScale(180), ScreenScale(40))
-	readyBtn:SetPos(self:GetWide() - margin - ScreenScale(180), (footerH - ScreenScale(40)) / 2)
+	readyBtn:SetSize(readyW, readyH)
+	readyBtn:SetPos(self:GetWide() - margin - readyW, math.floor((footerH - readyH) / 2))
 	readyBtn:SetCursor("hand")
 	readyBtn.hover = 0
 	readyBtn.Paint = function(sel, w, h)
-		sel.hover = Lerp(FrameTime() * 10, sel.hover, sel:IsHovered() and 1 or 0)
+		sel.hover = sel:IsHovered() and 1 or 0
 		local bg = Color(Lerp(sel.hover, 20, 40), Lerp(sel.hover, 50, 90), Lerp(sel.hover, 120, 180), 240)
 		draw.RoundedBox(4, 0, 0, w, h, bg)
 		surface.SetDrawColor(colAccentBright.r, colAccentBright.g, colAccentBright.b, Lerp(sel.hover, 120, 220))
@@ -589,6 +622,26 @@ function PANEL:Construct()
 	readyBtn.DoClick = function()
 		self:SaveSelection()
 		self:Remove()
+	end
+end
+
+function PANEL:Think()
+	if input.IsKeyDown(KEY_ESCAPE) then
+		self:SaveSelection()
+		self:Remove()
+		if gui.IsGameUIVisible() then
+			gui.HideGameUI()
+		end
+		return
+	end
+
+	if IsValid(self.BudgetLabel) then
+		self.BudgetLabel:SetText("Плювкоины: " .. self:GetBudget())
+		self.BudgetLabel:SizeToContents()
+	end
+	if IsValid(self.SpentLabel) then
+		self.SpentLabel:SetText("Потрачено: " .. self:GetSpent() .. "  |  Осталось: " .. (self:GetBudget() - self:GetSpent()))
+		self.SpentLabel:SizeToContents()
 	end
 end
 
@@ -714,8 +767,6 @@ end
 
 function PANEL:Think()
 
-	-- Hmm.. This needs to really just be done in one place
-	-- and made available to everyone.
 	local FrameRate = VGUIFrameTime() - self.FrameTime
 	self.FrameTime = VGUIFrameTime()
 

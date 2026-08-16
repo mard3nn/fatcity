@@ -1,4 +1,4 @@
-﻿MODE.name = "slovopacana"
+﻿MODE.name = "gangbang"
 local MODE = MODE
 
 local MusicVolume = GetConVar("snd_musicvolume")
@@ -6,14 +6,14 @@ local roundMusic = nil
 
 local teams = {
     [0] = {
-        name = "Чайники",
+        name = "Подъездные",
         color = Color(210, 120, 40),
-        objective = "Уничтожьте Братву"
+        objective = "Мы, из подъездов сука! Надо заебашить ебучих квартирантов"
     },
     [1] = {
-        name = "Братва",
+        name = "Квартиранты",
         color = Color(40, 130, 220),
-        objective = "Уничтожьте Чайников"
+        objective = "Сваливайте из наших подьездов, суки! Надо их всех прогнать!"
     }
 }
 
@@ -27,7 +27,7 @@ local posaddPoliceArrived = 0
 
 local CreateEndMenu
 
-net.Receive("slovopacana_roundend", function()
+net.Receive("slovopacana_roundend", function() // мне лень менять названия функций
     if IsValid(roundMusic) then
         roundMusic:Stop()
         roundMusic = nil
@@ -149,7 +149,7 @@ function MODE:HUDPaint()
     local w, h = ScrW(), ScrH()
     local teamData = teams[lply:Team()] or teams[0]
 
-    draw.SimpleText("Слово Пахана", "ZB_HomicideMediumLarge", w * 0.5, h * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Заруба", "ZB_HomicideMediumLarge", w * 0.5, h * 0.1, Color(0, 162, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText("Ваша команда: " .. teamData.name, "ZB_HomicideMediumLarge", w * 0.5, h * 0.5, Color(teamData.color.r, teamData.color.g, teamData.color.b, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText(teamData.objective, "ZB_HomicideMedium", w * 0.5, h * 0.9, Color(255, 255, 255, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
@@ -199,7 +199,7 @@ CreateEndMenu = function()
         draw.RoundedBox(12, 0, 0, w, h, Color(255, 0, 0, 65))
         draw.RoundedBox(10, 2, 2, w - 4, h - 4, Color(0, 0, 0, 185))
 
-        draw.SimpleText("Слово пацана", "ZB_InterfaceMediumLarge", w * 0.5, 18, color_white, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Заруба", "ZB_InterfaceMediumLarge", w * 0.5, 18, color_white, TEXT_ALIGN_CENTER)
         draw.SimpleText("Игроки:", "ZB_InterfaceMediumLarge", w * 0.5, 44, color_white, TEXT_ALIGN_CENTER)
     end
 
@@ -265,7 +265,7 @@ function MODE:RoundStart()
     posaddPoliceArrived = 0
     wasPoliceTimerActive = false
 
-    sound.PlayFile("sound/resimi_ot_rubi/clovo_pacana.mp3", "noblock", function(station)
+    sound.PlayFile("sound/resimi_ot_rubi/salt.mp3", "noblock", function(station)
         if IsValid(station) then
             roundMusic = station
             station:SetVolume(1 * MusicVolume:GetFloat())

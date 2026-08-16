@@ -1,5 +1,5 @@
-MODE.name = "slovopacana"
-MODE.PrintName = "Слово пацана"
+MODE.name = "gangbang"
+MODE.PrintName = "Заруба"
 
 MODE.OverideSpawnPos = true
 MODE.LootSpawn = false
@@ -32,9 +32,9 @@ local meleePool = {
     "weapon_hg_machete",
     "weapon_hg_axe",
     "weapon_hg_sledgehammer",
-    "weapon_hammer",
+    "weapon_hg_spear_pro",
     "weapon_pan",
-    "weapon_pocketknife",
+    "weapon_hatchet",
     "weapon_sogknife",
     "weapon_leadpipe",
     "weapon_buck200knife"
@@ -43,7 +43,7 @@ local meleePool = {
 local fallbackPool = {
     "weapon_bat",
     "weapon_hg_shovel",
-    "weapon_pocketknife"
+    "weapon_hatchet"
 }
 
 local function GiveOneMelee(ply)
