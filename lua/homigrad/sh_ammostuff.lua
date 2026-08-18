@@ -3032,7 +3032,7 @@ if CLIENT then
         local DLabel = vgui.Create( "DLabel", Frame )
         DLabel:SetPos( 10, 268 )
 		DLabel:SetTextColor(color_white)
-        DLabel:SetText( "LMB - Drop count\nRMB - Drop all" )
+        DLabel:SetText( "ЛКМ\nПКМ - Выкинуть всё" )
 		DLabel:SetFont("HomigradFontVSmall")
         DLabel:SizeToContents()
         local DLabel = vgui.Create( "DLabel", Frame )

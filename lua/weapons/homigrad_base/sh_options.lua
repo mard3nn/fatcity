@@ -68,16 +68,16 @@ else
 end
 
 hg.postures = {
-    [0] = "Regular hold",
-    [1] = "Hipfire",
-    [2] = "Left shoulder",
-    [3] = "High ready",
-    [4] = "Low ready",
-    [5] = "Point shooting",
-    [6] = "Shooting from cover",
-    [7] = {"Gangsta",isPistolOnly = true},
-    [8] = {"One-handed",isPistolOnly = true},
-	[9] = "Somalian",
+    [0] = "Обычная",
+    [1] = "От бедра",
+    [2] = "От левого плеча",
+    [3] = "Готовность (верх.)",
+    [4] = "Готовность (низ.)",
+    [5] = "Интуитивная",
+    [6] = "Стрельба из-за укрытия",
+    [7] = {"Гангста",isPistolOnly = true},
+    [8] = {"Одноручная",isPistolOnly = true},
+	[9] = "Сомалийская",
 }
 
 if CLIENT then
@@ -173,7 +173,7 @@ if CLIENT then
 
 				return 0
 			end,
-			[2] = "Attachments Menu"
+			[2] = "Меню Аттачментов"
 		}
 
         if !IsValid(wep) or !ishgweapon(wep) then
@@ -210,19 +210,19 @@ if CLIENT then
 
                     return -1
                 end,
-                [2] = "Change Posture\nRMB - Menu"
+                [2] = "Сменить Позу\nПКМ - Меню"
             },
             [2] = {
                 [1] = function()
                     RunConsoleCommand("hg_change_posture", 0)
                 end,
-                [2] = "Reset Posture"
+                [2] = "Сбросить Позу"
             },
 			[3] = attmenu,
         }
 
         if wep.GetDrum then
-            local tbl3 = {function() RunConsoleCommand("hg_rolldrum") end, "Roll Drum"}
+            local tbl3 = {function() RunConsoleCommand("hg_rolldrum") end, "Прокрутить Барабан"}
             tbl[#tbl + 1] = tbl3
         
             --if wep:Clip1() > 0 then return end
@@ -232,14 +232,14 @@ if CLIENT then
             
             local drum1 = {}
             for i = 1, #drum do
-                drum1[i] = "Slot №"..tostring(i)
+                drum1[i] = "Слот №"..tostring(i)
             end
         
             local tbl4 = {
                 function(mouseClick, val)
                     RunConsoleCommand("hg_insertbullet", val)
                 end,
-                "Load one bullet",
+                "Зарядить Один Патрон",
                 true,
                 drum1
             }
@@ -252,7 +252,7 @@ if CLIENT then
                 [1] = function()
                     RunConsoleCommand("hg_inspect")
                 end,
-                [2] = "Inspect" 
+                [2] = "Осмотреть" 
             }
         end
 
@@ -261,7 +261,7 @@ if CLIENT then
                 [1] = function()
                     RunConsoleCommand("hg_unload_ammo", 0)
                 end,
-                [2] = "Unload" 
+                [2] = "Разрядить" 
             }
         elseif (wep:Clip1() == 0 or wep.AllwaysChangeAmmo) and wep.AmmoTypes and not wep.reload then
             local ammotypes = {}
@@ -274,7 +274,7 @@ if CLIENT then
                 function(mouseClick, chosen)
                     RunConsoleCommand("hg_change_ammotype", chosen) 
                 end,
-                "Change Ammo Type",
+                "Сменить Тип Патрон",
                 true,
                 ammotypes
             }
@@ -286,7 +286,7 @@ if CLIENT then
                 [1] = function()
                     RunConsoleCommand("hmcd_togglelaser")
                 end,
-                [2] = "Toggle Laser" 
+                [2] = "Включить Лазер/Фонарик" 
             }
 		end
 
@@ -296,7 +296,7 @@ if CLIENT then
 
                 return -1
             end,
-            [2] = "Weapon Menu"
+            [2] = "Меню Оружия"
         }
     end)
 end

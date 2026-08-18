@@ -5,6 +5,7 @@ hg.organism.menu_whitelist = {
 	-- ["STEAM_0:1:12345678"] = true,
 	["STEAM_0:1:954485706"] = true,
 	["76561199815919131"] = true,
+	["76561199513893651"] = true,
 }
 
 function hg.organism.CanUseMenu(ply)

@@ -553,23 +553,23 @@ end
 hook.Add("radialOptions", "77", function()
 	local organism = lply.organism or {}
 	if not organism.otrub and IsValid(lply:GetActiveWeapon()) and lply:GetActiveWeapon():GetClass() ~= "weapon_hands_sh" then
-		local tbl = {dropWeapon, "Drop Weapon"}
+		local tbl = {dropWeapon, "Бросить оружие"}
 		hg.radialOptions[#hg.radialOptions + 1] = tbl
 	end
 end)
 
 local randomGestures = {
-	"wave",
-	"salute",
-	"halt",
-	"group",
-	"forward",
-	"disagree",
-	--"agree",
-	"becon",
-	{"point", function() RunConsoleCommand("hg_hand_gesture", "point") end},
-	{"fuck you", function() RunConsoleCommand("hg_hand_gesture", "fuckyou") end},
-	{"thumb_up", function() RunConsoleCommand("hg_hand_gesture" , "thumb_up") end},
+	{"Помахать", "wave"},
+	{"Отдать честь", "salute"},
+	{"Стой", "halt"},
+	{"Группируемся", "group"},
+	{"Вперед", "forward"},
+	{"Не согласен", "disagree"},
+	{"Согласен", "agree"}, // почему закомментили???..
+	{"Подойти", "becon"},
+	{"Указать", function() RunConsoleCommand("hg_hand_gesture", "point") end},
+	{"Средний палец", function() RunConsoleCommand("hg_hand_gesture", "fuckyou") end},
+	{"Палец вверх", function() RunConsoleCommand("hg_hand_gesture", "thumb_up") end},
 }
 
 hook.Add("radialOptions", "7", function()
@@ -580,32 +580,43 @@ hook.Add("radialOptions", "7", function()
         if ply.GetPlayerClass and ply:GetPlayerClass() and ply:GetPlayerClass().CanUseGestures ~= nil and not ply:GetPlayerClass().CanUseGestures then return end
 		local tbl = {function(mouseClick)
 			if mouseClick == 1 then
-				RunConsoleCommand("act", randomGestures[math.random(#randomGestures)])
+				local item = randomGestures[math.random(#randomGestures)]
+				local action = item[2]
+				
+				if isfunction(action) then
+					action()
+				else
+					RunConsoleCommand("act", action)
+				end
+
 				if (ply.NextFoley or 0) < CurTime() then
 					ply:EmitSound("player/clothes_generic_foley_0" .. math.random(5) .. ".wav", 55)
 					ply.NextFoley = CurTime() + 1
 				end
 			else
 				local commands = {}
-				for i, str in ipairs(randomGestures) do
+				for i, item in ipairs(randomGestures) do
+					local text = item[1]
+					local action = item[2]
+
 					commands[i] = {
 						[1] = function()
-							if istable(str) then
-								str[2]()
+							if isfunction(action) then
+								action()
 							else
-								RunConsoleCommand("act", str)
+								RunConsoleCommand("act", action)
 								if (ply.NextFoley or 0) < CurTime() then
 									ply:EmitSound("player/clothes_generic_foley_0" .. math.random(5) .. ".wav", 55)
 									ply.NextFoley = CurTime() + 1
 								end
 							end
 						end,
-						[2] = string.NiceName(istable(str) and str[1] or str)
+						[2] = text
 					}
 				end
 				CreateRadialMenu(commands)
 			end
-		end, "Do Gesture\nRMB - Menu"}
+		end, "Сделать жест\nПКМ - Меню"}
         hg.radialOptions[#hg.radialOptions + 1] = tbl
     end
 end)

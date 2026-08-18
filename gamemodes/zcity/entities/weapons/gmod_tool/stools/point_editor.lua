@@ -104,7 +104,7 @@ end
 
 function TOOL.BuildCPanel(CPanel)
 	CPanel:AddControl("Header", {
-		Description = "LMB to add point,\nRMB to remove nearest point" -- ура удобный инструмент я в шоке!!
+		Description = "ЛКМ чтобы добавить точку,\nПКМ чтобы удалить ближайшую точку" -- ура удобный инструмент я в шоке!!
 	})
 
 	local dlist = vgui.Create("DListView")

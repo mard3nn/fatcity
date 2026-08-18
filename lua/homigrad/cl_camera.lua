@@ -614,7 +614,7 @@ function hg.cam_things(ply, view, angles)
 
 	eyeAnglesOld = eyeAngs
 	local position_differencedot = position_difference:Dot(angles:Right()) * 2
-	angles[3] = angles[3] - angle_difference[2] * 0.5
+	angles[3] = angles[3] - angle_difference[2] * 2.5
 	--angles[3] = angles[3] - position_differencedot
 	angles[3] = angles[3] - (lean_lerp or 0) * hg_leancam_mul:GetInt()
 end

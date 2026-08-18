@@ -754,7 +754,7 @@ if CLIENT then
 		lbl:DockMargin(10,0,0,10)
 
 		lbl.Paint = function(self, w, h)
-			draw.SimpleText("LMB - Add attachment | RMB - remove attachment", "ZCity_Tiny", w * 0.5, h * 0.5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			draw.SimpleText("ЛКМ - добавить аттачмент | ПКМ - убрать аттачмент", "ZCity_Tiny", w * 0.5, h * 0.5, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 
 		local scroll = vgui.Create("DScrollPanel",frame)
@@ -792,14 +792,14 @@ if CLIENT then
 			for k, v in pairs(tblcpy) do
 				if !hg.attachmentslaunguage[v[1]] then continue end
 				local but = vgui.Create("DButton")
-				but:SetText( hg.attachmentslaunguage[v[1]]..(v[2] and " - on the weapon" or "") )
+				but:SetText( hg.attachmentslaunguage[v[1]]..(v[2] and " - на оружии" or "") )
 				but:SetFont("ZCity_Tiny")
 				but:Dock( TOP )
 				but:DockMargin( 0, 0, 0, 5 )
 				but:SetSize(0, ScreenScaleH(20))
 
 				local but2 = vgui.Create("DButton", but)
-				but2:SetText( "Drop" )
+				but2:SetText( "Бросить" )
 				but2:SetFont("ZCity_SuperTiny")
 				but2:Dock( RIGHT )
 

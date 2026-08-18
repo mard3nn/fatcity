@@ -344,8 +344,8 @@ function SWEP:Camera(eyePos, eyeAng, view, vellen, ply)
 	ply:SetLOD(0);
 
 	if hg_realismcam:GetBool() then
-		outputPos:Add(-(angle_difference_localvec * 150))
-		local ang = -(angle_difference * 5)
+		outputPos:Add(-(angle_difference_localvec * 50))
+		local ang = -(angle_difference * 4)
 		ang[3] = ang[3] / 2
 		outputAng:Add(ang)
 	end
