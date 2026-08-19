@@ -125,39 +125,39 @@ concommand.Add("-hmcd_holdbreath",function(ply)
 end)
 
 local lowoxy = {
-	"I'm gonna faint right now... There's not enough oxygen.",
-	"There's not enough oxygen... I can't hold much longer...",
-	"I really need some fresh air...",
-	"I'm gasping for air...",
-	"Need to breathe air... or I'm gonna faint right here..."
+	"Я сейчас упаду в обморок... Не хватает кислорода.",
+	"Не хватает кислорода... Я не могу больше терпеть...",
+	"Мне очень нужен свежий воздух...",
+	"Я задыхаюсь...",
+	"Нужно вдохнуть воздуха... или я сейчас же упаду в обморок..."
 }
 
 local not_enough_intake = {
-	//"I have to breathe...",
-	//"I gotta take a break...",
-	//"Need a break from this... to breathe...",
-	//"Resting sounds like a nice idea.",
-	"I need to breathe...",
-	"I'm struggling to breathe...",
+	//"Мне нужно подышать...",
+	//"Мне нужен перерыв...",
+	//"Нужен перерыв от этого... чтобы подышать...",
+	//"Отдохнуть - неплохая идея.",
+	"Мне нужно дышать...",
+	"Мне тяжело дышать...",
 }
 
 local drop_mask = {
-	"I can't breathe in this mask... I need to take it off.",
-	"Drop the mask, it's not worth it...",
-	"It's fucking disgusting... and I surely can't breathe in this...",
-	"Fucking stinks... Gotta take this mask off...",
+	"Я не могу дышать в этой маске... Мне нужно её снять.",
+	"Сними маску, оно того не стоит...",
+	"Это пиздецки отвратительно... и я точно не могу в этом дышать...",
+	"Хуево воняет... Надо снять эту маску...",
 }
 
 local drugged = {
-	"Ohhh hohoohoooo Ie-like it.....",
-	"Fukkenh awesomee..... ffffeeelin gooooood..",
-	"That's theh sStuffff DUDeeee",
-	"I reallly like whatEvER I'm feeling right now....",
-	"Oh yeahhhh this feels gooood!",
-	"I want to feel likhe this for theRRRREST of my life",
-	"Why am I here even?.. wWhatever whuhhh heh",
-	"Whoa re you? Gett outtaheree...",
-	"Don't want anything else... this is pERRRfect!..",
+	"Оххх хохохоооо мне-нравится.....",
+	"Ахуительноо..... оооощщщущения класссные..",
+	"Вот это тааа шШтукааа ЧУВААк",
+	"Мне оченнь нравится, что бы я ни чувствовал сейчас....",
+	"Оо дааа, это ощущается классно!",
+	"Я хочу чувствовать себя вот так до концаааа жизни",
+	"Почему я вообще здесь?.. кНеважно ммм хех",
+	"Ты кто? Свалиии отсюдаа...",
+	"Не хочу ничего другого... это иДеАААльно!..",
 }
 
 local bit_band,util_PointContents = bit.band,util.PointContents
@@ -251,7 +251,7 @@ module[2] = function(owner, org, timeValue)
 	if org.isPly and not org.otrub and o2.curregen < losing_oxy and org.analgesia <= 1.5 and !org.heartstop then
 		if mask_blevota then
 			if o2[1] < 15 then
-				org.owner:Notify("DROP THE FUCKING MASK", 25, "take_gasmask2", 0, nil, color_red2)
+				org.owner:Notify("ВЫКИНЬ ЁБАННУЮ МАСКУ!!", 25, "take_gasmask2", 0, nil, color_red2)
 			else
 				org.owner:Notify(drop_mask[math.random(#drop_mask)], 15, "take_gasmask", 0)
 			end
@@ -265,7 +265,7 @@ module[2] = function(owner, org, timeValue)
 			org.owner:Notify(lowoxy[math.random(#lowoxy)], 30, "lowoxy", 0, nil, color_red3)
 	
 			if o2[1] < 6 then
-				org.owner:Notify("Oxygen... please...", 30, "lowoxy2", 0, nil, color_red)
+				org.owner:Notify("Кислород... пожалуйста...", 30, "lowoxy2", 0, nil, color_red)
 			end
 		end
 	end
@@ -306,19 +306,19 @@ module[2] = function(owner, org, timeValue)
 
 	if org.isPly then
 		if org.pneumothorax > 0 then
-			org.owner:Notify("I can feel something filling my lungs.", true, "pneumothorax1",10) // delay of 10 seconds before typing that
+			org.owner:Notify("Я чувствую, как что-то заполняет мои лёгкие.", true, "pneumothorax1",10) // delay of 10 seconds before typing that
 		else
 			org.owner:ResetNotification("pneumothorax1")
 		end
 
 		if org.pneumothorax > 0.3 then
-			org.owner:Notify("It's getting harder to breathe.", true, "pneumothorax2", 5)
+			org.owner:Notify("Дышать становится всё труднее.", true, "pneumothorax2", 5)
 		else
 			org.owner:ResetNotification("pneumothorax2")
 		end
 
 		if org.pneumothorax > 0.5 then
-			org.owner:Notify("I'm really struggling to breathe.", true, "pneumothorax3", 5)
+			org.owner:Notify("Мне очень тяжело дышать.", true, "pneumothorax3", 5)
 		else
 			org.owner:ResetNotification("pneumothorax3")
 		end

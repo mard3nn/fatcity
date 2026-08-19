@@ -48,17 +48,17 @@ module[1] = function(org)
 end
 
 local internalbleed_phrases = {
-	"That's... that's blood I just vomited...",
-	"Oh, that's blood...",
-	"Fuck, I just puked blood...",
-	"Oh shit... I don't feel good...",
+	"Это... это кровь, меня только что вырвало...",
+	"Ох, это кровь...",
+	"Сука, меня только что вырвало кровью...",
+	"Твою мать... мне нехорошо...",
 }
 
 local about_to_puke = {
-	"I feel like I'm gonna puke any second now...",
-	"Not feeling good...",
-	"Gonna puke right now...",
-	"I want to vomit...",
+	"Такое чувство, что меня вот-вот вырвет...",
+	"Мне нехорошо...",
+	"Сейчас меня вырвет...",
+	"Меня тошнит...",
 }
 
 local vecZero = Vector(0, 0, 0)

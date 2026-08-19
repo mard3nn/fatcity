@@ -1,7 +1,7 @@
 local MODE = MODE
 
 MODE.name = "protocol01"
-MODE.PrintName = "Crisis Response"
+MODE.PrintName = "TЦК"
 
 MODE.ROUND_TIME = 600
 MODE.Chance = 0.0

@@ -377,14 +377,14 @@ function SWEP:SetDrum(drum)
 end
 
 local phrases = {
-	"Didn't fire...",
-	"Lucky me...",
-	"I thought that was it...",
-	"Still not dead...",
-	"I knew it wasn't there! I really did!..",
-	"FUCK- Thought it would fire...",
-	"HELL YEAH!",
-	"Luck is on my side!",
+	"Не выстрелило...",
+	"Повезло мне...",
+	"Я думал, это конец...",
+	"Всё ещё жив...",
+	"Я знал, что там пусто! Правда знал!..",
+	"БЛЯТЬ- Думал, что выстрелит...",
+	"ЕСТЬ НАХУЙ!",
+	"Удача на моей стороне!",
 }
 
 local clr_notify = Color(122, 0, 0)

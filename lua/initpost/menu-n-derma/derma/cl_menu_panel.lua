@@ -164,7 +164,7 @@ function PANEL:Init()
     zteam:DockMargin(ScreenScale(10), 0, 0, 0)
     zteam:SetFont("ZCity_Tiny")
     zteam:SetTextColor(clr_gray)
-    zteam:SetText("Authors: aboba, marden, frex, tupikrupik")
+    zteam:SetText("Authors: aboba,marden,frex")
     zteam:SetContentAlignment(4)
     zteam:SizeToContents()
 end
@@ -273,36 +273,32 @@ function PANEL:AddSelect( pParent, strTitle, tbl )
     end
 
     function btn:Think()
-    self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, (self:IsHovered() or (IsValid(self:GetChild(0)) and self:GetChild(0):IsHovered()) or (IsValid(self:GetChild(0)) and IsValid(self:GetChild(0):GetChild(0)) and self:GetChild(0):GetChild(0):IsHovered())) and 1 or 0)
+        self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, (self:IsHovered() or (IsValid(self:GetChild(0)) and self:GetChild(0):IsHovered()) or (IsValid(self:GetChild(0)) and IsValid(self:GetChild(0):GetChild(0)) and self:GetChild(0):GetChild(0):IsHovered())) and 1 or 0)
 
-    local v = self.HoverLerp
-    self:SetTextColor(self.RColor:Lerp(red_select, v))
+        local v = self.HoverLerp
+        self:SetTextColor(self.RColor:Lerp(red_select, v))
 
-    local will_text = (curent_panel == string.lower(strTitle)) and '[ '..string.upper(strTitle)..' ]' or strTitle
+        local targetText = (self:IsHovered()) and string.upper(strTitle) or strTitle
+        local crw = self:GetText()
 
-    local chars = Utf8Chars(will_text)
-    local total = #chars
-    local threshold = math.ceil(total * v)
-
-    if self._typedThreshold ~= threshold or self._typedBase ~= will_text then
-        local ntxt = ""
-        for i = 1, total do
-            local char = chars[i]
-            if i <= threshold then
-                ntxt = ntxt .. string.upper(char)
-            else
-                ntxt = ntxt .. char
+        if (crw ~= targetText) or (curent_panel == string.lower(strTitle)) then
+            local ntxt = ""
+            local will_text = (curent_panel == string.lower(strTitle) and not strTitle == 'Traitor Role') and '[ '..string.upper(strTitle)..' ]' or strTitle
+            for i = 1, #will_text do
+                local char = will_text:sub(i, i)
+                if i <= math.ceil(#will_text * v) then
+                    ntxt = ntxt .. string.upper(char)
+                else
+                    ntxt = ntxt .. char
+                end
             end
+			if self:GetText() ~= ntxt then
+				surface.PlaySound("shitty/tap-resonant.wav")
+			end
+            self:SetText(ntxt)
         end
-
-        if self:GetText() ~= ntxt then
-            surface.PlaySound("shitty/tap-resonant.wav")
-        end
-        self:SetText(ntxt)
-        self._typedThreshold = threshold
-        self._typedBase = will_text
+        self:SizeToContents()
     end
-    self:SizeToContents()
 end
 
 function PANEL:Close()

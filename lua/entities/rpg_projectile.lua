@@ -241,22 +241,22 @@ function ENT:OnTakeDamage(damage)
 end
 
 local doubt_phrases = {
-    "Should I really do this...",
-    "What if I explode",
-    "I hope this thing doesn't blow up",
-    "Hopefully it won't explode",
-    "God give me strength",
-    "If it blows up, it blows up..."
+    "Стоит ли мне вообще это делать...",
+    "А что если я взорвусь",
+    "Надеюсь, эта штука не рванёт",
+    "Надеюсь, оно не взорвётся",
+    "Господи, дай мне сил",
+    "Если рванёт, значит рванёт..."
 }
 
 local relief_phrases = {
-    "Thank God",
-    "I thought I was going to die",
-    "Lord I thought it was about to explode",
-    "What a relief",
-    "My God I thought I was going to die",
-    "Hah, not as scary as I thought",
-    "Now everything is safe"
+    "Слава Богу",
+    "Я думал, что умру",
+    "Господи, я думал, оно сейчас взорвётся",
+    "Какое облегчение",
+    "Боже мой, я думал, что умру",
+    "Ха, не так страшно, как я думал",
+    "Теперь всё безопасно"
 }
 
 function ENT:Use(ply)

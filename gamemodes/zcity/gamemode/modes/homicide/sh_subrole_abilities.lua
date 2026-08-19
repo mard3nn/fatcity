@@ -42,10 +42,10 @@ function MODE.GetPlayerTraceToOtherVictim(ply, victim, dist)
 					if(IsValid(aim_ent))then
 						return aim_ent, other_ply, trace
 					else
-						return MODE.GetPlayerTraceToOther(ply, dist)
+						return MODE.GetPlayerTraceToOther(ply, nil, dist)
 					end
 				else
-					return MODE.GetPlayerTraceToOther(ply, dist)
+					return MODE.GetPlayerTraceToOther(ply, nil, dist)
 				end
 			end
 		end

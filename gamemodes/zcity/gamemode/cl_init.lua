@@ -3,7 +3,7 @@ include("shared.lua")
 include("loader.lua")
 
 if not ConVarExists("hg_newspectate") then
-    CreateClientConVar("hg_newspectate", "1", true, false, "Включает плавные переходы камеры наблюдателя", 0, 1)
+    CreateClientConVar("hg_newspectate", "1", true, false, "Enables smooth spectator camera transitions", 0, 1)
 end
 
 function CurrentRound()
@@ -92,11 +92,11 @@ hook.Add("HUDPaint","FUCKINGSAMENAMEUSEDINHOOKFUCKME",function()
 	
 	surface.SetFont("HomigradFont")
 	surface.SetTextColor(255, 255, 255, 255)
-	local txt = "Наблюдение за: "..spect:Name()
+	local txt = "Spectating: "..spect:Name()
 	local w, h = surface.GetTextSize(txt)
 	surface.SetTextPos(ScrW() / 2 - w / 2, ScrH() / 8 * 7)
 	surface.DrawText(txt)
-	local txt = "Имя в игре: "..spect:GetPlayerName()
+	local txt = "In-game name: "..spect:GetPlayerName()
 	local w, h = surface.GetTextSize(txt)
 	surface.SetTextPos(ScrW() / 2 - w / 2, ScrH() / 8 * 7 + h)
 	surface.DrawText(txt)
@@ -296,7 +296,7 @@ hook.Add("Player Disconnected","retrymenu",function(data)
 	end
 end)
 
-local hg_font = ConVarExists("hg_font") and GetConVar("hg_font") or CreateClientConVar("hg_font", "Bahnschrift", true, false, "Изменить шрифт интерфейса")
+local hg_font = ConVarExists("hg_font") and GetConVar("hg_font") or CreateClientConVar("hg_font", "Bahnschrift", true, false, "Change the interface font")
 local font = function()
     local usefont = "Bahnschrift"
     if hg_font:GetString() != "" then
@@ -416,7 +416,7 @@ local function OpenPlayerSoundSettings(selfa, ply)
 	
 	if not hg.playerInfo[ply:SteamID()] or not istable(hg.playerInfo[ply:SteamID()]) then addToPlayerInfo(ply, false, 1) end
 
-	local mute = Menu:AddOption( "Заглушить", function(self)
+	local mute = Menu:AddOption( "Mute", function(self)
 		if hg.muteall || hg.mutespect then return end
 		
 		self:SetChecked(not ply:IsMuted())
@@ -563,9 +563,9 @@ function GM:ScoreboardShow()
         surface.DrawOutlinedRect(0, 0, w, h, 1)
         surface.SetFont("ZB_InterfaceSmall")
         surface.SetTextColor(230, 230, 230, 255)
-        local tw, th = surface.GetTextSize("Загл. всех")
+        local tw, th = surface.GetTextSize("Mute all")
         surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
-        surface.DrawText("Загл. всех")
+        surface.DrawText("Mute all")
     end
     muteallbut.DoClick = function()
         hg.muteall = not hg.muteall
@@ -587,9 +587,9 @@ function GM:ScoreboardShow()
         surface.DrawOutlinedRect(0, 0, w, h, 1)
         surface.SetFont("ZB_InterfaceSmall")
         surface.SetTextColor(230, 230, 230, 255)
-        local tw, th = surface.GetTextSize("Загл. мертв")
+        local tw, th = surface.GetTextSize("Mute dead")
         surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
-        surface.DrawText("Загл. мертв")
+        surface.DrawText("Mute dead")
     end
     mutespectbut.DoClick = function()
         hg.mutespect = not hg.mutespect
@@ -641,7 +641,7 @@ function GM:ScoreboardShow()
 
             surface.SetFont("ZB_InterfaceSmall")
 
-            local curLabel = "Текущий режим: "
+            local curLabel = "Current mode: "
             local lw = surface.GetTextSize(curLabel)
             surface.SetTextColor(170, 170, 170, 255)
             surface.SetTextPos(w * 0.01, h * 0.01)
@@ -650,7 +650,7 @@ function GM:ScoreboardShow()
             surface.SetTextPos(w * 0.01 + lw, h * 0.01)
             surface.DrawText(curModeName)
 
-            local nextLabel = "Следующий режим: "
+            local nextLabel = "Next mode: "
             local nlw, nlh = surface.GetTextSize(nextLabel)
             local nvw = surface.GetTextSize(nextModeName)
             surface.SetTextColor(170, 170, 170, 255)
@@ -663,7 +663,7 @@ function GM:ScoreboardShow()
 
         surface.SetFont("ZB_InterfaceSmall")
         surface.SetTextColor(170, 170, 170, 255)
-        local ver = "Версия ZC: " .. hg.Version
+        local ver = "ZC Version: " .. hg.Version
         local lx, ly = surface.GetTextSize(ver)
         surface.SetTextPos(w * 0.01, h - ly - h * 0.01)
         surface.DrawText(ver)
@@ -685,12 +685,12 @@ function GM:ScoreboardShow()
 
         surface.SetFont("ZB_InterfaceMediumLarge")
         surface.SetTextColor(220, 220, 220, 255)
-        local playersText = "Игроки [" .. aliveCount .. "]"
+        local playersText = "Players [" .. aliveCount .. "]"
         tw, _ = surface.GetTextSize(playersText)
         surface.SetTextPos(w / 4 - tw / 2, ScreenScale(25))
         surface.DrawText(playersText)
 
-        local spectatorsText = "Наблюдатели [" .. deadCount .. "]"
+        local spectatorsText = "Spectators [" .. deadCount .. "]"
         tw, _ = surface.GetTextSize(spectatorsText)
         surface.SetTextPos(w * 0.75 - tw / 2, ScreenScale(25))
         surface.DrawText(spectatorsText)
@@ -707,7 +707,7 @@ function GM:ScoreboardShow()
         end
         current_fake_tick = Lerp(FrameTime() * 5, current_fake_tick or 66, target_fake_tick or 66)
         local visual = math.Round(current_fake_tick)
-        local tickText = "Тикрейт сервера: " .. visual
+        local tickText = "Server tickrate: " .. visual
         tw, _ = surface.GetTextSize(tickText)
         surface.SetTextPos(w * 0.5 - tw / 2, ScreenScale(25))
         surface.DrawText(tickText)
@@ -728,9 +728,9 @@ function GM:ScoreboardShow()
             surface.DrawOutlinedRect(0, 0, w, h, 1)
             surface.SetFont("ZB_InterfaceMedium")
             surface.SetTextColor(230, 230, 230, 255)
-            local tw, th = surface.GetTextSize("Войти")
+            local tw, th = surface.GetTextSize("Join")
             surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
-            surface.DrawText("Войти")
+            surface.DrawText("Join")
         end
     end
 
@@ -748,9 +748,9 @@ function GM:ScoreboardShow()
             surface.DrawOutlinedRect(0, 0, w, h, 1)
             surface.SetFont("ZB_InterfaceMedium")
             surface.SetTextColor(230, 230, 230, 255)
-            local tw, th = surface.GetTextSize("Играть")
+            local tw, th = surface.GetTextSize("Play")
             surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
-            surface.DrawText("Играть")
+            surface.DrawText("Play")
         end
     end
 
@@ -807,7 +807,7 @@ function GM:ScoreboardShow()
                 surface.SetDrawColor(bgBot)
                 surface.DrawRect(0, h / 2, w, h / 2)
 
-                local name = ply:Name() or "Вышел..."
+                local name = ply:Name() or "Disconnected..."
                 local groupStr = ""
                 if ply:IsBot() then
                     groupStr = " [BOT]"
@@ -841,14 +841,14 @@ function GM:ScoreboardShow()
             end
 
             but.DoClick = function()
-                if ply:IsBot() then chat.AddText(Color(255, 0, 0), "Нельзя.") return end
+                if ply:IsBot() then chat.AddText(Color(255, 0, 0), "Not allowed.") return end
                 gui.OpenURL("https://steamcommunity.com/profiles/" .. ply:SteamID64())
             end
 
             but.DoRightClick = function()
                 local Menu = DermaMenu()
-                Menu:AddOption("Аккаунт", function() zb.Experience.AccountMenu(ply) end)
-                Menu:AddOption("Копировать ID", function() SetClipboardText(ply:SteamID()) end)
+                Menu:AddOption("Account", function() zb.Experience.AccountMenu(ply) end)
+                Menu:AddOption("Copy ID", function() SetClipboardText(ply:SteamID()) end)
                 Menu:Open()
             end
 
@@ -869,7 +869,7 @@ function GM:ScoreboardHide()
 	end
 end
 
-local AdminShowVoiceChat = CreateClientConVar("zb_admin_show_voicechat","0",false,false,"Показывать иконки войса админам",0,1)
+local AdminShowVoiceChat = CreateClientConVar("zb_admin_show_voicechat","0",false,false,"Show voice icons to admins",0,1)
 hook.Add("PlayerStartVoice", "showVoicePanels", function(ply)
 	if !IsValid(ply) then return end
 	if LocalPlayer():IsAdmin() and AdminShowVoiceChat:GetBool() then return end
@@ -931,12 +931,12 @@ local snakeGameOpen = false
 
 concommand.Add("zb_snake", function()
     if snakeGameOpen then
-        print("[Змейка] Игра уже запущена!")
+        print("[Snake] Game is already running!")
         return
     end
 
     local frame = vgui.Create("ZFrame")
-    frame:SetTitle("Змейка")
+    frame:SetTitle("Snake")
     frame:SetSize(400, 400)
     frame:Center()
     frame:MakePopup()
@@ -1047,10 +1047,10 @@ concommand.Add("zb_snake", function()
             drawSnake()
             drawFood()
         else
-            draw.SimpleText("Конец игры! R - заново", "DermaDefault", w / 2, h / 2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            draw.SimpleText("Game over! Press R to restart", "DermaDefault", w / 2, h / 2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end
 
-        draw.SimpleText("Счёт: " .. score, "DermaDefault", 10, 10, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        draw.SimpleText("Score: " .. score, "DermaDefault", 10, 10, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
     end
 
     function frame:OnKeyCodePressed(key)
@@ -1077,7 +1077,7 @@ concommand.Add("zb_snake", function()
     frame.OnClose = function()
         timer.Remove("SnakeGameTimer")
         snakeGameOpen = false  
-        print("[Змейка] Игра закрыта.")
+        print("[Snake] Game closed.")
     end
 
     resetGame()

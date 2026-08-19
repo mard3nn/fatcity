@@ -14,7 +14,7 @@ MODE.OverrideSpawn = true
 MODE.LootSpawn = true
 MODE.LootOnTime = true
 
-MODE.Chance = 0.2 -- this is mostly unused
+MODE.Chance = 0.5 -- this is mostly unused
 MODE.LootDivTime = 500
 
 function MODE:SetupChances()
@@ -758,13 +758,13 @@ function MODE:Intermission()
 
 	for k, ply in player.Iterator() do
 		if(MODE.ShouldStartRoleRound())then
-			net.Start("HMCD_RoundStart")	--; TODO Structure description
-				net.WriteBool(ply.isTraitor)	--; Is Traitor
-				net.WriteBool(ply.isGunner)	--; Is Gunner
-				net.WriteString(self.Type)	--; Round Type
-				net.WriteBool(false)	--; Round Started
-				net.WriteString("")	--; SubRole
-				net.WriteBool(ply.MainTraitor == true)	--; MainTraitor
+			net.Start("HMCD_RoundStart")
+				net.WriteBool(ply.isTraitor)	
+				net.WriteBool(ply.isGunner)
+				net.WriteString(self.Type)
+				net.WriteBool(false)	
+				net.WriteString("")	
+				net.WriteBool(ply.MainTraitor == true)
 
 				if(ply.isTraitor)then
 					net.WriteString(MODE.TraitorWord)
@@ -776,7 +776,7 @@ function MODE:Intermission()
 					net.WriteUInt(0, MODE.TraitorExpectedAmtBits)
 				end
 				
-				net.WriteString("")	--; Profession
+				net.WriteString("")	
 			net.Send(ply)
 
 			local role = self.Roles[self.Type][(ply.isTraitor and "traitor") or (ply.isGunner and "gunner") or "innocent"]
@@ -1213,7 +1213,6 @@ end)
 // ...
 
 function MODE.ShouldStartRoleRound()
-	do return false end
 	return MODE.RoleChooseRoundTypes[MODE.Type] and GetGlobalBool("RolesPlus_Enable", false)
 end
 --//
@@ -1644,6 +1643,11 @@ function MODE.SpawnPlayers(spawn_with_subroles)
                         end
 
                         current_ply.SubRole = sub_role
+
+                        if(role_info and role_info.SpawnFunction)then
+                            role_info.SpawnFunction(current_ply)
+                        end
+
                         if(current_ply.MainTraitor)then
                             MODE.GiveTraitorLoadout(current_ply, sub_role)
                         end
