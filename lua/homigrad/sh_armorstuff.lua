@@ -124,9 +124,9 @@ hg.armor.torso = {
 		protection = 9.8,
 		bone = "ValveBiped.Bip01_Spine2",
 		model = "models/lightvest/lightvest.mdl",
-		material = {"models/lightvest/accs_diff_000_b_uni"},
-		/*"models/lightvest/accs_diff_000_c_uni", "models/lightvest/accs_diff_000_c_uni",
-		"models/lightvest/accs_diff_000_d_uni", "sal/acc/armor01_4", "sal/acc/armor01_5"},*/
+		material = {"models/lightvest/accs_diff_000_b_uni",
+		"models/lightvest/accs_diff_000_c_uni", "models/lightvest/accs_diff_000_c_uni",
+		"models/lightvest/accs_diff_000_d_uni", "sal/acc/armor01_4", "sal/acc/armor01_5"},
 		femPos = Vector(2.5, 0, 1),
 		scale = 0.88,
 		femscale = 0.8,
@@ -144,9 +144,9 @@ hg.armor.torso = {
 		protection = 13.5,
 		bone = "ValveBiped.Bip01_Spine2",
 		model = "models/lightvest/lightvest.mdl",
-		material = {"models/lightvest/accs_diff_000_a_uni"},
-		*/"models/lightvest/accs_diff_000_h_uni", "models/lightvest/accs_diff_000_f_uni",
-		"models/lightvest/accs_diff_000_e_uni", "sal/acc/armor01_3"},*/
+		material = {"models/lightvest/accs_diff_000_a_uni",
+		"models/lightvest/accs_diff_000_h_uni", "models/lightvest/accs_diff_000_f_uni",
+		"models/lightvest/accs_diff_000_e_uni", "sal/acc/armor01_3"},
 		femPos = Vector(2.5, 0, 1),
 		scale = 0.88,
 		femscale = 0.8,
@@ -315,9 +315,9 @@ hg.armor.head = {
 		bone = "ValveBiped.Bip01_Head1",
 		model = "models/barney_helmet.mdl",
 		femPos = Vector(-1, 0, 0),
-		material = {"sal/hanker"}, /*"models/jacky_camouflage/digi",
+		material = {"sal/hanker", "models/jacky_camouflage/digi",
 		"models/jacky_camouflage/digi2", "models/lightvest/accs_diff_000_g_uni",
-		"sal/acc/armor01_2", "sal/acc/armor01_3", "sal/acc/armor01_4", "sal/acc/armor01_5"},*/
+		"sal/acc/armor01_2", "sal/acc/armor01_3", "sal/acc/armor01_4", "sal/acc/armor01_5"},
 		norender = true,
 		customviewrender = function(ply)
 			DrawFirstPersonHelmet(ply, "models/barney_helmet.mdl", vectors[1], -40, "sal/hanker")
@@ -624,13 +624,13 @@ hg.armor.face = {
 		bone = "ValveBiped.Bip01_Head1",
 		model = "models/jmod/ballistic_mask.mdl",
 		femPos = Vector(-1.2, 0, 0.15),
-		material = {"sal/hanker"}, /*"griggs/models/ballistic_mask_2011x","griggs/models/ballistic_mask_collector",
+		material = {"sal/hanker","griggs/models/ballistic_mask_2011x","griggs/models/ballistic_mask_collector",
 					"griggs/models/ballistic_mask_cute","griggs/models/ballistic_mask_golden_guard",
 					"griggs/models/ballistic_mask_grunt","griggs/models/ballistic_mask_peace",
 					"griggs/models/ballistic_mask_phonky","griggs/models/ballistic_mask_steamhappy",
 					"griggs/models/ballistic_mask_z", "griggs/models/ballistic_mask_pluvmaska",
 					"griggs/models/ballistic_mask_coolkid_01","griggs/models/ballistic_mask_coolkid_02",
-					"sosoda/models/ballistic_mask_manhunt"},*/
+					"sosoda/models/ballistic_mask_manhunt"},
 		norender = true,
 		scale = 1,
 		femscale = 0.97,
