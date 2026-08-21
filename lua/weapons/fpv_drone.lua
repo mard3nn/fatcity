@@ -3,7 +3,7 @@ AddCSLuaFile()
 SWEP.PrintName = "FPV Drone Controller"
 SWEP.Slot = 4
 SWEP.SlotPos = 1
-SWEP.Spawnable = true
+SWEP.Spawnable = false
 
 SWEP.ViewModel = "models/kamik/hunter_scanner.mdl"
 SWEP.WorldModel = "models/kamik/hunter_scanner.mdl"

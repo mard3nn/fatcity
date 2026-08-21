@@ -1,8 +1,62 @@
 local PANEL = {}
-local curent_panel 
-local red_select = Color(192,0,0)
+local curent_panel
+local red_select = Color(192, 0, 0)
 
 DISCORD_URL = "https://discord.gg/475EmEdTgH"
+
+local rucaps = {
+    ["а"] = "А", ["б"] = "Б", ["в"] = "В", ["г"] = "Г", ["д"] = "Д",
+    ["е"] = "Е", ["ё"] = "Ё", ["ж"] = "Ж", ["з"] = "З", ["и"] = "И",
+    ["й"] = "Й", ["к"] = "К", ["л"] = "Л", ["м"] = "М", ["н"] = "Н",
+    ["о"] = "О", ["п"] = "П", ["р"] = "Р", ["с"] = "С", ["т"] = "Т",
+    ["у"] = "У", ["ф"] = "Ф", ["х"] = "Х", ["ц"] = "Ц", ["ч"] = "Ч",
+    ["ш"] = "Ш", ["щ"] = "Щ", ["ъ"] = "Ъ", ["ы"] = "Ы", ["ь"] = "Ь",
+    ["э"] = "Э", ["ю"] = "Ю", ["я"] = "Я",
+}
+
+local function toupper(char)
+    local ru = rucaps[char]
+    if ru then return ru end
+    return string.upper(char)
+end
+
+local function utf8chars(str)
+    local chars = {}
+    local i = 1
+    while i <= #str do
+        local byte = string.byte(str, i)
+        local len = 1
+        if byte >= 240 then len = 4
+        elseif byte >= 224 then len = 3
+        elseif byte >= 192 then len = 2
+        end
+        table.insert(chars, string.sub(str, i, i + len - 1))
+        i = i + len
+    end
+    return chars
+end
+
+local function partiallycaps(original, progress)
+    local chars = utf8chars(original)
+    local len = #chars
+
+    if progress >= 0.95 then
+        progress = 1
+    end
+
+    local capped = math.floor(len * progress)
+    local result = ""
+
+    for i = 1, len do
+        local char = chars[i]
+        if i <= capped then
+            result = result .. toupper(char)
+        else
+            result = result .. char
+        end
+    end
+    return result
+end
 
 local Selects = {
     {Title = "Выйти", Func = function(luaMenu) RunConsoleCommand("disconnect") end},
@@ -46,14 +100,12 @@ local splasheh = {
     'I WISH YOU GOOD HEALTH, JASON STATHAM'
 }
 
---print(string.upper('I wish you good health, Jason Statham'))
 surface.CreateFont("ZC_MM_Title", {
     font = "Bahnschrift",
     size = ScreenScale(40),
     weight = 800,
     antialias = true
 })
--- local Title = markup.Parse("error")
 
 local Pluv = Material("pluv/pluvkid.jpg")
 local GomiLogo = Material("gomi/gomicity.png")
@@ -222,7 +274,11 @@ function PANEL:AddSelect( pParent, strTitle, tbl )
     local id = #self.Buttons + 1
     self.Buttons[id] = vgui.Create( "DLabel", pParent )
     local btn = self.Buttons[id]
-    btn:SetText( strTitle )
+
+    btn.OriginalTitle = strTitle
+    btn.CapsProgress = 0
+
+    btn:SetText(strTitle)
     btn:SetMouseInputEnabled( true )
     btn:SizeToContents()
     btn:SetFont( "ZCity_Small" )
@@ -234,8 +290,8 @@ function PANEL:AddSelect( pParent, strTitle, tbl )
     local luaMenu = self 
     if tbl.CreatedFunc then tbl.CreatedFunc(btn, self, luaMenu) end
     btn.RColor = Color(225,225,225)
+
     function btn:DoClick()
-        -- ,kz оптимизировать надо, но идёт ошибка(кэшировать бы luaMenu.panelparrent вместо вызова его каждый раз)
         if curent_panel == string.lower(strTitle) then
 			for i = 1, 3 do
 				surface.PlaySound("shitty/tap_release.wav")
@@ -248,7 +304,6 @@ function PANEL:AddSelect( pParent, strTitle, tbl )
                 luaMenu.panelparrent:SetPos(some_coordinates_x, 0)
                 luaMenu.panelparrent:SetSize(some_size_x, some_size_y)
                 luaMenu.panelparrent.Paint = function(this, w, h) end
-                --btn.Func(luaMenu,luaMenu.panelparrent)
                 curent_panel = nil
             end)
             return 
@@ -272,32 +327,33 @@ function PANEL:AddSelect( pParent, strTitle, tbl )
 		end
     end
 
-    function btn:Think()
-        self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, (self:IsHovered() or (IsValid(self:GetChild(0)) and self:GetChild(0):IsHovered()) or (IsValid(self:GetChild(0)) and IsValid(self:GetChild(0):GetChild(0)) and self:GetChild(0):GetChild(0):IsHovered())) and 1 or 0)
+    function btn:Paint(w, h)
+        derma.SkinHook("Paint", "Label", self, w, h)
+    end
 
+    function btn:Think()
+        local isHovered = self:IsHovered() or (IsValid(self:GetChild(0)) and self:GetChild(0):IsHovered()) or (IsValid(self:GetChild(0)) and IsValid(self:GetChild(0):GetChild(0)) and self:GetChild(0):GetChild(0):IsHovered())
+
+        self.HoverLerp = LerpFT(0.2, self.HoverLerp or 0, isHovered and 1 or 0)
         local v = self.HoverLerp
         self:SetTextColor(self.RColor:Lerp(red_select, v))
 
-        local targetText = (self:IsHovered()) and string.upper(strTitle) or strTitle
-        local crw = self:GetText()
+        local targetCaps = isHovered and 1 or 0
+        self.CapsProgress = LerpFT(0.12, self.CapsProgress or 0, targetCaps)
 
-        if (crw ~= targetText) or (curent_panel == string.lower(strTitle)) then
-            local ntxt = ""
-            local will_text = (curent_panel == string.lower(strTitle) and not strTitle == 'Traitor Role') and '[ '..string.upper(strTitle)..' ]' or strTitle
-            for i = 1, #will_text do
-                local char = will_text:sub(i, i)
-                if i <= math.ceil(#will_text * v) then
-                    ntxt = ntxt .. string.upper(char)
-                else
-                    ntxt = ntxt .. char
-                end
-            end
-			if self:GetText() ~= ntxt then
-				surface.PlaySound("shitty/tap-resonant.wav")
-			end
-            self:SetText(ntxt)
+        local result = partiallycaps(self.OriginalTitle, self.CapsProgress)
+
+        if curent_panel == string.lower(self.OriginalTitle) then
+            result = "[ " .. result .. " ]"
         end
-        self:SizeToContents()
+
+        if self:GetText() ~= result then
+            if isHovered then
+                surface.PlaySound("shitty/tap-resonant.wav")
+            end
+            self:SetText(result)
+            self:SizeToContents()
+        end
     end
 end
 
