@@ -917,7 +917,7 @@ if SERVER then
         end
     end
 
-    COMMANDS.skip = {function(ply, args)
+    COMMANDS.skip = {function(ply, args) // если тип забрал голос
         if skipEnded then return end
         local sid = ply:SteamID()
         if skipVotes[sid] then
@@ -936,14 +936,14 @@ if SERVER then
         end
     end, 0}
 
-    hook.Add("PlayerDisconnected", "SkipVoteDisconnect", function(ply)
+    hook.Add("PlayerDisconnected", "SkipVoteDisconnect", function(ply) // если тип ливает нахуй с голосование
         if skipVotes[ply:SteamID()] then
             skipVotes[ply:SteamID()] = nil
             CheckSkip()
         end
     end)
 
-    hook.Add("ZB_PreRoundStart", "ClearSkipVotes", function()
+    hook.Add("ZB_PreRoundStart", "ClearSkipVotes", function() // очищение голосов
         table.Empty(skipVotes)
         skipEnded = false
     end)
