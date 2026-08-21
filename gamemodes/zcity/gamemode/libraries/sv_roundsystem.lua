@@ -897,3 +897,54 @@ if SERVER then
 	end)
 
 end
+
+if SERVER then
+    local skipVotes = {}
+    local skipEnded = false
+
+    local function SkipNeeded()
+        return math.ceil(player.GetCount() * 0.7)
+    end
+
+    local function CheckSkip()
+        if skipEnded then return end
+        if table.Count(skipVotes) >= SkipNeeded() then
+            skipEnded = true
+            for _, v in player.Iterator() do
+                v:ChatPrint("Набралось достаточное количество за скип раунда")
+            end
+            zb:EndRound()
+        end
+    end
+
+    COMMANDS.skip = {function(ply, args)
+        if skipEnded then return end
+        local sid = ply:SteamID()
+        if skipVotes[sid] then
+            skipVotes[sid] = nil
+            for _, v in player.Iterator() do
+                v:ChatPrint(ply:Nick() .. " забрал свой голос за скип")
+            end
+        else
+            skipVotes[sid] = true
+            local needed = SkipNeeded()
+            local left = needed - table.Count(skipVotes)
+            for _, v in player.Iterator() do
+                v:ChatPrint(ply:Nick() .. " проголосовал за скип, ещё нужно " .. left .. " голосов. Напишите повторно !skip если хотите отменить голос")
+            end
+            CheckSkip()
+        end
+    end, 0}
+
+    hook.Add("PlayerDisconnected", "SkipVoteDisconnect", function(ply)
+        if skipVotes[ply:SteamID()] then
+            skipVotes[ply:SteamID()] = nil
+            CheckSkip()
+        end
+    end)
+
+    hook.Add("ZB_PreRoundStart", "ClearSkipVotes", function()
+        table.Empty(skipVotes)
+        skipEnded = false
+    end)
+end
