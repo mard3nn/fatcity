@@ -136,7 +136,6 @@ MODE.LootTable = {
 		{5,"weapon_bat"},
 		{5,"weapon_hammer"},
 		{5,"weapon_hg_bottle"},
-		{0.1,"weapon_fury13"},
 	}}
 }
 
