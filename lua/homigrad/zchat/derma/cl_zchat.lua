@@ -204,20 +204,21 @@ function PANEL:MatrixPaint()
 				for _, cp in ipairs(seg.chars) do
 					localIdx = localIdx + 1
 
+					local origCh = utf8.char(cp)
+					local tw = surface.GetTextSize(origCh)
+
 					local ch
 					local r, g, b
 
 					if cp == 32 then
 						ch = " "
 					elseif localIdx <= gate then
-						ch = utf8.char(cp)
+						ch = origCh
 						r, g, b = seg.color.r, seg.color.g, seg.color.b
 					else
 						ch = MatrixRandomChar()
 						r, g, b = math.random(40, 120), math.random(160, 255), math.random(40, 120)
 					end
-
-					local tw = surface.GetTextSize(ch)
 
 					if ch ~= " " then
 						surface.SetTextPos(x + 1, y + 1)
