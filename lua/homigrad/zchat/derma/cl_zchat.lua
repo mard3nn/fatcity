@@ -28,8 +28,8 @@ end
 
 local MATRIX_CHARS = "#$%*+=?!;:^~/[]{}|01"
 
-local function MatrixRandomChar()
-	local i = math.random(#MATRIX_CHARS)
+local function MatrixRandomChar(index, tick)
+	local i = (index * 31 + tick * 17) % #MATRIX_CHARS + 1
 	return MATRIX_CHARS:sub(i, i)
 end
 
@@ -112,11 +112,21 @@ function PANEL:SetupMatrix(segs)
 		end
 	end
 
+	surface.SetFont("zChatFont")
+
 	for _, seg in ipairs(segs) do
+		seg.glyphs = {}
+		seg.widths = {}
+
+		for i, cp in ipairs(seg.chars) do
+			local ch = utf8.char(cp)
+			seg.glyphs[i] = ch
+			seg.widths[i] = surface.GetTextSize(ch)
+		end
+
 		self.matrix.total = self.matrix.total + #seg.chars
 	end
 
-	surface.SetFont("zChatFont")
 	local _, th = surface.GetTextSize("Ag")
 	self:SetTall(math.max(th, 10))
 
@@ -145,6 +155,7 @@ end
 
 local MATRIX_DECODE_TIME = 1.2
 local MATRIX_GONE_TIME = 0.5
+local MATRIX_SCRAMBLE_HZ = 15
 
 function PANEL:GetMatrixFraction()
 	local age = CurTime() - self.matrix.born
@@ -171,6 +182,7 @@ function PANEL:MatrixPaint()
 	surface.SetAlphaMultiplier(math.Clamp(newAlpha, 0, 255) / 255)
 
 	local frac = self:GetMatrixFraction()
+	local tick = math.floor(CurTime() * MATRIX_SCRAMBLE_HZ)
 
 	DisableClipping(true)
 		local chatboxX, chatboxY = hg.chat:GetPos()
@@ -181,29 +193,27 @@ function PANEL:MatrixPaint()
 			local x, y = 0, self.yAnim
 
 			for _, seg in ipairs(self.matrix.segs) do
-				local gate = seg.gated and math.floor(#seg.chars * frac + 0.5) or #seg.chars + 1000
-				local localIdx = 0
+				local gate = seg.gated and math.floor(#seg.chars * frac + 0.5) or math.huge
 
-				for _, cp in ipairs(seg.chars) do
-					localIdx = localIdx + 1
+				for i = 1, #seg.chars do
+					local ch = seg.glyphs[i]
+					local tw = seg.widths[i]
 
-					local origCh = utf8.char(cp)
-					local tw = surface.GetTextSize(origCh)
+					if (ch ~= " ") then
+						local r, g, b
 
-					local ch
-					local r, g, b
+						if (i <= gate) then
+							r, g, b = seg.color.r, seg.color.g, seg.color.b
+						else
+							ch = MatrixRandomChar(i, tick)
 
-					if cp == 32 then
-						ch = " "
-					elseif localIdx <= gate then
-						ch = origCh
-						r, g, b = seg.color.r, seg.color.g, seg.color.b
-					else
-						ch = MatrixRandomChar()
-						r, g, b = math.random(40, 120), math.random(160, 255), math.random(40, 120)
-					end
+							if (i == gate + 1) then
+								r, g, b = 190, 255, 190
+							else
+								r, g, b = 30 + (i * 7 + tick * 3) % 50, 150 + (i * 13 + tick * 5) % 90, 70
+							end
+						end
 
-					if ch ~= " " then
 						surface.SetTextPos(x + 1, y + 1)
 						surface.SetTextColor(0, 0, 0, 255)
 						surface.DrawText(ch)
