@@ -101,6 +101,8 @@ function PANEL:SetupMatrix(segs)
 		born = CurTime()
 	}
 
+	self.matrixFrac = 0
+
 	if self.matrixPrefixText then
 		for _, seg in ipairs(segs) do
 			if seg.text == self.matrixPrefixText then
@@ -145,13 +147,16 @@ local MATRIX_DECODE_TIME = 1.2
 local MATRIX_GONE_TIME = 0.5
 
 function PANEL:GetMatrixFraction()
-	local now = CurTime()
+	local age = CurTime() - self.matrix.born
 
-	if now < self.fadeDelay then
-		return math.Clamp((now - self.matrix.born) / MATRIX_DECODE_TIME, 0, 1)
-	end
+	// расшифровка при появлении сообщения и пока чат открыт
+	local target = (hg.chat:GetActive() or age < MATRIX_DECODE_TIME) and 1 or 0
 
-	return 1 - math.Clamp((now - self.fadeDelay) / MATRIX_GONE_TIME, 0, 1)
+	// плавная зашифровка обратно когда чат закрыт
+	self.matrixFrac = math.Approach(self.matrixFrac or 0, target,
+		FrameTime() / ((target == 1) and MATRIX_DECODE_TIME or MATRIX_GONE_TIME))
+
+	return math.Clamp(self.matrixFrac, 0, 1)
 end
 
 function PANEL:MatrixPaint()
