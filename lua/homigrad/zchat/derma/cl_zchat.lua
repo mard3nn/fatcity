@@ -147,30 +147,33 @@ end
 local MATRIX_DECODE_TIME = 1.2
 local MATRIX_OPEN_TIME = 0.5
 local MATRIX_CLOSE_TIME = 0.3
+local MATRIX_GONE_TIME = 0.5
 
 function PANEL:GetMatrixFraction()
-	local active = IsValid(hg.chat) and hg.chat:GetActive() or false
 	local now = CurTime()
 	local born = self.matrix.born
+
+	if now < self.fadeDelay then
+		return math.Clamp((now - born) / MATRIX_DECODE_TIME, 0, 1)
+	end
+
+	local active = IsValid(hg.chat) and hg.chat:GetActive() or false
 
 	if active ~= self.lastActive then
 		self.lastActive = active
 		self.transTime = now
 	end
 
-	local auto = math.Clamp((now - born) / MATRIX_DECODE_TIME, 0, 1)
+	local restFrac = 1 - math.Clamp((now - self.fadeDelay) / MATRIX_GONE_TIME, 0, 1)
 	local transitioned = self.transTime and self.transTime > born
 
-	if active then
-		if not transitioned then return auto end
+	if not transitioned then return restFrac end
 
-		return math.max(auto, math.Clamp((now - self.transTime) / MATRIX_OPEN_TIME, 0, 1))
+	if active then
+		return math.max(restFrac, math.Clamp((now - self.transTime) / MATRIX_OPEN_TIME, 0, 1))
 	end
 
-	local rev = now >= self.fadeDelay - 1 and math.Clamp((self.fadeDelay - now) / 1, 0, 1) or 1
-	local closeRamp = not transitioned and 1 or 1 - math.Clamp((now - self.transTime) / MATRIX_CLOSE_TIME, 0, 1)
-
-	return math.min(auto, rev, closeRamp)
+	return math.min(restFrac, 1 - math.Clamp((now - self.transTime) / MATRIX_CLOSE_TIME, 0, 1))
 end
 
 function PANEL:MatrixPaint()
