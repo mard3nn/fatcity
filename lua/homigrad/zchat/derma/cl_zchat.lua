@@ -26,6 +26,62 @@ local function PaintMarkupOverride(text, font, x, y, color, alignX, alignY, alph
 	surface.DrawText(text)
 end
 
+local MATRIX_CHARS = "#$%*+=?!;:^~/[]{}|01"
+
+local function MatrixRandomChar()
+	local i = math.random(#MATRIX_CHARS)
+	return MATRIX_CHARS:sub(i, i)
+end
+
+local function DecodeEntities(s)
+	return s:gsub("&lt;", "<"):gsub("&gt;", ">"):gsub("&amp;", "&")
+end
+
+local function SplitSegments(buffer)
+	local segs = {}
+	local col = Color(255, 255, 255)
+	local buf = {}
+
+	local function Flush()
+		if #buf > 0 then
+			segs[#segs + 1] = {color = col, text = table.concat(buf)}
+			buf = {}
+		end
+	end
+
+	local pos = 1
+	while pos <= #buffer do
+		local s, e = buffer:find("<[^>]*>", pos)
+		local chunkEnd = (s or #buffer + 1) - 1
+		if chunkEnd >= pos then buf[#buf + 1] = buffer:sub(pos, chunkEnd) end
+		if not s then break end
+
+		Flush()
+
+		local rr, gg, bb = buffer:sub(s, e):match("^<color=(%d+),(%d+),(%d+)>$")
+		if rr then col = Color(tonumber(rr), tonumber(gg), tonumber(bb)) end
+		pos = e + 1
+	end
+	Flush()
+
+	for _, seg in ipairs(segs) do
+		seg.text = DecodeEntities(seg.text)
+		seg.chars = {}
+
+		if utf8 then
+			for _, cp in utf8.codes(seg.text) do
+				seg.chars[#seg.chars + 1] = cp
+			end
+		else
+			for i = 1, #seg.text do
+				seg.chars[#seg.chars + 1] = seg.text:byte(i)
+			end
+		end
+	end
+
+	return segs
+end
+
 local PANEL = {}
 
 function PANEL:Init()
@@ -38,8 +94,122 @@ function PANEL:Init()
 	self.yAnim = 5
 end
 
+function PANEL:SetupMatrix(segs)
+	self.matrix = {
+		segs = segs,
+		total = 0,
+		start = CurTime()
+	}
+
+	for _, seg in ipairs(segs) do
+		self.matrix.total = self.matrix.total + #seg.chars
+	end
+
+	surface.SetFont("zChatFont")
+	local _, th = surface.GetTextSize("Ag")
+	self:SetTall(math.max(th, 10))
+
+	self:CreateAnimation(self.yAnimDuration, {
+		index = 4,
+		target = {yAnim = 0},
+		easing = "outQuint"
+	})
+
+	self:CreateAnimation(0.5, {
+		index = 3,
+		target = {alpha = 255},
+	})
+
+	timer.Simple(self.fadeDelay, function()
+		if (!IsValid(self)) then
+			return
+		end
+
+		self:CreateAnimation(self.fadeDuration, {
+			index = 3,
+			target = {alpha = 0}
+		})
+	end)
+end
+
+function PANEL:GetMatrixFraction()
+	local t = CurTime() - self.matrix.start
+	local frac = math.Clamp(t / 1.2, 0, 1)
+
+	local revStart = self.fadeDelay - 1
+	if t >= revStart then
+		frac = math.min(frac, math.Clamp((self.fadeDelay - t) / 1, 0, 1))
+	end
+
+	return frac
+end
+
+function PANEL:MatrixPaint()
+	local newAlpha
+
+	if (hg.chat:GetActive()) then
+		newAlpha = math.max(hg.chat.alpha, self.alpha)
+	else
+		newAlpha = self.alpha - (255 - hg.chat.realAlpha)
+	end
+
+	surface.SetAlphaMultiplier(math.Clamp(newAlpha, 0, 255) / 255)
+
+	DisableClipping(true)
+		local chatboxX, chatboxY = hg.chat:GetPos()
+		local wide, tall = hg.chat:GetSize()
+
+		render.SetScissorRect(chatboxX, chatboxY, chatboxX + wide, chatboxY + tall, true)
+			surface.SetFont("zChatFont")
+			local allowed = math.floor(self.matrix.total * self:GetMatrixFraction() + 0.5)
+			local idx = 0
+			local x, y = 0, self.yAnim
+
+			for _, seg in ipairs(self.matrix.segs) do
+				for _, cp in ipairs(seg.chars) do
+					idx = idx + 1
+
+					local ch
+					local r, g, b
+
+					if idx <= allowed then
+						ch = utf8.char(cp)
+						r, g, b = seg.color.r, seg.color.g, seg.color.b
+					elseif cp == 32 then
+						ch = " "
+					else
+						ch = MatrixRandomChar()
+						r, g, b = math.random(40, 120), math.random(160, 255), math.random(40, 120)
+					end
+
+					local tw = surface.GetTextSize(ch)
+
+					if ch ~= " " then
+						surface.SetTextPos(x + 1, y + 1)
+						surface.SetTextColor(0, 0, 0, 255)
+						surface.DrawText(ch)
+
+						surface.SetTextPos(x, y)
+						surface.SetTextColor(r, g, b, 255)
+						surface.DrawText(ch)
+					end
+
+					x = x + tw
+				end
+			end
+		render.SetScissorRect(0, 0, 0, 0, false)
+	DisableClipping(false)
+
+	surface.SetAlphaMultiplier(1)
+end
+
 function PANEL:SetMarkup(text)
 	self.text = text
+
+	if self.isMatrix then
+		self:SetupMatrix(SplitSegments(text))
+		return
+	end
 
 	self.markup = hg.markup.Parse(self.text, self:GetWide())
 	self.markup.onDrawText = PaintMarkupOverride
@@ -70,6 +240,12 @@ function PANEL:SetMarkup(text)
 end
 
 function PANEL:PerformLayout(width, height)
+	if self.matrix then
+		surface.SetFont("zChatFont")
+		self:SetTall(select(2, surface.GetTextSize("Ag")))
+		return
+	end
+
 	self.markup = hg.markup.Parse(self.text, width)
 	self.markup.onDrawText = PaintMarkupOverride
 
@@ -77,6 +253,11 @@ function PANEL:PerformLayout(width, height)
 end
 
 function PANEL:Paint(width, height)
+	if self.matrix then
+		self:MatrixPaint()
+		return
+	end
+
 	local newAlpha
 
 	if (hg.chat:GetActive()) then
@@ -383,6 +564,7 @@ function PANEL:AddLine(elements)
 	end
 
 	local panel = self.history:Add("zChatMessage")
+	panel.isMatrix = IsValid(CHAT_SPEAKER) and CHAT_SPEAKER:IsPlayer() and hg.IsOwner and hg.IsOwner(CHAT_SPEAKER) or false
 	panel:Dock(TOP)
 	panel:InvalidateParent(true)
 	panel:SetMarkup(table.concat(buffer))

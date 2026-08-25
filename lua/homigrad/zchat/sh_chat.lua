@@ -199,11 +199,11 @@ if CLIENT then
 
 	local ghost = Color(118, 159, 255)
 	local dead = Color(255, 0, 0)
-	local gold = Color(255, 215, 0)
 	hook.Add("OnPlayerChat", "ZChatDead", function(ply, text, bTeam, bDead, bWhisper)
 		if ( ply:IsPlayer() and !ply:Alive() ) then
-			if ply:GetUserGroup() == "megasponsor" then
-				chat.AddText( dead, "*DEAD* ", gold, "[MegaSponsor] ", ghost, ply:Nick(), ghost, ": "..text )
+			local prefix = hg.GetRankPrefix and hg.GetRankPrefix(ply)
+			if prefix then
+				chat.AddText( dead, "*DEAD* ", prefix.color, prefix.tag .. " ", ghost, ply:Nick(), ghost, ": "..text )
 			else
 				chat.AddText( dead, "*DEAD* ", ghost, ply:Nick(), ghost, ": "..text )
 			end

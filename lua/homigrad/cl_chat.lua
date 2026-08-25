@@ -1,6 +1,5 @@
 // v7 privet
 local hook_Run = hook.Run
-local GOLD = Color(255, 215, 0)
 
 hook.Add( "OnPlayerChat", "HGPlayerChat", function( ply, strText, bTeam, bDead, bWhisper )
 	if bWhisper == nil then return true end
@@ -22,9 +21,10 @@ hook.Add( "OnPlayerChat", "HGPlayerChat", function( ply, strText, bTeam, bDead, 
 
 		local nameColor = ply:GetPlayerColor():ToColor()
 		local prefixColor, prefixText = nameColor, ""
+		local prefix = hg.GetRankPrefix and hg.GetRankPrefix(ply)
 
-		if ply:GetUserGroup() == "megasponsor" then
-			prefixColor, prefixText = GOLD, "[MegaSponsor] "
+		if prefix then
+			prefixColor, prefixText = prefix.color, prefix.tag .. " "
 		end
 
 		chat.AddText( prefixColor, prefixText, nameColor, ply:GetPlayerName(), color_white, ": "..strText ) -- print Hello fuckyou to the console садсалат нахуй ты вот это пишеш
