@@ -49,6 +49,8 @@ local repeating = {
 
 
 function hg.FurrifyPhrase(msg)
+	if not isstring(msg) or msg == "" then return msg end
+
 	local iter = utf8.codes(msg)
 	local len = 0
 	local chars = {}

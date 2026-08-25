@@ -127,12 +127,17 @@ local hg_furcity = ConVarExists("hg_furcity") and GetConVar("hg_furcity") or Cre
 hook.Add("HG_PlayerSay", "huy", function(ply, txt)
 	local text = txt[1]
 
-	txt[1] = funca(ply, text)
+	local result = funca(ply, text)
+	if isstring(result) then
+		txt[1] = result
+	end
 end)
 
 hook.Add("HG_PlayerSay", "furrifyPhraseOwO", function(ply, txt)
 	local text = txt[1]
-	
+
+	if not isstring(text) then return end
+
 	if hg_furcity:GetBool() or ply.PlayerClassName == "furry" then
 		text = hg.FurrifyPhrase(text)
 	end
