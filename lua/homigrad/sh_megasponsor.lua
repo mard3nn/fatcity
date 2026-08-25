@@ -15,8 +15,8 @@ local RANK_PREFIX = {
     megasponsor = {tag = "[MegaSponsor]", color = Color(255, 215, 0)},
     moderator = {tag = "[Moderator]", color = Color(85, 190, 255)},
     admin = {tag = "[Admin]", color = Color(35, 105, 255)},
-    superadmin = {tag = "[SuperAdmin]", color = Color(140, 18, 45)},
-    owner = {tag = "[Owner]", color = Color(12, 12, 12)}
+    superadmin = {tag = "[SuperAdmin]", color = Color(155, 48, 255)},
+    owner = {tag = "[Owner]", color = Color(140, 18, 45)}
 }
 
 local function GetGroupBySteamID(sid)

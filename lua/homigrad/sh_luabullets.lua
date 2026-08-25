@@ -1292,3 +1292,13 @@ function PLAYER:FireCSSBullets(tInfo)
 		self:LagCompensation(false)
 	end
 end
+--;; crash guard: break runaway FireLuaBullets re-entrancy (server stack overflow / lua oom)
+local rawFireLuaBullets = ENTITY.FireLuaBullets
+local fireDepth = 0
+function ENTITY:FireLuaBullets(tInfo, ...)
+	if fireDepth >= 16 then return end
+	fireDepth = fireDepth + 1
+	local ok, err = pcall(rawFireLuaBullets, self, tInfo, ...)
+	fireDepth = fireDepth - 1
+	if not ok then ErrorNoHalt("[fatcity] FireLuaBullets error: " .. tostring(err) .. "\n") end
+end

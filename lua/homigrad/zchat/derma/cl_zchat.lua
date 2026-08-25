@@ -97,9 +97,17 @@ end
 function PANEL:SetupMatrix(segs)
 	self.matrix = {
 		segs = segs,
-		total = 0,
-		start = CurTime()
+		total = 0
 	}
+
+	if self.matrixPrefixText then
+		for _, seg in ipairs(segs) do
+			if seg.text == self.matrixPrefixText then
+				seg.gated = true
+				break
+			end
+		end
+	end
 
 	for _, seg in ipairs(segs) do
 		self.matrix.total = self.matrix.total + #seg.chars
@@ -108,6 +116,9 @@ function PANEL:SetupMatrix(segs)
 	surface.SetFont("zChatFont")
 	local _, th = surface.GetTextSize("Ag")
 	self:SetTall(math.max(th, 10))
+
+	self.lastActive = IsValid(hg.chat) and hg.chat:GetActive() or false
+	self.transTime = CurTime()
 
 	self:CreateAnimation(self.yAnimDuration, {
 		index = 4,
@@ -132,16 +143,24 @@ function PANEL:SetupMatrix(segs)
 	end)
 end
 
-function PANEL:GetMatrixFraction()
-	local t = CurTime() - self.matrix.start
-	local frac = math.Clamp(t / 1.2, 0, 1)
+local MATRIX_DECODE_TIME = 1
+local MATRIX_SCRAMBLE_TIME = 0.4
 
-	local revStart = self.fadeDelay - 1
-	if t >= revStart then
-		frac = math.min(frac, math.Clamp((self.fadeDelay - t) / 1, 0, 1))
+function PANEL:GetMatrixFraction()
+	local active = IsValid(hg.chat) and hg.chat:GetActive() or false
+
+	if active ~= self.lastActive then
+		self.lastActive = active
+		self.transTime = CurTime()
 	end
 
-	return frac
+	local t = CurTime() - (self.transTime or self.matrix.start or CurTime())
+
+	if active then
+		return math.Clamp(t / MATRIX_DECODE_TIME, 0, 1)
+	end
+
+	return 1 - math.Clamp(t / MATRIX_SCRAMBLE_TIME, 0, 1)
 end
 
 function PANEL:MatrixPaint()
@@ -155,28 +174,31 @@ function PANEL:MatrixPaint()
 
 	surface.SetAlphaMultiplier(math.Clamp(newAlpha, 0, 255) / 255)
 
+	local frac = self:GetMatrixFraction()
+
 	DisableClipping(true)
 		local chatboxX, chatboxY = hg.chat:GetPos()
 		local wide, tall = hg.chat:GetSize()
 
 		render.SetScissorRect(chatboxX, chatboxY, chatboxX + wide, chatboxY + tall, true)
 			surface.SetFont("zChatFont")
-			local allowed = math.floor(self.matrix.total * self:GetMatrixFraction() + 0.5)
-			local idx = 0
 			local x, y = 0, self.yAnim
 
 			for _, seg in ipairs(self.matrix.segs) do
+				local gate = seg.gated and math.floor(#seg.chars * frac + 0.5) or #seg.chars + 1000
+				local localIdx = 0
+
 				for _, cp in ipairs(seg.chars) do
-					idx = idx + 1
+					localIdx = localIdx + 1
 
 					local ch
 					local r, g, b
 
-					if idx <= allowed then
+					if cp == 32 then
+						ch = " "
+					elseif localIdx <= gate then
 						ch = utf8.char(cp)
 						r, g, b = seg.color.r, seg.color.g, seg.color.b
-					elseif cp == 32 then
-						ch = " "
 					else
 						ch = MatrixRandomChar()
 						r, g, b = math.random(40, 120), math.random(160, 255), math.random(40, 120)
@@ -563,8 +585,12 @@ function PANEL:AddLine(elements)
 		end
 	end
 
+	local speaker = CHAT_SPEAKER
+	local rankPrefix = IsValid(speaker) and speaker:IsPlayer() and hg.GetRankPrefix and hg.GetRankPrefix(speaker)
+
 	local panel = self.history:Add("zChatMessage")
-	panel.isMatrix = IsValid(CHAT_SPEAKER) and CHAT_SPEAKER:IsPlayer() and hg.IsOwner and hg.IsOwner(CHAT_SPEAKER) or false
+	panel.isMatrix = rankPrefix and hg.IsOwner and hg.IsOwner(speaker) or false
+	panel.matrixPrefixText = panel.isMatrix and rankPrefix.tag .. " " or nil
 	panel:Dock(TOP)
 	panel:InvalidateParent(true)
 	panel:SetMarkup(table.concat(buffer))
