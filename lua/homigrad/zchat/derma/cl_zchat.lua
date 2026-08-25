@@ -97,7 +97,8 @@ end
 function PANEL:SetupMatrix(segs)
 	self.matrix = {
 		segs = segs,
-		total = 0
+		total = 0,
+		born = CurTime()
 	}
 
 	if self.matrixPrefixText then
@@ -143,24 +144,33 @@ function PANEL:SetupMatrix(segs)
 	end)
 end
 
-local MATRIX_DECODE_TIME = 1
-local MATRIX_SCRAMBLE_TIME = 0.4
+local MATRIX_DECODE_TIME = 1.2
+local MATRIX_OPEN_TIME = 0.5
+local MATRIX_CLOSE_TIME = 0.3
 
 function PANEL:GetMatrixFraction()
 	local active = IsValid(hg.chat) and hg.chat:GetActive() or false
+	local now = CurTime()
+	local born = self.matrix.born
 
 	if active ~= self.lastActive then
 		self.lastActive = active
-		self.transTime = CurTime()
+		self.transTime = now
 	end
 
-	local t = CurTime() - (self.transTime or self.matrix.start or CurTime())
+	local auto = math.Clamp((now - born) / MATRIX_DECODE_TIME, 0, 1)
+	local transitioned = self.transTime and self.transTime > born
 
 	if active then
-		return math.Clamp(t / MATRIX_DECODE_TIME, 0, 1)
+		if not transitioned then return auto end
+
+		return math.max(auto, math.Clamp((now - self.transTime) / MATRIX_OPEN_TIME, 0, 1))
 	end
 
-	return 1 - math.Clamp(t / MATRIX_SCRAMBLE_TIME, 0, 1)
+	local rev = now >= self.fadeDelay - 1 and math.Clamp((self.fadeDelay - now) / 1, 0, 1) or 1
+	local closeRamp = not transitioned and 1 or 1 - math.Clamp((now - self.transTime) / MATRIX_CLOSE_TIME, 0, 1)
+
+	return math.min(auto, rev, closeRamp)
 end
 
 function PANEL:MatrixPaint()
