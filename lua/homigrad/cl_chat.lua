@@ -1,15 +1,17 @@
 // v7 privet
 local hook_Run = hook.Run
-hook.Add( "OnPlayerChat", "HGPlayerChat", function( ply, strText, bTeam, bDead, bWhisper ) 
+local GOLD = Color(255, 215, 0)
+
+hook.Add( "OnPlayerChat", "HGPlayerChat", function( ply, strText, bTeam, bDead, bWhisper )
 	if bWhisper == nil then return true end
 
 	if ( ply:IsPlayer() and ply:Alive() ) then -- if the player typed /fuckyou then
 		local string = {strText}
-		
+
 		if hook.Run("HG_OnPlayerCommand", ply, string) then
 			return true
 		end
-		
+
 		local Hook = hook.Run("HG_OnPlayerChat", ply, string, bTeam, bDead, ply:GetPlayerColor():ToColor(), ply:GetPlayerName(), bWhisper)
 
 		strText = string[1]
@@ -18,8 +20,15 @@ hook.Add( "OnPlayerChat", "HGPlayerChat", function( ply, strText, bTeam, bDead, 
 			return Hook
 		end
 
-		chat.AddText( ply:GetPlayerColor():ToColor(), ply:GetPlayerName(), color_white, ": "..strText ) -- print Hello fuckyou to the console
-		
+		local nameColor = ply:GetPlayerColor():ToColor()
+		local prefixColor, prefixText = nameColor, ""
+
+		if ply:GetUserGroup() == "megasponsor" then
+			prefixColor, prefixText = GOLD, "[MegaSponsor] "
+		end
+
+		chat.AddText( prefixColor, prefixText, nameColor, ply:GetPlayerName(), color_white, ": "..strText ) -- print Hello fuckyou to the console садсалат нахуй ты вот это пишеш
+
 		return true -- this suppresses the fcukyopu from being shown
 	end
 end )
