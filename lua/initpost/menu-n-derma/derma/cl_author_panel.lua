@@ -251,3 +251,4 @@ vgui.Register("ZAuthorPanel", PANEL, "EditablePanel")
 
 -- Команда для теста
 concommand.Add("hg_authors", function() vgui.Create("ZAuthorPanel") end)]]
+// не юзается
