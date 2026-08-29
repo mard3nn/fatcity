@@ -34,7 +34,7 @@ properties.Add("notify", {
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
         local text = net.ReadString()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать notify на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -75,7 +75,7 @@ properties.Add("givegun", {
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
         local text = net.ReadString()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать givegun на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -108,7 +108,7 @@ properties.Add("strip", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать strip на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -139,7 +139,7 @@ properties.Add("fullstrip", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать fullstrip на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -169,7 +169,7 @@ properties.Add("reset_org", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать reset_org на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -199,7 +199,7 @@ properties.Add("freeze", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать freeze на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -232,7 +232,7 @@ properties.Add("snatch", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать snatch на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -256,7 +256,7 @@ properties.Add("ragdollize", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать ragdollize на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -282,7 +282,7 @@ properties.Add("vomit", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать vomit на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -304,7 +304,7 @@ properties.Add("lobotomize", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать lobotomize на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -333,7 +333,7 @@ properties.Add("killsilent", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать killsilent на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -355,7 +355,7 @@ properties.Add("removeply", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать removeply на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -390,7 +390,7 @@ properties.Add("setplayerclass", {
         local ent = net.ReadEntity()
         local class = net.ReadString()
 
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался setplayerclass без прав (обход)")
             return
         end
@@ -460,7 +460,7 @@ properties.Add("break_limb", {
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
         local limb = net.ReadUInt(8)
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать break_limb на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -535,7 +535,7 @@ properties.Add("amputate_limb", {
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
         local limb = net.ReadUInt(8)
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать amputate_limb на " .. (IsValid(ent) and ent:Nick() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -558,7 +558,7 @@ properties.Add("amputate_limb", {
 })
 
 local function doorCheck(self, ent, ply)
-    if not ply:IsAdmin() then return false end
+    if not hg.HasAdminAccess(ply) then return false end
     if not IsValid(ent) then return false end
     if not ent:GetClass():lower():find("door") then return false end
     return true
@@ -576,7 +576,7 @@ properties.Add("door_toggle", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать door_toggle на " .. (IsValid(ent) and ent:GetClass() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -597,7 +597,7 @@ properties.Add("door_lock", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать door_lock на " .. (IsValid(ent) and ent:GetClass() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -618,7 +618,7 @@ properties.Add("door_unlock", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать door_unlock на " .. (IsValid(ent) and ent:GetClass() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -703,7 +703,7 @@ properties.Add("respawn_ply_in_rag", {
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
         local sPly = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать respawn_ply_in_rag на " .. (IsValid(ent) and ent:GetClass() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -739,7 +739,7 @@ properties.Add("respawn_lply_in_rag", {
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
         local sPly = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать respawn_lply_in_rag на " .. (IsValid(ent) and ent:GetClass() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -779,7 +779,7 @@ properties.Add("respawn_ragply_in_rag", {
     end,
     Receive = function(self, length, ply)
         local ent = net.ReadEntity()
-        if not ply:IsAdmin() then
+        if not hg.HasAdminAccess(ply) then
             ZashitaPrint(ply:Nick() .. " пытался использовать respawn_ragply_in_rag на " .. (IsValid(ent) and ent:GetClass() or "хуй знает кто это") .. " (обход)")
             return
         end
@@ -792,15 +792,15 @@ properties.Add("respawn_ragply_in_rag", {
 
 
 hook.Add("CanProperty", "Zashita_Properties", function(ply, property, ent)
-    if not ply:IsAdmin() then return false end
+    if not hg.HasAdminAccess(ply) then return false end
 end)
 
---if not ply:IsAdmin() then
-	--if not ply:IsAdmin() then
-		--if not ply:IsAdmin() then
-			--if not ply:IsAdmin() then
-				--if not ply:IsAdmin() then
-					--if not ply:IsAdmin() then
+--if not hg.HasAdminAccess(ply) then
+	--if not hg.HasAdminAccess(ply) then
+		--if not hg.HasAdminAccess(ply) then
+			--if not hg.HasAdminAccess(ply) then
+				--if not hg.HasAdminAccess(ply) then
+					--if not hg.HasAdminAccess(ply) then
 				--end
 			--end	
 		--end	

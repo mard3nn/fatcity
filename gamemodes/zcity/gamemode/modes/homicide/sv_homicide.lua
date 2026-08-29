@@ -866,7 +866,7 @@ function MODE:Intermission()
 end
 
 --[[concommand.Add("hmcd_call_police", function(ply, cmd, args)
-    if IsValid(ply) and not ply:IsAdmin() then
+    if IsValid(ply) and not hg.HasAdminAccess(ply) then
         ply:ChatPrint("loh.")
         return
     end
@@ -1496,7 +1496,7 @@ util.AddNetworkString("hmcd_roundend")
 MODE.NextRoundMainTraitors = MODE.NextRoundMainTraitors or {}
 
 concommand.Add("hmcd_request_main_traitor", function(ply, cmd, args)
-    if not IsValid(ply) or not ply:IsAdmin() then return end
+    if not IsValid(ply) or not hg.HasAdminAccess(ply) then return end
     
 
     if zb.ROUND_STATE == 1 then

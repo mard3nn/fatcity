@@ -113,7 +113,7 @@ net.Receive("criresp_ready", function(len, ply)
 end)
 
 net.Receive("criresp_over20", function(len, ply)
-	if not ply:IsAdmin() then return end
+	if not hg.HasAdminAccess(ply) then return end
 	overlimit:SetBool(net.ReadBool())
 end)
 

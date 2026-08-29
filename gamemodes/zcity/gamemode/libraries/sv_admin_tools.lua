@@ -1,6 +1,6 @@
 COMMANDS.sendtospawn = {
 	function(ply, args)
-		if not ply:IsAdmin() then return end
+		if not hg.HasAdminAccess(ply) then return end
 		local plya = #args > 0 and args[1] or ply:Name()
 		local targets = player.GetListByName(plya)
 		if not targets then return end
@@ -16,7 +16,7 @@ COMMANDS.sendtospawn = {
 
 COMMANDS.give = {
 	function(ply, args)
-		if not ply:IsAdmin() then return end
+		if not hg.HasAdminAccess(ply) then return end
 		local plya = #args > 1 and args[1] or ply:Name()
 		local wep = #args > 1 and args[2] or args[1]
 		local targets = player.GetListByName(plya)
@@ -36,7 +36,7 @@ COMMANDS.give = {
 
 COMMANDS.respawn = {
 	function(ply, args)
-		if not ply:IsAdmin() then return end
+		if not hg.HasAdminAccess(ply) then return end
 		local plya = #args > 0 and args[1] or ply:Name()
 		local targets = player.GetListByName(plya)
 		if not targets then return end

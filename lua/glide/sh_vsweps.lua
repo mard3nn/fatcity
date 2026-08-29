@@ -153,8 +153,8 @@ if CLIENT then
 end
 
 local function CmdReloadWeaponScript( ply, _, args )
-    if not ply:IsSuperAdmin() then
-        Glide.Print( "You must be a super admin to run this." )
+	if not hg.HasSuperAdminAccess(ply) then
+		Glide.Print( "You must be a super admin to run this." )
         return
     end
 

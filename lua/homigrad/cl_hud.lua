@@ -477,7 +477,7 @@ hook.Add( "PlayerBindPress", "PlayerBindPressExample2huy", function( ply, bind, 
 				PressRadialMenu(1)
 			end
 		else
-			if lply:IsAdmin() then return end
+			if hg.HasAdminAccess(lply) then return end
 		end
 
 		return true

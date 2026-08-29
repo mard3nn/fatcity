@@ -28,17 +28,17 @@ end
 
 function AS:IsSuperAdmin(ply)
 	if !IsValid(ply) then return false end
-	return ply:IsSuperAdmin()
+	return hg.HasSuperAdminAccess(ply)
 end
 
 function AS:IsAdminOnly(ply)
 	if !IsValid(ply) then return false end
-	return ply:IsAdmin() and !ply:IsSuperAdmin()
+	return hg.HasAdminAccess(ply) and !hg.HasSuperAdminAccess(ply)
 end
 
 function AS:IsAdmin(ply)
 	if !IsValid(ply) then return false end
-	return ply:IsAdmin()
+	return hg.HasAdminAccess(ply)
 end
 
 function AS:GetUserGroup(ply)

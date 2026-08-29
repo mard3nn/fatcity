@@ -545,7 +545,7 @@ function GM:EntityKeyValue( ent, key, value )
 end
 
 hook.Add("CanProperty", "AntiExploit", function(ply, property, ent)
-	if(!ply:IsAdmin())then
+	if(!hg.HasAdminAccess(ply))then
 		return false
 	end
 end)

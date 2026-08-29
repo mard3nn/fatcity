@@ -409,7 +409,7 @@ if SERVER then
 	---------------------------------------------------------------------------]]
 	concommand.Add("vfire_remove_all", function(ply)
 
-		if IsValid(ply) and !ply:IsAdmin() then return end
+		if IsValid(ply) and !hg.HasAdminAccess(ply) then return end
 
 		for k, fire in pairs(ents.FindByClass("vfire")) do
 			fire:Remove()
@@ -424,7 +424,7 @@ if SERVER then
 	---------------------------------------------------------------------------]]
 	concommand.Add("vfire_default_settings", function(ply)
 
-		if IsValid(ply) and !ply:IsAdmin() then return end
+		if IsValid(ply) and !hg.HasAdminAccess(ply) then return end
 
 		vFireThrottleMultiplierConVar:SetFloat(vFireThrottleMultiplierConVar:GetDefault())
 		vFireEnableDamageConVar:SetBool(vFireEnableDamageConVar:GetDefault())

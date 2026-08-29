@@ -16,8 +16,8 @@ hg.AdminTools = hg.AdminTools or {}
 local plyMeta = FindMetaTable("Player")
 
 function plyMeta:ZCTools_GetAccess( bSAdmin ) 
-    if bSAdmin and self:IsSuperAdmin() then return true end
-    if not bSAdmin and self:IsAdmin() then return true end
+    if bSAdmin and hg.HasSuperAdminAccess(self) then return true end
+    if not bSAdmin and hg.HasAdminAccess(self) then return true end
     
     return false
 end
@@ -136,6 +136,6 @@ function hg.AdminTools:Point( str, vec )
 end
 
 concommand.Add("hg_timer",function( ply, _, args )
-    if not ply:IsAdmin() then return end
-    hg.AdminTools:Timer( args[2], args[1] )
+	if not hg.HasAdminAccess(ply) then return end
+	hg.AdminTools:Timer( args[2], args[1] )
 end)

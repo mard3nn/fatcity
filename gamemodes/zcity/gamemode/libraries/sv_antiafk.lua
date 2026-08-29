@@ -37,7 +37,7 @@ timer.Create("ZB_AntiAfkThink",10,0,function()
             ply:SetTeam(TEAM_SPECTATOR)
             PrintMessage(HUD_PRINTTALK, ply:Name().." joined the spectators, because he was AFK.")
         end
-        if ply:Team() == TEAM_SPECTATOR and not ply:IsAdmin() then
+        	if ply:Team() == TEAM_SPECTATOR and not hg.HasAdminAccess(ply) then
           ply.afkTime = ply.afkTime + 10
         end
         if ply.afkTime > AfkToSpectTime * 2 then ply:Kick("Afk") end

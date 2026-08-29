@@ -449,7 +449,7 @@ end
 
 
 COMMANDS.forcertv = {function(ply, args)
-	if not ply:IsAdmin() then ply:ChatPrint("You don't have access") return end
+	if not hg.HasAdminAccess(ply) then ply:ChatPrint("You don't have access") return end
 		zb.StartRTV(20)
 	end,
 	0

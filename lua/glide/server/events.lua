@@ -130,7 +130,7 @@ end )
 
 -- Block "Disable Collisions" option on tanks
 hook.Add( "CanProperty", "Glide.BlockCollisionProperty", function( ply, property, ent )
-    if not ply:IsAdmin() and property == "collision" and ent.VehicleType == Glide.VEHICLE_TYPE.TANK then
+    	if not hg.HasAdminAccess(ply) and property == "collision" and ent.VehicleType == Glide.VEHICLE_TYPE.TANK then
         return false
     end
 end )

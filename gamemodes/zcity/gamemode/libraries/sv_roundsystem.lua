@@ -270,7 +270,7 @@ end)
 
 COMMANDS.bigmap = {
 	function(ply, args)
-		if not ply:IsAdmin() then ply:ChatPrint("You don't have access") return end
+		if not hg.HasAdminAccess(ply) then ply:ChatPrint("You don't have access") return end
 		ZBATTLE_BIGMAP = tonumber(args[1])
 		ply:ChatPrint("Distance for big map: " .. ZBATTLE_BIGMAP)
 		zb.RerollChances()
@@ -553,7 +553,7 @@ end
 
 
 hook.Add("PlayerInitialSpawn", "ZB_SendModesOnSpawn", function(ply)
-	if ply:IsAdmin() then
+	if hg.HasAdminAccess(ply) then
 		timer.Simple(1, function()
 			if IsValid(ply) then
 				zb.SendModesInfoToClient(ply)
@@ -565,14 +565,14 @@ end)
 
 
 net.Receive("ZB_RequestRoundList", function(len, ply)
-	if IsValid(ply) and ply:IsAdmin() then
+	if IsValid(ply) and hg.HasAdminAccess(ply) then
 		zb.SendModesInfoToClient(ply)
 		zb.SendRoundListToClient(ply)
 	end
 end)
 
 net.Receive("ZB_UpdateRoundList", function(len, ply)
-	if not IsValid(ply) or not ply:IsAdmin() then return end
+	if not IsValid(ply) or not hg.HasAdminAccess(ply) then return end
 
 	local newList = net.ReadTable()
 	local forceUpdate = net.ReadBool()
@@ -642,8 +642,8 @@ function zb:RoundStart()
 	end
 end
 
-concommand.Add("zb_checkchances",function(ply) if ply:IsAdmin() then zb.CheckChances() end end)
-concommand.Add("zb_rerollchances",function(ply) if ply:IsAdmin() then zb.RerollChances() zb.CheckChances() end end)
+concommand.Add("zb_checkchances",function(ply) if hg.HasAdminAccess(ply) then zb.CheckChances() end end)
+concommand.Add("zb_rerollchances",function(ply) if hg.HasAdminAccess(ply) then zb.RerollChances() zb.CheckChances() end end)
 
 function zb.NotifyQueueEmptied()
 	net.Start("QueueEmptiedNotification")
@@ -651,7 +651,7 @@ function zb.NotifyQueueEmptied()
 end
 
 hook.Add("PlayerInitialSpawn", "SendGameModesToClient", function(ply)
-	if ply:IsAdmin() then
+	if hg.HasAdminAccess(ply) then
 		local modesToSend = {}
 		for key, mode in pairs(zb.modes) do
 			table.insert(modesToSend, {key = key, name = mode.PrintName or mode.name})
@@ -664,7 +664,7 @@ hook.Add("PlayerInitialSpawn", "SendGameModesToClient", function(ply)
 end)
 
 net.Receive("AdminSetGameMode", function(len, ply)
-	if not ply:IsAdmin() then return end
+	if not hg.HasAdminAccess(ply) then return end
 
 	local command = net.ReadString()
 	local modeKey = net.ReadString()
@@ -695,7 +695,7 @@ net.Receive("AdminSetGameMode", function(len, ply)
 end)
 
 net.Receive("AdminEndRound", function(len, ply)
-	if not ply:IsAdmin() then return end
+	if not hg.HasAdminAccess(ply) then return end
 
 	ply:ChatPrint("Round ended!")
 	zb:EndRound()
@@ -710,7 +710,7 @@ function zb.SyncQueueToAdmins()
 end
 
 net.Receive("AdminSetGameQueue", function(len, ply)
-	if not ply:IsAdmin() then return end
+	if not hg.HasAdminAccess(ply) then return end
 
 	local modeQueue = net.ReadTable()
 	zb.QueuedModes = modeQueue
@@ -767,7 +767,7 @@ end
 function zb.GetAllAdmins()
 	local admins = {}
 	for _, ply in player.Iterator() do
-		if ply:IsAdmin() then
+		if hg.HasAdminAccess(ply) then
 			table.insert(admins, ply)
 		end
 	end
@@ -776,7 +776,7 @@ end
 
 COMMANDS.setmode = {
 	function(ply, args)
-		if not ply:IsAdmin() then ply:ChatPrint("You don't have access") return end
+		if not hg.HasAdminAccess(ply) then ply:ChatPrint("You don't have access") return end
 		if not args[1] or (not zb:GetMode(args[1]) and args[1]~="random") then return end
 		ply:ChatPrint(args[1])
 		NextRound(args[1])
@@ -786,7 +786,7 @@ COMMANDS.setmode = {
 
 COMMANDS.setforcemode = {
 	function(ply, args)
-		if not ply:IsAdmin() then ply:ChatPrint("You don't have access") return end
+		if not hg.HasAdminAccess(ply) then ply:ChatPrint("You don't have access") return end
 		if not args[1] or (not zb:GetMode(args[1]) and args[1]~="random") then return end
 		ply:ChatPrint(args[1])
 		forcemode = args[1]
@@ -798,7 +798,7 @@ COMMANDS.setforcemode = {
 
 COMMANDS.endround = {
 	function(ply, args)
-		if not ply:IsAdmin() then
+		if not hg.HasAdminAccess(ply) then
 			ply:ChatPrint("You don't have access")
 			return
 		end
@@ -817,7 +817,7 @@ if SERVER then
 	util.AddNetworkString("QueueModifiedNotification")
 
 	hook.Add("PlayerInitialSpawn", "SendGameModesToClient", function(ply)
-		if ply:IsAdmin() then
+		if hg.HasAdminAccess(ply) then
 			local modesToSend = {}
 			for key, mode in pairs(zb.modes) do
 				table.insert(modesToSend, {key = key, name = mode.PrintName or mode.name})
@@ -830,13 +830,13 @@ if SERVER then
 	end)
 
 	net.Receive("AdminSetGameMode", function(len, ply)
-		if not ply:IsAdmin() then return end
+		if not hg.HasAdminAccess(ply) then return end
 
 		local command = net.ReadString()
 		local modeKey = net.ReadString()
 		local addToQueue = net.ReadBool() or false
 
-		if !(ply:IsSuperAdmin() or ply:IsAdmin()) and not zb.modes[modeKey]:CanLaunch() then
+		if !(hg.HasSuperAdminAccess(ply) or hg.HasAdminAccess(ply)) and not zb.modes[modeKey]:CanLaunch() then
 			ply:ChatPrint("This mode can't launch (No points or Is blocked): " .. modeKey)
 			return
 		end
@@ -874,7 +874,7 @@ if SERVER then
 	end
 
 	net.Receive("AdminSetGameQueue", function(len, ply)
-		if not ply:IsAdmin() then return end
+		if not hg.HasAdminAccess(ply) then return end
 
 		local modeQueue = net.ReadTable()
 		zb.QueuedModes = modeQueue

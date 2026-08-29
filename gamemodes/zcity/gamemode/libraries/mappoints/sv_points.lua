@@ -227,7 +227,7 @@ function zb.TranslatePointsToVectors(tbl)
 end
 
 net.Receive("zb_getallpoints",function(len,ply)
-    if not ply:IsAdmin() then ply:ChatPrint("Points: Access denied") return end
+    if not hg.HasAdminAccess(ply) then ply:ChatPrint("Points: Access denied") return end
 
     zb.SendPointsToPly(ply, true)
 end)

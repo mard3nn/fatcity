@@ -20,7 +20,7 @@ end
 
 if CLIENT then
     function zb.GetAllPoints()
-        if not LocalPlayer():IsAdmin() then return false end
+        if not hg.HasAdminAccess(LocalPlayer()) then return false end
         net.Start("zb_getallpoints")
         net.SendToServer()
     end
@@ -39,7 +39,7 @@ if CLIENT then
     local showpointnames = CreateConVar( "zb_drawpoints_names", "1", FCVAR_PROTECTED, "Draw point names if zb_drawpoints enabled", 0, 1 )
 
     function zb.DrawPoints()
-        if not LocalPlayer():IsAdmin() then return end
+        if not hg.HasAdminAccess(LocalPlayer()) then return end
         local radius = 4
         local wideSteps = 10
         local tallSteps = 10
@@ -93,7 +93,7 @@ if CLIENT then
     end, "huy")
 
     concommand.Add( "zb_pointsupdate", function( ply, cmd, args )
-        if not ply:IsAdmin() then return end
+        if not hg.HasAdminAccess(ply) then return end
         zb.GetAllPoints()
     end )
     

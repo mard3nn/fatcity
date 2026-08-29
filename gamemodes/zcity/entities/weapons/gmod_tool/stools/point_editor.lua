@@ -5,7 +5,7 @@ TOOL.ClientConVar["point"] = ""
 
 function TOOL:LeftClick(trace, attach)
 	local ply = self:GetOwner()
-	if not ply:IsAdmin() then
+	if not hg.HasAdminAccess(ply) then
 		ply:ChatPrint("You are a furry")
 		return false
 	end
@@ -33,7 +33,7 @@ end
 
 function TOOL:RightClick(trace)
 	local ply = self:GetOwner()
-	if not ply:IsAdmin() then
+	if not hg.HasAdminAccess(ply) then
 		ply:ChatPrint("You are a furry")
 		return false
 	end
@@ -122,7 +122,7 @@ function TOOL.BuildCPanel(CPanel)
 end
 
 function TOOL:Allowed()
-	return self:GetOwner():IsAdmin()
+	return hg.HasAdminAccess(self:GetOwner())
 end
 
 function TOOL:Deploy()
@@ -138,7 +138,7 @@ end
 local red = Color(255, 0, 0, 100)
 function TOOL:DrawHUD()
 	local lply = LocalPlayer()
-	if not lply:IsAdmin() then return end
+	if not hg.HasAdminAccess(lply) then return end
 
 	local radius = 4
 	local wideSteps = 10

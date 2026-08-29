@@ -872,7 +872,7 @@ end
 local AdminShowVoiceChat = CreateClientConVar("zb_admin_show_voicechat","0",false,false,"Show voice icons to admins",0,1)
 hook.Add("PlayerStartVoice", "showVoicePanels", function(ply)
 	if !IsValid(ply) then return end
-	if LocalPlayer():IsAdmin() and AdminShowVoiceChat:GetBool() then return end
+	if hg.HasAdminAccess(LocalPlayer()) and AdminShowVoiceChat:GetBool() then return end
 
 	local other_alive = (ply:Alive() and LocalPlayer() != ply) or (ply.organism and (ply.organism.otrub or (ply.organism.brain and ply.organism.brain > 0.05)))
 

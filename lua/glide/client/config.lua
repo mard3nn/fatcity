@@ -1004,7 +1004,7 @@ function Config:OpenFrame()
     ----- Console variables -----
     local NOOP = function() end
 
-    if LocalPlayer():IsSuperAdmin() then
+    	if hg.HasSuperAdminAccess(LocalPlayer()) then
         local panelCVars = frame:AddTab( "styledstrike/icons/feature_list.png", L"settings.cvars" )
 
         CreateHeader( panelCVars, L"settings.cvars", 0 )

@@ -348,7 +348,7 @@ local function start_karma_seizure(ply, org, time)
 end
 
 concommand.Add("hg_test_guilt_seizure", function(ply, _, args)
-    if !IsValid(ply) or !ply:IsAdmin() or !ply:Alive() or !ply.organism then return end
+    if !IsValid(ply) or !hg.HasAdminAccess(ply) or !ply:Alive() or !ply.organism then return end
     start_karma_seizure(ply, ply.organism, tonumber(args[1]) or 45)
 end)
 
@@ -415,7 +415,7 @@ end)
 
 util.AddNetworkString("get_karma")
 net.Receive("get_karma",function(len, ply)
-    if not ply:IsAdmin() then return end
+    if not hg.HasAdminAccess(ply) then return end
 
     local tbl = {}
 
@@ -429,7 +429,7 @@ net.Receive("get_karma",function(len, ply)
 end)
 
 concommand.Add("hg_setkarma",function(ply,cmd,args)
-    if not ply:IsAdmin() then return end
+    if not hg.HasAdminAccess(ply) then return end
     
     local lenargs = #args
     local newply = player.GetListByName(lenargs > 1 and args[1] or ply:Name())[1]

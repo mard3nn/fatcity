@@ -37,7 +37,7 @@ function hg.DrawBlur(panel, amount, passes, alpha)
 end
 
 local function BlockSpawn(ply, ent)
-	if game.SinglePlayer() or ply:IsAdmin() then return true end
+	if game.SinglePlayer() or hg.HasAdminAccess(ply) then return true end
 
 	return false
 end
@@ -51,7 +51,7 @@ end
 hook.Add( "PlayerNoClip", "FeelFreeToTurnItOff", function( ply, desiredState )
 	if ( desiredState == false ) then -- the player wants to turn noclip off
 		return true -- always allow
-	elseif ( ply:IsAdmin() ) then
+	elseif ( hg.HasAdminAccess(ply) ) then
 		return true -- allow administrators to enter noclip
 	end
 
@@ -67,8 +67,8 @@ if CLIENT then
 
 	hook.Add( "SpawnMenuOpen", "SpawnMenuWhitelist", function()
 		local ply = LocalPlayer()
-		if ply:IsSuperAdmin() then return end
-		if ply:IsAdmin() then return end
+		if hg.HasSuperAdminAccess(ply) then return end
+		if hg.HasAdminAccess(ply) then return end
 		return false
 	end )
 end

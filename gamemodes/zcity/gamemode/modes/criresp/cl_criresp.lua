@@ -584,7 +584,7 @@ local function OpenMenu()
 			end,
 			function() return cv_musicvol:GetInt() .. "%" end)
 
-		if LocalPlayer():IsAdmin() then
+		if hg.HasAdminAccess(LocalPlayer()) then
 			local capRow = CriRow(box, "ALLOW MORE THAN 20 PLAYERS")
 			CriToggle(capRow, function()
 				return GetConVar("criresp_over20"):GetBool()
