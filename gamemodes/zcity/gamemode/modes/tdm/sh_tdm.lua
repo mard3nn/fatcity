@@ -183,6 +183,105 @@ AddItemToBUY( ".44 Remington Magnum (20)", "Ammo", "ent_ammo_.44remingtonmagnum"
 
 AddItemToBUY( "Arrow", "Ammo", "ent_ammo_arrow", 25, "Ammo", {}, 5)
 
+local weaponCategoryMap = {
+    ["Weapons - Pistols"] = {"Pistols", 700},
+    ["Weapons - Machine-Pistols"] = {"Submachine", 1800},
+    ["Weapons - Carbines"] = {"Carbines", 2200},
+    ["Weapons - Assault Rifles"] = {"Assault", 3000},
+    ["Weapons - Shotguns"] = {"Shotguns", 2100},
+    ["Weapons - Machineguns"] = {"Heavy", 6000},
+    ["Weapons - Sniper Rifles"] = {"Marksman/Sniper", 5000},
+    ["Weapons - Grenade Launchers"] = {"Explosive", 8000},
+    ["Weapons - Other"] = {"Special", 1500},
+}
+
+local weaponBlacklist = {
+    ["weapon_slugcat"] = true,
+    ["weapon_osipr"] = true,
+    ["weapon_bleeding_musket"] = true,
+    ["weapon_ash12"] = true,
+    ["weapon_kord"] = true,
+    ["weapon_remington870_roullet"] = true,
+    ["weapon_ptrd"] = true,
+    ["weapon_combinesniper"] = true,
+    ["weapon_ags_30_handheld"] = true,
+}
+
+local function HasMountType(mountTypes, mountType)
+    if istable(mountTypes) then return table.HasValue(mountTypes, mountType) end
+    return mountTypes == mountType
+end
+
+local function GetWeaponAttachments(weapon)
+    local result = {}
+    local added = {}
+
+    local function AddAttachment(name)
+        if not isstring(name) or name == "" or name == "empty" or name == "null" or added[name] then return end
+        if not hg.attachmentsIcons or not hg.attachmentsIcons[name] then return end
+        added[name] = true
+        result[#result + 1] = name
+    end
+
+    for placement, available in pairs(weapon.availableAttachments or {}) do
+        if not istable(available) then continue end
+
+        for key, attachment in pairs(available) do
+            if isnumber(key) and istable(attachment) then AddAttachment(attachment[1]) end
+        end
+
+        local mountTypes = available.mountType
+        if mountTypes then
+            for name, attachment in pairs((hg.validattachments and hg.validattachments[placement]) or {}) do
+                if istable(attachment) and HasMountType(mountTypes, attachment.mountType) then
+                    AddAttachment(name)
+                end
+            end
+        end
+    end
+
+    table.sort(result)
+    return result
+end
+
+local function PopulateTDMWeapons()
+    local registeredWeapons = {}
+    for _, category in pairs(MODE.BuyItems) do
+        for name, item in pairs(category) do
+            if name != "Priority" and istable(item) and item.Type == "Weapon" then
+                if weaponBlacklist[item.ItemClass] then
+                    category[name] = nil
+                else
+                    registeredWeapons[item.ItemClass] = item
+                end
+            end
+        end
+    end
+
+    for _, weapon in ipairs(weapons.GetList()) do
+        local categoryData = weaponCategoryMap[weapon.Category]
+        local class = weapon.ClassName
+        local ammo = weapon.Primary and weapon.Primary.Ammo
+        if weapon.Spawnable == true and categoryData and isstring(class) and isstring(ammo) and ammo != "" and ammo != "none" and not weaponBlacklist[class] and not registeredWeapons[class] then
+            local itemName = weapon.PrintName or class
+            local category = categoryData[1]
+            if MODE.BuyItems[category] and MODE.BuyItems[category][itemName] then
+                itemName = itemName .. " (" .. class .. ")"
+            end
+            AddItemToBUY(itemName, "Weapon", class, categoryData[2], category, GetWeaponAttachments(weapon))
+            registeredWeapons[class] = MODE.BuyItems[category][itemName]
+        end
+    end
+
+    for class, item in pairs(registeredWeapons) do
+        local weapon = weapons.GetStored(class)
+        if weapon then item.Attachments = GetWeaponAttachments(weapon) end
+    end
+end
+
+timer.Simple(0, PopulateTDMWeapons)
+hook.Add("OnReloaded", "TDM_PopulateBuyWeapons", PopulateTDMWeapons)
+
 function MODE:HG_MovementCalc_2( mul, ply, cmd, mv )
     if (zb.ROUND_START or 0) + 20 > CurTime() and cmd then
         cmd:RemoveKey(IN_ATTACK)

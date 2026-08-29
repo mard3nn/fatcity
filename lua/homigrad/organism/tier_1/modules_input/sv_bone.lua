@@ -325,6 +325,11 @@ input_list.jaw = function(org, bone, dmg, dmgInfo, boneindex, dir, hit, ricochet
 	hg.AddHarmToAttacker(dmgInfo, (org.jaw - oldDmg) * 3, "Jaw bone damage harm")
 
 	if org.jaw == 1 and (org.jaw - oldDmg) > 0 and org.isPly then
+		org.alive = false
+		org.heartstop = true
+		if IsValid(org.owner) and org.owner:IsPlayer() and org.owner:Alive() then
+			org.owner:Kill()
+		end
 		if !hasNewThoughts(org) then org.owner:Notify(jaw_broken_msg[math.random(#jaw_broken_msg)], true, "jaw", 2) end
 		sendThought(org, "Your jaw is broken.", "thought_jaw", 4, Color(255, 210, 210))
 	end

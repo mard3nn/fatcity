@@ -242,89 +242,37 @@ function MODE:RoundStart()
     end
 end
 
-surface.CreateFont("ZB_TDM_MENU", {
-    font = "Bahnschrift",
-    size = ScreenScale(12),
-    extended = true,
-    weight = 400,
-    antialias = true
-})
-surface.CreateFont("ZB_TDM_DESC", {
-    font = "Bahnschrift",
-    size = ScreenScale(7),
-    extended = true,
-    weight = 400,
-    antialias = true
-})
+surface.CreateFont("ZB_TDM_MENU", {font = "Bahnschrift", size = ScreenScale(13), extended = true, weight = 700, antialias = true})
+surface.CreateFont("ZB_TDM_DESC", {font = "Bahnschrift", size = ScreenScale(9), extended = true, weight = 500, antialias = true})
+surface.CreateFont("ZB_TDM_CATEGORY", {font = "Bahnschrift", size = ScreenScale(10), extended = true, weight = 700, antialias = true})
+surface.CreateFont("ZB_TDM_DESCSMALL", {font = "Bahnschrift", size = ScreenScale(7), extended = true, weight = 500, antialias = true})
+surface.CreateFont("ZB_TDM_TITLE", {font = "Bahnschrift", size = ScreenScale(22), extended = true, weight = 800, antialias = true})
 
-surface.CreateFont("ZB_TDM_CATEGORY", {
-    font = "Bahnschrift",
-    size = ScreenScale(6),
-    extended = true,
-    weight = 400,
-    antialias = true
-})
+local buyAccent = Color(60, 120, 235)
+local buyAccentBright = Color(105, 165, 255)
+local buyPanel = Color(14, 20, 42, 238)
+local buyPanelHover = Color(22, 34, 66, 245)
+local buyText = Color(220, 228, 245)
+local buyTextDim = Color(105, 122, 150)
+local buyGreen = Color(92, 205, 128)
+local buyRed = Color(210, 82, 82)
+local buyGold = Color(255, 200, 60)
+local buyGradientR = Material("vgui/gradient-r")
 
-surface.CreateFont("ZB_TDM_DESCSMALL", {
-    font = "Bahnschrift",
-    size = ScreenScale(5),
-    extended = true,
-    weight = 400,
-    antialias = true
-})
-
-local function PaintFrame(self,w,h)
-	BlurBackground(self)
-
-	surface.SetDrawColor( 255, 0, 0, 128)
-    surface.DrawOutlinedRect( 0, 0, w, h, 2.5 )
+local function SendBuy(item)
+	net.Start("tdm_buyitem")
+		net.WriteTable(item)
+	net.SendToServer()
 end
 
-local function PaintPanel(self,w,h)
-	surface.SetDrawColor( 0, 0, 0,155)
-    surface.DrawRect( 0, 0, w, h, 2.5 )
-	surface.SetDrawColor( 255, 0, 0, 128)
-    surface.DrawOutlinedRect( 0, 0, w, h, 2.5 )
-end
-
-local gradient_l = Material("vgui/gradient-l")
-
-local function PaintPanel1(self,w,h)
-	surface.SetDrawColor( 0, 0, 0,155)
-    surface.DrawRect( 0, 0, w, h, 2.5 )
-	surface.SetDrawColor( 255, 0, 0, 128)
-    surface.DrawOutlinedRect( 0, 0, w, h, 2.5 )
-	draw.RoundedBox( 0, 2.5, 2.5, w-5, h-5, Color( 0, 0, 0, 140) )
-    surface.SetDrawColor(155, 0, 0, 55)
-    surface.SetMaterial(gradient_l)
-    surface.DrawTexturedRect( 0, 0, w/1.5, h )
-end
-
-local function PaintPanel2(self,w,h)
-	--surface.SetDrawColor( 15, 15, 15,25)
-    --surface.DrawRect( 0, 0, w, h, 2.5 )
-	--draw.RoundedBox( 0, 2.5, 2.5, w-5, h-5, Color( 0, 0, 0, 140) )
-    surface.SetDrawColor(55, 155, 55, 25)
-    surface.SetMaterial(gradient_l)
-    surface.DrawTexturedRect( 0, 0, w*1.2, h )
-end
-
-local rtabFunc = function(self)
-
-	local ExtraInset = 10
-
-	if ( self.Image ) then
-		ExtraInset = ExtraInset + self.Image:GetWide()
+local function GetBuyIcon(item)
+	local weapon = weapons.GetStored(item.ItemClass)
+	local ent = scripted_ents.GetStored(item.ItemClass)
+	local icon = ent and ent.t and ent.t.IconOverride
+	if weapon then
+		icon = (weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride or icon
 	end
-
-	self:SetTextInset( ExtraInset, 2 )
-	local w, h = self:GetContentSize()
-	h = self:GetTabHeight()
-
-	self:SetSize( w + 10, h + 7 )
-
-	DLabel.ApplySchemeSettings( self )
-
+	return icon, weapon
 end
 
 local function OpenBuyMenu()
@@ -334,180 +282,198 @@ local function OpenBuyMenu()
 	end
 	local StartTime = zb.ROUND_START or CurTime()
 	if not LocalPlayer():Alive() or StartTime + 40 < CurTime() then return end
-	TDM_OpenedBuyMenu = vgui.Create("ZFrame")
+	TDM_OpenedBuyMenu = vgui.Create("DPanel")
 	local Frame = TDM_OpenedBuyMenu
-	Frame:SetSize(ScrW() * 0.35,ScrH() * 0.85)
-	Frame:Center()
+	Frame:SetSize(ScrW(), ScrH())
+	Frame:SetPos(0, 0)
 	Frame:MakePopup()
-	Frame:SetTitle("Buy menu")
-	Frame.Paint = PaintFrame
-	
-	local Sheet = vgui.Create( "DPropertySheet", Frame )
-	Sheet:Dock( FILL )
-	Sheet:SetTextInset(50)
-	Sheet.Paint = function() end
-	Sheet.tabScroller:SetOverlap( 0 )
-	Sheet.tabScroller:DockMargin( 8, 0, 8, 0 )
-	Sheet:SetFadeTime(0.1)
+	Frame:SetAlpha(0)
+	Frame:AlphaTo(255, 0.15, 0)
+	Frame.Paint = function(self, w, h)
+		BlurBackground(self)
+		surface.SetDrawColor(8, 12, 26, 238)
+		surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, 55)
+		surface.SetMaterial(buyGradientR)
+		surface.DrawTexturedRect(0, 0, w, h)
+		local grid = ScreenScale(28)
+		local off = (RealTime() * 10) % grid
+		surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, 10)
+		for x = -1, math.ceil(w / grid) do surface.DrawRect(x * grid - off, 0, 1, h) end
+		for y = -1, math.ceil(h / grid) do surface.DrawRect(0, y * grid + off, w, 1) end
+	end
 
-	for k,category in SortedPairsByMemberValue(MODE.BuyItems, "Priority") do
-		local CategoryPanel = vgui.Create( "DScrollPanel", sheet )
-		--CategoryPanel:Dock()
-		CategoryPanel.Paint = function() end
-		for n,Item in pairs(category) do
-			if n == "Priority" then continue end
-			local weapon = weapons.GetStored( Item.ItemClass )
-			local ent = scripted_ents.GetStored( Item.ItemClass )
+	local margin, headerH, footerH, gap = ScreenScale(10), ScreenScale(30), ScreenScale(28), ScreenScale(8)
+	local leftW = math.floor(ScrW() * 0.19)
+	local bodyY, bodyH = headerH, ScrH() - headerH - footerH - margin
 
-			local ItemPanel = vgui.Create("DPanel",CategoryPanel)
-			ItemPanel:SetSize(0,ScrH()*0.1)
-			ItemPanel:Dock(TOP)
-			ItemPanel:DockMargin(0,8,0,0)
-			ItemPanel.Paint = PaintPanel1
-			--print(Item.ItemClass,weapon)
-			if ( weapon ~= nil and ( (weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName()) or (weapon.IconOverride)) ) or ((ent and ent.t.IconOverride)) then
-				local ItemButton = vgui.Create("DImage",ItemPanel)
-				local bBox = ((ent and ent.t.IconOverride) or weapon~=nil and weapon.WepSelectIcon2box)
-				ItemButton:SetSize(ScrH() * ( (bBox and 0.1) or 0.17), ScrH() * 0.1)
-				ItemButton:Dock(LEFT)
-				local boxed = ScrH()*0.07/2
-				ItemButton:DockMargin(5 + (bBox and boxed or 0),5,5 + (bBox and boxed or 0),5)
-				ItemButton:SetImage( ( weapon ~= nil and ( (weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride) ) or ((ent and ent.t.IconOverride) or "none") )
+	local title = vgui.Create("DLabel", Frame)
+	title:SetPos(margin, ScreenScale(3))
+	title:SetFont("ZB_TDM_TITLE")
+	title:SetText("АРСЕНАЛ")
+	title:SetTextColor(Color(180, 210, 255))
+	title:SizeToContents()
+
+	local close = vgui.Create("DButton", Frame)
+	close:SetText("")
+	close:SetSize(ScreenScale(22), ScreenScale(22))
+	close:SetPos(ScrW() - margin - close:GetWide(), ScreenScale(4))
+	close.Paint = function(self, w, h)
+		if self:IsHovered() then draw.RoundedBox(4, 0, 0, w, h, Color(60, 120, 235, 130)) end
+		draw.SimpleText("×", "ZB_TDM_MENU", w / 2, h / 2, buyText, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end
+	close.DoClick = function() Frame:Remove() end
+
+	local categories = vgui.Create("DPanel", Frame)
+	categories:SetPos(margin, bodyY)
+	categories:SetSize(leftW, bodyH)
+	categories.Paint = function(self, w, h)
+		draw.RoundedBox(6, 0, 0, w, h, buyPanel)
+		surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, 75)
+		surface.DrawOutlinedRect(0, 0, w, h, 1)
+	end
+
+	local categoryTitle = vgui.Create("DLabel", categories)
+	categoryTitle:Dock(TOP)
+	categoryTitle:DockMargin(ScreenScale(8), ScreenScale(8), 0, ScreenScale(5))
+	categoryTitle:SetFont("ZB_TDM_CATEGORY")
+	categoryTitle:SetText("КАТЕГОРИИ")
+	categoryTitle:SetTextColor(buyAccentBright)
+	categoryTitle:SetTall(ScreenScale(18))
+
+	local categoryList = vgui.Create("DScrollPanel", categories)
+	categoryList:Dock(FILL)
+	categoryList:DockMargin(ScreenScale(6), 0, ScreenScale(6), ScreenScale(6))
+	local content = vgui.Create("DScrollPanel", Frame)
+	content:SetPos(margin + leftW + gap, bodyY)
+	content:SetSize(ScrW() - margin * 2 - leftW - gap, bodyH)
+	content.Paint = function(self, w, h)
+		draw.RoundedBox(6, 0, 0, w, h, buyPanel)
+		surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, 75)
+		surface.DrawOutlinedRect(0, 0, w, h, 1)
+	end
+
+	local selectedCategory
+	local categoryButtons = {}
+	local function ShowCategory(categoryName, category)
+		selectedCategory = categoryName
+		content:Clear()
+		local layout = vgui.Create("DIconLayout", content)
+		layout:Dock(TOP)
+		layout:DockMargin(ScreenScale(8), ScreenScale(8), ScreenScale(8), ScreenScale(8))
+		layout:SetSpaceX(ScreenScale(6))
+		layout:SetSpaceY(ScreenScale(6))
+		local cols = math.Clamp(math.floor(content:GetWide() / ScreenScale(150)), 2, 5)
+		local cardW = math.floor((content:GetWide() - ScreenScale(22) - ScreenScale(6) * (cols - 1)) / cols)
+		local cardH = ScreenScale(92)
+		local count = 0
+		for itemName, item in SortedPairs(category) do
+			if itemName == "Priority" then continue end
+			count = count + 1
+			local icon, weapon = GetBuyIcon(item)
+			local actionX = math.floor(cardW * 0.53)
+			local attachCols = math.max(1, math.floor((cardW - actionX - ScreenScale(5)) / ScreenScale(16)))
+			local attachRows = math.ceil(#(item.Attachments or {}) / attachCols)
+			local itemCardH = math.max(cardH, ScreenScale(55 + attachRows * 16))
+			local card = layout:Add("DButton")
+			card:SetText("")
+			card:SetSize(cardW, itemCardH)
+			card.Paint = function(self, w, h)
+				local affordable = LocalPlayer():GetNWInt("TDM_Money", 0) >= item.Price
+				draw.RoundedBox(4, 0, 0, w, h, self:IsHovered() and buyPanelHover or Color(12, 18, 38, 240))
+				surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, self:IsHovered() and 150 or 55)
+				surface.DrawOutlinedRect(0, 0, w, h, 1)
+				draw.SimpleText(itemName, "ZB_TDM_MENU", ScreenScale(6), ScreenScale(5), affordable and buyText or buyTextDim)
+				draw.SimpleText("$" .. item.Price, "ZB_TDM_DESC", ScreenScale(6), ScreenScale(22), affordable and buyGreen or buyRed)
+				draw.SimpleText("КУПИТЬ", "ZB_TDM_DESCSMALL", w - ScreenScale(6), h - ScreenScale(5), self:IsHovered() and buyAccentBright or buyTextDim, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+			end
+			card.DoClick = function() SendBuy({categoryName, itemName}) end
+
+			if icon then
+				local image = vgui.Create("DImage", card)
+				image:SetImage(icon)
+				image:SetPos(ScreenScale(5), ScreenScale(31))
+				image:SetSize(math.min(cardW * 0.48, ScreenScale(58)), ScreenScale(40))
+				image:SetMouseInputEnabled(false)
 			end
 
-			local ItemButton = vgui.Create("DPanel",ItemPanel)
-			ItemButton:Dock(FILL)
-			ItemButton:DockMargin(0,5,0,0)
-			ItemButton.Paint = function() end
-
-			local lbl = vgui.Create("DLabel", ItemButton)
-			lbl:SetText(n)
-			lbl:DockMargin(10,0,5,0)
-			lbl:Dock(TOP)
-			lbl:SetFont("ZB_TDM_MENU")
-			lbl:SetSize(ScrW()*0.5,ScrH()*0.04)
-
-			local lbl = vgui.Create("DLabel", ItemButton)
-			lbl:SetText("Price: $"..Item.Price)
-			lbl:DockMargin(10,0,5,0)
-			lbl:Dock(TOP)
-			lbl:SetTextColor(Color(155,200,155))
-			lbl:SetFont("ZB_TDM_DESC")
-			lbl:SetSize(ScrW()*0.5,ScrH()*0.02)
-
-			local BuyBtn = vgui.Create("DButton", ItemButton)
-			BuyBtn:DockMargin(10,5,10,10)
-			BuyBtn:Dock(LEFT)
-			BuyBtn:SetText("Buy")
-			BuyBtn:SetTextColor(Color(200,200,200))
-			BuyBtn:SetFont("ZB_TDM_DESC")
-			BuyBtn:SetHeight(ScrH()*0.025)
-			BuyBtn.Paint = PaintPanel
-			BuyBtn.Item = {k,n}
-
-			function BuyBtn:DoClick()
-				net.Start("tdm_buyitem")
-					net.WriteTable(self.Item)
-				net.SendToServer()
-			end
-			
 			if weapon then
-				local ammo = weapon.Primary.Ammo != "none" and weapon.Primary.Ammo or weapon.Ammo or (weapons.GetStored( weapon.Base ) and weapons.GetStored( weapon.Base ).Primary.Ammo)
-				
-				if hg.ammotypeshuy[ammo] then
-					local amm = vgui.Create( "DButton", ItemButton)
-					amm:DockMargin(10,5,10,10)
-					amm:Dock(LEFT)
-					amm:SetText(ammo)
-					amm:SetTextColor(Color(200,200,200))
-					amm:SetFont("ZB_TDM_DESCSMALL")
-					
-					surface.SetFont("ZB_TDM_DESCSMALL")
-					local w, h = surface.GetTextSize(ammo)
-
-					amm:SetHeight(ScrH()*0.025)
-					amm:SetWidth(w + 7)
-					local ammo2 = "ent_ammo_"..hg.ammotypeshuy[ammo].name
-					local name
-					for name2, ammo in pairs(MODE.BuyItems["Ammo"]) do
-						if not istable(ammo) then continue end
-						if ammo.ItemClass == ammo2 then
-							name = name2
-						end
+				local base = weapons.GetStored(weapon.Base or "")
+				local ammo = weapon.Primary and weapon.Primary.Ammo or weapon.Ammo or (base and base.Primary and base.Primary.Ammo)
+				if ammo and ammo != "none" and hg.ammotypeshuy[ammo] and MODE.BuyItems["Ammo"] then
+					local ammoClass = "ent_ammo_" .. hg.ammotypeshuy[ammo].name
+					local ammoName
+					for name, ammoItem in pairs(MODE.BuyItems["Ammo"]) do
+						if istable(ammoItem) and ammoItem.ItemClass == ammoClass then ammoName = name break end
 					end
-					
-					amm.huy = {"Ammo", name}
-
-					function amm:DoClick()
-						net.Start("tdm_buyitem")
-							net.WriteTable(amm.huy)
-						net.SendToServer()
+					if ammoName then
+						local ammoBtn = vgui.Create("DButton", card)
+						ammoBtn:SetText("ПАТРОНЫ")
+						ammoBtn:SetFont("ZB_TDM_DESCSMALL")
+						ammoBtn:SetTextColor(buyGold)
+						ammoBtn:SetPos(actionX, ScreenScale(32))
+						ammoBtn:SetSize(cardW - actionX - ScreenScale(5), ScreenScale(15))
+						ammoBtn.Paint = function(self, w, h) draw.RoundedBox(3, 0, 0, w, h, Color(30, 42, 72, self:IsHovered() and 255 or 220)) end
+						ammoBtn.DoClick = function() SendBuy({"Ammo", ammoName}) end
 					end
-
-					amm.Paint = PaintPanel
 				end
 			end
 
-			if Item.Attachments and #Item.Attachments > 0 then
-				local ItemAtt = vgui.Create("DGrid",ItemPanel)
-				local ItemIcon = math.ceil(ScrH()*0.06)
-				ItemAtt:Dock(RIGHT)
-				ItemAtt:DockMargin(0,5,0,0)
-				ItemAtt:SetCols( 4 )
-				ItemAtt:SetColWide(ItemIcon)
-				ItemAtt:SetRowHeight(ItemIcon)
-				ItemAtt.Paint = function() end
-				for id,AttachN in pairs(Item.Attachments) do
-					local ico = hg.attachmentsIcons[AttachN]
-					local Attach = vgui.Create( "DImageButton" )
-					Attach:SetImage(ico)
-					Attach:SetSize(ItemIcon-5,ItemIcon-5)
-
-					Attach.Attachment = {k,n,AttachN}
-
-					function Attach:DoClick()
-						net.Start("tdm_buyitem")
-							net.WriteTable(self.Attachment)
-						net.SendToServer()
-					end
-
-					Attach.Paint = PaintPanel2
-					ItemAtt:AddItem(Attach)
+			for id, attachName in ipairs(item.Attachments or {}) do
+				local attach = vgui.Create("DImageButton", card)
+				attach:SetImage(hg.attachmentsIcons[attachName] or "icon16/wrench.png")
+				attach:SetTooltip((hg.attachmentslaunguage and hg.attachmentslaunguage[attachName]) or attachName)
+				attach:SetSize(ScreenScale(14), ScreenScale(14))
+				local attachColumn = (id - 1) % attachCols
+				local attachRow = math.floor((id - 1) / attachCols)
+				attach:SetPos(actionX + attachColumn * ScreenScale(16), ScreenScale(51) + attachRow * ScreenScale(16))
+				attach.DoClick = function() SendBuy({categoryName, itemName, attachName}) end
+				attach.PaintOver = function(self, w, h)
+					surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, self:IsHovered() and 210 or 70)
+					surface.DrawOutlinedRect(0, 0, w, h, 1)
 				end
 			end
 		end
-		local tab = Sheet:AddSheet(k,CategoryPanel)
-		local rTab = tab["Tab"]
-		rTab.Paint = PaintPanel
-		rTab:SetFont("ZB_TDM_CATEGORY")
-		rTab.ApplySchemeSettings = rtabFunc
-		--rTab:SetTextInset(50)
+		layout:SetTall(math.max(cardH, count * (cardH + ScreenScale(6))))
+		layout:InvalidateLayout(true)
+		timer.Simple(0, function()
+			if not IsValid(layout) then return end
+			layout:InvalidateLayout(true)
+			layout:SizeToChildren(false, true)
+		end)
 	end
 
-	local StartTime = zb.ROUND_START or CurTime()
-	local lbl = vgui.Create("DLabel", Frame)
-	lbl:SetText("Time Left: "..string.FormattedTime(StartTime + 40 - CurTime(), "%02i:%02i:%02i"))
-	lbl:DockMargin(10,0,10,10)
-	lbl:Dock(BOTTOM)
-	lbl:SetTextColor(Color(255,255,255))
-	lbl:SetFont("ZB_TDM_DESC")
-	lbl:SetSize(0,ScrH()*0.015)
+	for categoryName, category in SortedPairsByMemberValue(MODE.BuyItems, "Priority") do
+		local btn = vgui.Create("DButton", categoryList)
+		btn:Dock(TOP)
+		btn:DockMargin(0, 0, 0, ScreenScale(3))
+		btn:SetTall(ScreenScale(23))
+		btn:SetText("")
+		btn.Paint = function(self, w, h)
+			local selected = selectedCategory == categoryName
+			draw.RoundedBox(4, 0, 0, w, h, selected and Color(18, 36, 78, 245) or (self:IsHovered() and buyPanelHover or Color(10, 15, 31, 210)))
+			if selected then surface.SetDrawColor(buyAccentBright) surface.DrawRect(0, 0, 3, h) end
+			draw.SimpleText(categoryName, "ZB_TDM_DESC", ScreenScale(7), h / 2, selected and buyText or buyTextDim, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		end
+		btn.DoClick = function() ShowCategory(categoryName, category) end
+		categoryButtons[#categoryButtons + 1] = {button = btn, name = categoryName, data = category}
+	end
+	if categoryButtons[1] then ShowCategory(categoryButtons[1].name, categoryButtons[1].data) end
 
-	function lbl:Think()
-		if not LocalPlayer():Alive() or StartTime + 40 < CurTime() then TDM_OpenedBuyMenu:Remove() end
-		self:SetText("Time Left: "..string.FormattedTime(StartTime + 40 - CurTime(), "%02i:%02i:%02i"))
+	local status = vgui.Create("DPanel", Frame)
+	status:SetPos(0, ScrH() - footerH)
+	status:SetSize(ScrW(), footerH)
+	status.Paint = function(self, w, h)
+		surface.SetDrawColor(8, 12, 24, 248) surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(buyAccent.r, buyAccent.g, buyAccent.b, 100) surface.DrawRect(0, 0, w, 1)
+		draw.SimpleText("ДЕНЬГИ  $" .. LocalPlayer():GetNWInt("TDM_Money", 0), "ZB_TDM_CATEGORY", margin, h / 2, buyGreen, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		local left = math.max(0, StartTime + 40 - CurTime())
+		draw.SimpleText("ПОКУПКА  " .. string.FormattedTime(left, "%02i:%02i"), "ZB_TDM_CATEGORY", w - margin, h / 2, left <= 5 and buyRed or buyText, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 	end
 
-	local lbl = vgui.Create("DLabel", Frame)
-	lbl:SetText("Cash: $"..LocalPlayer():GetNWInt("TDM_Money",0))
-	lbl:DockMargin(10,5,10,5)
-	lbl:Dock(BOTTOM)
-	lbl:SetTextColor(Color(61,173,61))
-	lbl:SetFont("ZB_TDM_DESC")
-	lbl:SetSize(0,ScrH()*0.02)
-
-	function lbl:Think()
-		self:SetText("Cash: $"..LocalPlayer():GetNWInt("TDM_Money",0))
+	Frame.Think = function(self)
+		if not LocalPlayer():Alive() or StartTime + 40 < CurTime() then self:Remove() return end
+		if input.IsKeyDown(KEY_ESCAPE) then self:Remove() if gui.IsGameUIVisible() then gui.HideGameUI() end end
 	end
 
 end

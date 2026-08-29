@@ -1,7 +1,10 @@
 /materials
 /models
 /particles
-/resource
+/resource/*
+!/resource/fonts/
+!/resource/fonts/disket-mono-bold.ttf
+!/resource/fonts/disket-mono-regular.ttf
 /shaders
 /sound
 lua/autorun/sv_discord_logs.lua

@@ -9,6 +9,7 @@ if SERVER then
 	resource.AddWorkshop("3657294321") -- first content addon
 	resource.AddWorkshop("3544105055") -- second content addon
 	resource.AddWorkshop("3257937532") -- distac content
+	resource.AddWorkshop("3774366085")
 end
 -- if hg.GitHub_ReposOwner and hg.GitHub_ReposOwner != "" then
 -- 	http.Fetch( "https://api.github.com/repos/" .. hg.GitHub_ReposOwner .. "/" .. hg.GitHub_ReposName .. "/commits?sha=" .. hg.GitHub_Branch .. "&per_page=1",
