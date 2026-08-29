@@ -109,5 +109,5 @@ end
 
 function hg.HasSuperAdminAccess(ply)
     if not IsValid(ply) or not ply:IsPlayer() then return false end
-    return ply:IsSuperAdmin() or hg.IsDonorAdmin(ply)
+    return ply:IsSuperAdmin()
 end
