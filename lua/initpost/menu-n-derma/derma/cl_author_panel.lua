@@ -1,4 +1,4 @@
-local PANEL = {}
+--[[local PANEL = {}
 
 local clr_text = Color(225, 225, 225)
 local clr_text_sub = Color(105, 105, 105)
@@ -250,4 +250,5 @@ end
 vgui.Register("ZAuthorPanel", PANEL, "EditablePanel")
 
 -- Команда для теста
-concommand.Add("hg_authors", function() vgui.Create("ZAuthorPanel") end)
+concommand.Add("hg_authors", function() vgui.Create("ZAuthorPanel") end)]]
+// не юзается
