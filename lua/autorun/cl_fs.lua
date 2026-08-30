@@ -63,40 +63,24 @@ local function CaptureNormal()
 	})
 end
 
--- "Экспериментальный" режим (как Local/Advanced mode в GimmeThatScreen):
--- скриншот делает сам движок командой `jpeg <имя>` -- это тот же кадр, что
--- уходит в Steam. Его нельзя подменить перехватом render.Capture из Lua.
--- В GTS этот режим часто "висел": файл проверялся ровно один раз через 0.5 c,
--- и если движок не успел его дописать, админ видел бесконечный Loading.
--- Здесь файл опрашивается циклически до ENGINE_TIMEOUT секунд.
--- Результат отдаётся асинхронно в finishSlot(SLOT_EXPERIMENTAL, data|nil).
 local function StartEngineCapture(finishSlot)
 	local name = "gomiac_" .. tostring(math.random(10000000, 99999999))
 	local path = "screenshots/" .. name .. ".jpg"
 
 	local qualityCvar = GetConVar("jpeg_quality")
-	local steamCvar = GetConVar("cl_savescreenshotstosteam")
 	local oldQuality = qualityCvar and qualityCvar:GetInt() or 70
-	local oldSteam = steamCvar and steamCvar:GetInt() or 1
 
 	local function RestoreCvars()
-		RunConsoleCommand("jpeg_quality", tostring(oldQuality))
-		RunConsoleCommand("cl_savescreenshotstosteam", tostring(oldSteam))
+		pcall(function() RunConsoleCommand("jpeg_quality", tostring(oldQuality)) end)
 	end
 
-	RunConsoleCommand("jpeg_quality", tostring(SHOT_QUALITY))
-	RunConsoleCommand("cl_savescreenshotstosteam", "0") -- не заливать в Steam
+	pcall(function() RunConsoleCommand("jpeg_quality", tostring(SHOT_QUALITY)) end)
 
-	local ok = pcall(function()
-		local ply = LocalPlayer()
-		if IsValid(ply) then
-			ply:ConCommand("jpeg " .. name)
-		else
-			RunConsoleCommand("jpeg", name)
-		end
-	end)
-	if not ok then
+	local jpegOk = pcall(function() RunConsoleCommand("jpeg", name) end)
+	if not jpegOk then
 		RestoreCvars()
+		local data = CaptureNormal()
+		finishSlot(SLOT_EXPERIMENTAL, data)
 		return false
 	end
 
@@ -106,9 +90,7 @@ local function StartEngineCapture(finishSlot)
 		local data = file.Read(path, "GAME")
 		if data and #data > 0 then
 			timer.Remove("gomiac_grab_wait")
-			-- файл остаётся в garrysmod/screenshots/: file.Delete работает
-			-- только внутри DATA, движковый кадр оттуда не удалить
-			timer.Simple(0.5, RestoreCvars) -- даём движку закончить с файлом
+			timer.Simple(0.5, RestoreCvars)
 			finishSlot(SLOT_EXPERIMENTAL, data)
 			return
 		end
@@ -116,8 +98,8 @@ local function StartEngineCapture(finishSlot)
 		if SysTime() - started >= ENGINE_TIMEOUT then
 			timer.Remove("gomiac_grab_wait")
 			RestoreCvars()
-			ErrorNoHalt("[GOMIAC] engine screenshot timed out\n")
-			finishSlot(SLOT_EXPERIMENTAL, nil)
+			local fallback = CaptureNormal()
+			finishSlot(SLOT_EXPERIMENTAL, fallback)
 		end
 	end)
 
@@ -138,27 +120,30 @@ local function SendScreenshot(slot, data)
 		chunks[#chunks + 1] = string.sub(data, i, i + CHUNK_SIZE - 1)
 	end
 
-	for index, chunk in ipairs(chunks) do
+	local function SendChunk(idx)
+		if idx > #chunks then return end
+		local chunk = chunks[idx]
 		net.Start("gomiac_screengrab_res")
 		net.WriteUInt(1, 8)
 		net.WriteUInt(slot, 8)
-		net.WriteUInt(index, 16)
+		net.WriteUInt(idx, 16)
 		net.WriteUInt(#chunks, 16)
 		net.WriteUInt(#chunk, 32)
 		net.WriteData(chunk, #chunk)
 		net.SendToServer()
+		timer.Simple(0.05, function() SendChunk(idx + 1) end)
 	end
+
+	SendChunk(1)
 end
 
 local grabPending = false
 
 net.Receive("gomiac_screengrab_req", function()
 	net.Start("gomiac_screengrab_res")
-	net.WriteUInt(0, 8) -- ack
+	net.WriteUInt(0, 8)
 	net.SendToServer()
 
-	-- Второй кадр приходит асинхронно (движок дописывает файл), поэтому слоты
-	-- закрываются независимо друг от друга.
 	if grabPending then return end
 	grabPending = true
 
@@ -172,7 +157,6 @@ net.Receive("gomiac_screengrab_req", function()
 		end
 	end
 
-	-- слот 1: обычный захват в конце текущего кадра рендера
 	hook.Add("PostRender", "gomiac_grab", function()
 		hook.Remove("PostRender", "gomiac_grab")
 		local ok, normal = pcall(CaptureNormal)
@@ -182,7 +166,6 @@ net.Receive("gomiac_screengrab_req", function()
 		FinishSlot(SLOT_NORMAL, ok and normal or nil)
 	end)
 
-	-- слот 2: движковый скриншот (jpeg), результат придёт по таймеру
 	if not StartEngineCapture(FinishSlot) then
 		FinishSlot(SLOT_EXPERIMENTAL, nil)
 	end
