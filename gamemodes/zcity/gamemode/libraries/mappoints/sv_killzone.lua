@@ -1,20 +1,20 @@
 zb = zb or {}
 
-zb.Points.KILLZONE = zb.Points.KILLZONE or {}
-zb.Points.KILLZONE.Color = Color(255, 0, 0)
-zb.Points.KILLZONE.Name = "Killzone"
-
 zb.Killzones = zb.Killzones or {}
 
 function zb.LoadKillzones()
     zb.Killzones = {}
-    local points = zb.GetMapPoints("KILLZONE")
-    if not points then return end
+
+    local points = zb.GetMapPoints("KILLZONE", true)
+    if not points or #points == 0 then
+        MsgC(Color(255, 200, 0), "[Killzone] ", color_white, "No KILLZONE points found\n")
+        return
+    end
 
     for i = 1, #points, 2 do
         local p1 = points[i]
         local p2 = points[i + 1]
-        if p1 and p2 then
+        if p1 and p2 and p1.pos and p2.pos then
             local mins = Vector(
                 math.min(p1.pos.x, p2.pos.x),
                 math.min(p1.pos.y, p2.pos.y),
@@ -28,6 +28,8 @@ function zb.LoadKillzones()
             table.insert(zb.Killzones, { mins = mins, maxs = maxs })
         end
     end
+
+    MsgC(Color(100, 255, 100), "[Killzone] ", color_white, "Loaded " .. #zb.Killzones .. " killzone(s)\n")
 end
 
 function zb.IsInKillzone(pos)
@@ -58,13 +60,13 @@ hook.Add("Think", "KillzoneThink", function()
 end)
 
 hook.Add("ZB_AfterAllPoints", "ReloadKillzones", function()
-    timer.Simple(0.1, function()
+    timer.Simple(0.5, function()
         zb.LoadKillzones()
     end)
 end)
 
 hook.Add("InitPostEntity", "LoadKillzones", function()
-    timer.Simple(1, function()
+    timer.Simple(2, function()
         zb.LoadKillzones()
     end)
 end)
