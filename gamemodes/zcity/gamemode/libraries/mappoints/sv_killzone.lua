@@ -45,15 +45,19 @@ end
 
 hook.Add("Think", "KillzoneThink", function()
     for _, ply in ipairs(player.GetAll()) do
-        if IsValid(ply) and ply:Alive() and ply:GetMoveType() ~= MOVETYPE_NOCLIP then
+        if IsValid(ply) and ply:GetMoveType() ~= MOVETYPE_NOCLIP then
             if zb.IsInKillzone(ply:GetPos()) then
-                local dmg = DamageInfo()
-                dmg:SetDamage(1000)
-                dmg:SetDamageType(DMG_DISSOLVE)
-                dmg:SetAttacker(game.GetWorld())
-                dmg:SetInflictor(game.GetWorld())
-                dmg:SetDamagePosition(ply:GetPos())
-                ply:TakeDamageInfo(dmg)
+                if ply:Alive() then
+                    local dmg = DamageInfo()
+                    dmg:SetDamage(1000)
+                    dmg:SetDamageType(DMG_DISSOLVE)
+                    dmg:SetAttacker(game.GetWorld())
+                    dmg:SetInflictor(game.GetWorld())
+                    dmg:SetDamagePosition(ply:GetPos())
+                    ply:TakeDamageInfo(dmg)
+                elseif ply:Health() > 0 then
+                    ply:SetHealth(0)
+                end
             end
         end
     end
