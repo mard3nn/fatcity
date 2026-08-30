@@ -46,7 +46,14 @@ end
 hook.Add("Think", "KillzoneThink", function()
     for _, ply in ipairs(player.GetAll()) do
         if IsValid(ply) and ply:GetMoveType() ~= MOVETYPE_NOCLIP then
-            if zb.IsInKillzone(ply:GetPos()) then
+            local inZone = zb.IsInKillzone(ply:GetPos())
+            if not inZone then
+                local ragdoll = ply:GetRagdollEntity()
+                if IsValid(ragdoll) then
+                    inZone = zb.IsInKillzone(ragdoll:GetPos())
+                end
+            end
+            if inZone then
                 if ply:Alive() then
                     local dmg = DamageInfo()
                     dmg:SetDamage(1000)
