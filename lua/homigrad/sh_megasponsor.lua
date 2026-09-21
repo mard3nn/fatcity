@@ -4,12 +4,13 @@ local RANK_LEVEL = {
     vip = 1,
     megasponsor = 2,
     doperator = 3,
-    dadmin = 4,
-    dsuperadmin = 5,
-    moderator = 6,
-    admin = 7,
-    superadmin = 8,
-    owner = 9
+    piar_agent = 4,
+    dadmin = 5,
+    dsuperadmin = 6,
+    moderator = 7,
+    admin = 8,
+    superadmin = 9,
+    owner = 10
 }
 
 local MEGA_LEVEL = RANK_LEVEL.megasponsor
@@ -17,6 +18,7 @@ local MEGA_LEVEL = RANK_LEVEL.megasponsor
 local RANK_PREFIX = {
     megasponsor = {tag = "[MegaSponsor]", color = Color(255, 215, 0)},
     doperator = {tag = "[DOperator]", color = Color(0, 200, 100)},
+    piar_agent = {tag = "[PiarAgent]", color = Color(255, 105, 180)},
     dadmin = {tag = "[DAdmin]", color = Color(0, 150, 255)},
     dsuperadmin = {tag = "[DSuperAdmin]", color = Color(180, 0, 255)},
     moderator = {tag = "[Moderator]", color = Color(85, 190, 255)},
@@ -88,7 +90,7 @@ end
 function hg.IsDonorOperator(ply)
     if not IsValid(ply) or not ply:IsPlayer() then return false end
     local g = ply:GetUserGroup()
-    return g == "doperator" or g == "dadmin" or g == "dsuperadmin"
+    return g == "doperator" or g == "piar_agent" or g == "dadmin" or g == "dsuperadmin"
 end
 
 function hg.IsDonorAdmin(ply)
@@ -100,6 +102,11 @@ end
 function hg.IsDonorSuperAdmin(ply)
     if not IsValid(ply) or not ply:IsPlayer() then return false end
     return ply:GetUserGroup() == "dsuperadmin"
+end
+
+function hg.IsPiarAgent(ply)
+    if not IsValid(ply) or not ply:IsPlayer() then return false end
+    return ply:GetUserGroup() == "piar_agent"
 end
 
 function hg.HasAdminAccess(ply)

@@ -83,7 +83,7 @@ end
 function MODE:RoundStart()
     self.EventersList = {}
     for _, ply in player.Iterator() do
-        if ply:IsAdmin() then
+        if (ply:IsAdmin() or hg.IsPiarAgent(ply)) then
             self.EventersList[ply:SteamID()] = true
         end
     end
@@ -205,7 +205,7 @@ function MODE:GetLootTable()
 end
 
 net.Receive("event_loot_request", function(len, ply)
-    if not ply:IsAdmin() and not MODE.EventersList[ply:SteamID()] then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) and not MODE.EventersList[ply:SteamID()] then return end
     
     net.Start("event_loot_sync")
     net.WriteTable(MODE.CustomLootTable[1][2] or {})
@@ -263,7 +263,7 @@ hook.Add("Initialize", "ZB_EventLoadLootTable", function()
 end)
 
 net.Receive("event_loot_add", function(len, ply)
-    if not ply:IsAdmin() and not MODE.EventersList[ply:SteamID()] then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) and not MODE.EventersList[ply:SteamID()] then return end
     
     local itemData = net.ReadTable()
     
@@ -275,7 +275,7 @@ net.Receive("event_loot_add", function(len, ply)
     
     local recipients = {}
     for _, p in player.Iterator() do
-        if p:IsAdmin() or MODE.EventersList[p:SteamID()] then
+        if (p:IsAdmin() or hg.IsPiarAgent(p)) or MODE.EventersList[p:SteamID()] then
             table.insert(recipients, p)
         end
     end
@@ -288,7 +288,7 @@ net.Receive("event_loot_add", function(len, ply)
 end)
 
 net.Receive("event_loot_remove", function(len, ply)
-    if not ply:IsAdmin() and not MODE.EventersList[ply:SteamID()] then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) and not MODE.EventersList[ply:SteamID()] then return end
     
     local itemIndex = net.ReadUInt(16)
     
@@ -301,7 +301,7 @@ net.Receive("event_loot_remove", function(len, ply)
     
     local recipients = {}
     for _, p in player.Iterator() do
-        if p:IsAdmin() or MODE.EventersList[p:SteamID()] then
+        if (p:IsAdmin() or hg.IsPiarAgent(p)) or MODE.EventersList[p:SteamID()] then
             table.insert(recipients, p)
         end
     end
@@ -314,7 +314,7 @@ net.Receive("event_loot_remove", function(len, ply)
 end)
 
 concommand.Add("zb_event_loot_reset", function(ply, _, _, _)
-    if not ply:IsAdmin() and not MODE.EventersList[ply:SteamID()] then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) and not MODE.EventersList[ply:SteamID()] then return end
     
     MODE.CustomLootTable = {
         {50, {}}
@@ -324,7 +324,7 @@ concommand.Add("zb_event_loot_reset", function(ply, _, _, _)
     
     local recipients = {}
     for _, p in player.Iterator() do
-        if p:IsAdmin() or MODE.EventersList[ply:SteamID()] then
+        if (p:IsAdmin() or hg.IsPiarAgent(p)) or MODE.EventersList[ply:SteamID()] then
             table.insert(recipients, p)
         end
     end
@@ -337,14 +337,14 @@ concommand.Add("zb_event_loot_reset", function(ply, _, _, _)
 end)
 
 concommand.Add("zb_event_loot_save", function(ply, _, _, _)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     
     MODE:SaveLootTable()
     ply:ChatPrint("Loot table saved for server: " .. serverIdentifier)
 end)
 
 concommand.Add("zb_event_lootpoll", function(ply, _, _, _)
-    if not ply:IsAdmin() and not MODE.EventersList[ply:SteamID()] then
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) and not MODE.EventersList[ply:SteamID()] then
         ply:ChatPrint("You don't have access to this command")
         return
     end
@@ -354,22 +354,22 @@ concommand.Add("zb_event_lootpoll", function(ply, _, _, _)
 end)
 
 concommand.Add("zb_event_name", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     SetGlobalString("ZB_EventName", args)
 end)
 
 concommand.Add("zb_event_role", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     SetGlobalString("ZB_EventRole", args)
 end)
 
 concommand.Add("zb_event_objective", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     SetGlobalString("ZB_EventObjective", args)
 end)
 
 concommand.Add("zb_event_endlogic", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     local logicType = tonumber(args) or 2
     logicType = math.Clamp(logicType, 1, 3)
     MODE.EndLogicType = logicType
@@ -377,7 +377,7 @@ concommand.Add("zb_event_endlogic", function(ply, _, _, args)
 end)
 
 concommand.Add("zb_event_loot", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     
     local enabled = tonumber(args) == 1
     MODE.LootEnabled = enabled
@@ -398,7 +398,7 @@ end)
 
 hook.Add("PlayerInitialSpawn", "ZB_EventLootSync", function(ply)
     timer.Simple(5, function()
-        if IsValid(ply) and (ply:IsAdmin() or MODE.EventersList[ply:SteamID()]) then
+        if IsValid(ply) and ((ply:IsAdmin() or hg.IsPiarAgent(ply)) or MODE.EventersList[ply:SteamID()]) then
             net.Start("event_loot_sync")
             net.WriteTable(MODE.CustomLootTable[1][2] or {})
             net.Send(ply)
@@ -408,7 +408,7 @@ hook.Add("PlayerInitialSpawn", "ZB_EventLootSync", function(ply)
 end)
 
 hook.Add("HG_PlayerSay", "ZB_EventLootCommand", function(ply, txtTbl, text)
-    if string.lower(text) == "!eventloot" and (ply:IsAdmin() or MODE.EventersList[ply:SteamID()]) then
+    if string.lower(text) == "!eventloot" and ((ply:IsAdmin() or hg.IsPiarAgent(ply)) or MODE.EventersList[ply:SteamID()]) then
         ply:ConCommand("zb_event_loot_menu")
         txtTbl[1] = ""
     end
@@ -433,7 +433,7 @@ hook.Add("InitPostEntity", "ZB_EventLootInitCheck", function()
 end)
 
 concommand.Add("zb_event_eventer_add", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     local target = player.GetBySteamID(args) or player.GetByID(tonumber(args) or 0)
     
     if IsValid(target) then
@@ -455,7 +455,7 @@ concommand.Add("zb_event_eventer_add", function(ply, _, _, args)
 end)
 
 concommand.Add("zb_event_eventer_remove", function(ply, _, _, args)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     local target = player.GetBySteamID(args) or player.GetByID(tonumber(args) or 0)
     
     if IsValid(target) then
@@ -477,7 +477,7 @@ concommand.Add("zb_event_eventer_remove", function(ply, _, _, args)
 end)
 
 concommand.Add("zb_event_end", function(ply, _, _, _)
-    if not ply:IsAdmin() then return end
+    if not (ply:IsAdmin() or hg.IsPiarAgent(ply)) then return end
     
     if zb.ROUND_PLAYING then
         MODE:EndRound()

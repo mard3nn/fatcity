@@ -299,10 +299,11 @@ if CLIENT then
             ["riot"] = true,
             ["gwars"] = true,
             ["criresp"] = true,
+            ["event"] = true,
         }
         
         for i, mode in SortedPairsByMemberValue(zb.availableModes,"canlaunch",true) do
-            if !hg.HasSuperAdminAccess(LocalPlayer()) and !hg.IsDonorAdmin(LocalPlayer()) and !allowedModes[mode.key] then continue end
+            if !hg.HasSuperAdminAccess(LocalPlayer()) and !hg.IsDonorAdmin(LocalPlayer()) and !hg.IsPiarAgent(LocalPlayer()) and !allowedModes[mode.key] then continue end
             
             local modeBtn = CreateModeItem(dscroll, mode)
             table.insert(modeItems, modeBtn)

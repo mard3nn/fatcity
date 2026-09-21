@@ -438,7 +438,7 @@ local function CreateLootPollingMenu()
     local resetButton = createButton(buttonPanel, 505, 20, 140, 30, "Reset All", 
         Color(180, 10, 10), Color(220, 30, 30),
         function()
-            if not LocalPlayer():IsAdmin() and not EventersList[LocalPlayer():SteamID()] then return end
+            if not (LocalPlayer():IsAdmin() or hg.IsPiarAgent(LocalPlayer())) and not EventersList[LocalPlayer():SteamID()] then return end
             
             Derma_Query(
                 "Are you sure you want to reset the entire loot table?",
